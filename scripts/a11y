@@ -20,6 +20,8 @@ async function main(){
   const browser=await launch();
   try {
     console.log("Screen State Critical Serious Moderate Minor Rules");
+    const large=await browser.newPage({viewport:stage,reducedMotion:"reduce"}); await stageFlow(large,audit,false,null,audit);
+    await large.close();
     const ctx=await browser.newContext({viewport:phone,reducedMotion:"reduce",permissions:["camera"]});
     const p=await ctx.newPage(); p.setDefaultTimeout(12000);
     for(const route of ["/","/about","/missions","/phone/devices","/phone/help","/missions/help","/play/scan"]){
@@ -57,7 +59,6 @@ async function main(){
     });
     await scan.scanFlow(p,audit,false,{fixture:true,describe:true});
     await ctx.close();
-    const large=await browser.newPage({viewport:stage,reducedMotion:"reduce"}); await stageFlow(large,audit);
     if(rows.some(r=>r.issues.some(i=>["serious","critical"].includes(i.impact))))process.exitCode=1;
   } finally {
     if(process.env.ION_AXE_REPORT)fs.writeFileSync(process.env.ION_AXE_REPORT,JSON.stringify(rows,null,2));

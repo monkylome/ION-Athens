@@ -22,15 +22,17 @@ export function venueApi(observations: () => Observation[], now: () => Date) {
   const trails = (v: Place) => (records.get(v.id) ?? []).map(r => r.trail);
   const card = (v: Place) => ({...v, entrances:doors(v), facts:facts(v,observations()), trails:trails(v)});
   function arrival(v: Place, door?: Place) {
-    const clauses = ["Φτάσατε στον προορισμό σας. " + v.name + "."];
-    if (!door) clauses.push("Η ακριβής είσοδος δεν έχει χαρτογραφηθεί.");
+    const clauses = [v.name.startsWith("Ωδείο ") ? "Φτάσατε στο " + v.name + "." : "Φτάσατε στον προορισμό σας. " + v.name + "."];
     const known = facts(v,observations());
+    if (known.some(f => f.key === "wheelchair" && f.value === "yes")) clauses.push("Ο χώρος είναι προσβάσιμος με αμαξίδιο.");
+    if (!door) clauses.push("Η ακριβής είσοδος δεν έχει χαρτογραφηθεί ακόμα.");
     const step = known.find(f => f.key === "step_count" && f.entranceId === (door?.id ?? null));
     if (step && (step.source === "citizens" ? step.value === "yes" : step.value === "0")) clauses.push("Υπάρχει είσοδος χωρίς σκαλιά.");
     if (known.some(f => f.key === "elevator" && f.value === "yes")) clauses.push("Υπάρχει ανελκυστήρας για το κοινό.");
     if (known.some(f => f.key === "toilets:wheelchair" && f.value === "yes")) clauses.push("Υπάρχει προσβάσιμη τουαλέτα.");
     const trail = trails(v).find(t => t.confirmed);
-    clauses.push(trail?.speech ?? "Δεν έχει χαρτογραφηθεί ακόμα το εσωτερικό.");
+    if (trail) clauses.push(trail.speech);
+    else if (door) clauses.push("Δεν έχει χαρτογραφηθεί ακόμα το εσωτερικό.");
     return {venueId:v.id,entranceId:door?.id ?? null,speech:clauses.join(" ")};
   }
   app.get("/",c => c.json({venues:venues.map(card)}));

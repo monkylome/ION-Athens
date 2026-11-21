@@ -49,6 +49,8 @@ function definitions(v: Place) {
 export function venueMissions(): Mission[] {
   return venues.flatMap(v => definitions(v).filter(f => !f.raw || f.raw === "unknown").map(f => ({
     id:f.id, type:"venue_check", venueId:v.id, key:f.key, entranceId:f.target.parentId ? f.target.id : null,
+    // OSM way 217627849 extends 107.2 m from its centroid. Allow 12 m for the phone fix.
+    ...(f.target.id === "community_centre-x-w217627849" ? {venueReachM:120} : {}),
     question:f.question, where:f.target.name, position:point(f.target), edgeIds:[], points:15, answers:{yes:0,no:0}
   })));
 }

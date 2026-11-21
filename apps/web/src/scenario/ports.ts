@@ -54,6 +54,7 @@ export interface SourceInfo {
   permission?: string;
   answering?: boolean;
   records?: number;
+  lastFetched?: string | null;
   stale?: boolean;
 }
 

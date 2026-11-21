@@ -9,7 +9,7 @@ async function gameFlow(p, inspect, recording=false) {
     if (!response.ok()) throw Error(path+" returned HTTP "+response.status());
     return response.json();
   }
-  const preset=encodeURIComponent(process.env.ION_DEMO_PRESET || "olympia");
+  const preset=encodeURIComponent(process.env.ION_DEMO_PRESET || "acropolis");
   const loop=await api("demo/loop?preset="+preset);
   const nearby=async ([lng,lat])=>(await api("missions?lng="+lng+"&lat="+lat+"&radius=5000&limit=100")).missions;
   const crossing=(await nearby(loop.crossing.position)).find(m=>m.id===loop.crossing.id && m.answers.no===0);

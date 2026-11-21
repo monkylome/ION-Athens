@@ -260,7 +260,7 @@ class Demo:
             {"room": self.o.preset, "loop": self.o.preset, "citizen": "live", "text": self.note}
         )
         print(
-            f"1. Laptop  {self.web}/stage?{query}\n2. USB Android  http://localhost:{self.o.device_port}/play?demo=1&loop={self.o.preset}"
+            f"1. Laptop  {self.web}/stage?{query}\n2. USB Android  http://localhost:{self.o.device_port}/play?loop={self.o.preset}"
         )
 
     def usb(self):
@@ -324,6 +324,10 @@ class Demo:
         self.resolve()
         self.stop("api")
         self.start_api()
+        loop = request(self.api + "/demo/loop?preset=" + self.o.preset)
+        lng, lat = loop["obstacle"]["position"]
+        seeded = request(self.api + "/reports?rehearsal=1", {"lng":lng,"lat":lat,"category":"sidewalk","text":"Επίδειξη ION · πρώτη αναφορά εμποδίου"})
+        print("First rehearsal report", seeded["report"]["id"])
         result = self.check()
         print(f"Rewind including preflight · {time.monotonic() - start:.1f} s")
         return result
@@ -429,6 +433,13 @@ def preflight(demo):
         if pos and None not in pos:
             data = get(f"/missions?lng={pos[0]}&lat={pos[1]}&radius=100&limit=100")
             missions.update({m["id"]: m["answers"] for m in data.get("missions", [])})
+    hall = get("/venues/community_centre-x-w217627849")
+    open_hall = get(f"/missions?lng={hall.get('lng')}&lat={hall.get('lat')}&radius=120&limit=100")
+    hall_questions = [m for m in open_hall.get("missions", []) if m.get("venueId") == hall.get("id")]
+    unknown = sum(f.get("value") is None for f in hall.get("facts", []))
+    line("Serafeio", unknown > 0 and bool(hall_questions), f"{unknown} unknown fields, {len(hall_questions)} open questions")
+    lift = get("/demo/loop?preset=acropolis").get("lift", {})
+    line("Akropoli lifts", bool(lift.get("fetchedAt")), str(lift))
     route_edges = set()
     if loop.get("start") and dest:
         try:
@@ -468,11 +479,12 @@ def preflight(demo):
         "Reports",
         ledger.get("scope") == "local-rehearsal-reports"
         and snapshot.get("stale") is False
-        and not nearby
-        and not ours,
+        and not (nearby - set(ours)),
         f"owned {ours}; other on route {sorted(nearby - set(ours))}; --resolve closes only recorded receipts"
         + ("; API lacks receipt support" if not ledger else ""),
     )
+    seed = [o for o in snapshot.get("obstacles", []) if o.get("edgeId") == edge and o.get("blocks") == "partial" and o.get("source",{}).get("ref") in ours]
+    line("First rehearsal report", bool(seed), "pending confirmation; run demo-rewind before the live act")
     try:
         seen = request(demo.web + "/api/health")
         direct = request(demo.api + "/health")
@@ -591,7 +603,7 @@ def main():
         ("vision", 11435),
     ]:
         parser.add_argument("--" + key + "-port", type=port, default=default)
-    parser.add_argument("--preset",choices=["olympia","acropolis"],default="olympia")
+    parser.add_argument("--preset",choices=["olympia","acropolis"],default="acropolis")
     if name == "demo-check":
         parser.add_argument("--resolve", action="store_true")
     o = parser.parse_args()

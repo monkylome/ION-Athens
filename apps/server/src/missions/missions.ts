@@ -34,6 +34,7 @@ export interface Mission {
   /** For obstacle_check: the report this mission confirms. */
   reportRef?: string;
   venueId?: string;
+  venueReachM?: number;
   key?: string;
   entranceId?: string | null;
 }
@@ -286,7 +287,7 @@ export class MissionBoard {
 
     if (at) {
       const d = Math.round(distanceM(at, mission.position));
-      if (d > this.opts.maxDistanceM) {
+      if (d > (mission.venueReachM ?? this.opts.maxDistanceM)) {
         return { ok: false, code: "too_far", distanceM: d, message: `Πρέπει να βρίσκεστε στο σημείο. Απέχετε περίπου ${d} μέτρα.` };
       }
     }

@@ -37,9 +37,6 @@ const BUILT_IN_SOURCES: SourceInfo[] = [
   { id: "ion-demo", name: "Περιπατητής, εμπόδιο και ήχοι", owner: "Ομάδα ION Athens", data: "simulated", permission: "not needed" },
 ];
 
-const DATA_EL: Record<string, string> = { real: "πραγματικά", test: "test data", simulated: "προσομοίωση" };
-const PERMISSION_EL: Record<string, string> = { "open licence": "ανοιχτή άδεια", pending: "άδεια σε εκκρεμότητα", "not needed": "δεν χρειάζεται άδεια" };
-
 function decimal(value: number, digits: number): string {
   return value.toLocaleString("el-GR", { minimumFractionDigits: digits, maximumFractionDigits: digits });
 }
@@ -58,7 +55,7 @@ function currentSentence(caption: Caption): { words: string[]; said: number } {
 
 function CaptionBar({ state }: { state: ScenarioState }) {
   const { caption, phase, request } = state;
-  const idle = phase === "idle" && !caption;
+  const idle = (phase === "idle" || phase === "destination") && !caption;
   const sentence = caption ? currentSentence(caption) : null;
   const length = sentence ? sentence.words.join(" ").length : request.length;
   // Two lines at the full size hold about 58 characters. A longer sentence steps down within the allowed range.
@@ -66,14 +63,14 @@ function CaptionBar({ state }: { state: ScenarioState }) {
   return (
     <footer className="caption" data-kind={caption?.kind ?? "none"}>
       <p className="caption__label">
-        <span>{idle ? "Το αίτημα του πεζού" : "Η φωνή λέει"}</span>
+        <span>{idle ? "Προορισμός" : "Η φωνή λέει"}</span>
         {caption && !caption.voiced && <span className="tag tag--solid">ΧΩΡΙΣ ΦΩΝΗ</span>}
-        {idle && <span className="tag">Κείμενο, όχι μικρόφωνο</span>}
+
         {state.signal && !idle && <span className="tag caption__signal">Σήμα στη συσκευή: {signalLabels[state.signal.value]}</span>}
       </p>
       {/* The caption is the mirror of the voice. Screen readers get the sentence once, from the status region below. */}
       <p className="caption__text t-instruction" data-size={size} lang="el" aria-hidden="true">
-        {idle && <span className="caption__quote">«{request}»</span>}
+        {idle && <span className="caption__quote">{state.loop?.destination.name ?? request}</span>}
         {sentence?.words.map((word, i) => (
           <span key={`${caption!.id}-${i}`} className="caption__word" data-said={i < sentence.said}>
             {word}{" "}
@@ -106,40 +103,31 @@ function MetricsPanel({ metrics }: { metrics: Metrics }) {
           <span className="metrics__what">προειδοποίηση πριν από τη στροφή</span>
         </p>
       )}
+      <p className="metrics__row"><span className="metrics__number">{Math.round(metrics.extraM)}</span><span className="metrics__what">μέτρα επιπλέον</span></p>
     </aside>
   );
 }
 
-const SOURCE_ROWS = 16; // what fits on a 16:9 stage at the smallest allowed type
-
+const kinds = ["ζωντανά", "ημερήσια", "αρχείο", "δοκιμαστικά"] as const;
+function sourceKind(s: SourceInfo) {
+  if (s.kind === "live") return kinds[0];
+  if (s.kind === "daily") return kinds[1];
+  return s.data === "real" ? kinds[2] : kinds[3];
+}
 function SourcesPanel({ sources, builtIn, stepCount }: { stepCount: number; sources: SourceInfo[]; builtIn: "waiting" | "failed" | null }) {
-  const shown = sources.slice(0, SOURCE_ROWS);
-  const more = sources.length - shown.length;
-  return (
-    <section className="overlay sources" aria-label="Πηγές δεδομένων">
-      <h2 className="overlay__title overlay__title--small">
-        Πηγές: {sources.length}{stepCount > 0 && <small> · Διαδρομή 2 του Δήμου: {stepCount} κοντινά σημεία βημάτων</small>}
-        {builtIn === "failed" && <span className="tag">Ενσωματωμένη λίστα, το /api/sources δεν απάντησε</span>}
-        {builtIn === "waiting" && <span className="tag">Ενσωματωμένη λίστα, αναμονή του /api/sources</span>}
-        {more > 0 && <span className="tag">Εδώ οι πρώτες {shown.length}</span>}
-      </h2>
-      <table className="sources__table">
-        <thead>
-          <tr><th scope="col">Πηγή</th><th scope="col">Φορέας</th><th scope="col">Δεδομένα</th><th scope="col">Άδεια χρήσης</th></tr>
-        </thead>
-        <tbody>
-          {shown.map((s, i) => (
-            <tr key={`${s.id}-${i}`} data-down={s.answering === false}>
-              <th scope="row">{s.name}</th>
-              <td>{s.owner}</td>
-              <td>{DATA_EL[s.data ?? ""] ?? s.data ?? "άγνωστο"}{s.answering === false ? ", δεν απαντά" : ""}</td>
-              <td>{PERMISSION_EL[s.permission ?? ""] ?? s.permission ?? "άγνωστο"}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </section>
-  );
+  const sorted = [...sources].sort((a,b)=>kinds.indexOf(sourceKind(a))-kinds.indexOf(sourceKind(b)));
+  return <section className="overlay sources" aria-label="Πηγές δεδομένων">
+    <h2 className="overlay__title overlay__title--small">Πηγές: {sources.length}</h2>
+    <p>{kinds.map(k=>sources.filter(s=>sourceKind(s)===k).length+" "+k).join(" · ")}
+      {stepCount > 0 && " · Διαδρομή 2: "+stepCount+" κοντινά σημεία"}
+      {builtIn && " · Ενσωματωμένη λίστα"}
+    </p>
+    <table className="sources__table"><tbody>{sorted.map(s=><tr key={s.id}>
+      <th scope="row">{s.name}</th><td>{sourceKind(s)}{s.kind === "live" && s.data === "test" && " · δοκιμαστικά"}</td>
+      <td>{s.kind === "live" && s.lastFetched && "πριν από "+Math.max(0, Math.round((Date.now()-Date.parse(s.lastFetched))/1000))+"″ "}
+        {s.answering === false && "δεν απαντά "}{s.permission === "pending" && "άδεια σε εκκρεμότητα"}</td>
+    </tr>)}</tbody></table>
+  </section>;
 }
 
 export function Stage() {
@@ -260,11 +248,9 @@ export function Stage() {
   }, [state.loop, query]);
 
   if (state.closing) return <main className="pitch-frame">
-    <div className="pitch-seats" role="img" aria-label="Δύο καθίσματα θεάτρου"><i/><i/></div>
-    <p>{state.loop?.preset === "acropolis" ? "Στη διαδρομή προς το Ηρώδειο προστέθηκε μια νέα μαρτυρία." : "Το θέατρο ήταν πάντα εκεί. Ο δρόμος ως την πόρτα του δεν ήταν γραμμένος πουθενά."}</p>
-    <strong>Απόψε τον έγραψε η πόλη.</strong>
+    <p>Ἰών. Αυτός που πηγαίνει.</p><small>ION Athens</small>
   </main>;
-  if (statement) return <main className="pitch-frame"><p>Δεν υπάρχουν «άνθρωποι με ειδικές ανάγκες». Υπάρχουν άνθρωποι με αναπηρία, και πόλεις που ακόμη τους βάζουν εμπόδια.</p></main>;
+  if (statement) return <main className="pitch-frame"><p>«Από την πόρτα του ανελκυστήρα ξεκινάει ο οδηγός όδευσης τυφλών.»</p><small>Δήμος Αθηναίων · Με Άλλα Μάτια · This is Athens: Προσβάσιμες Διαδρομές, Βόλτα στην Ακρόπολη</small></main>;
   return (
     <div className="stage" data-surface="stage" data-moment={beat} data-phase={state.phase} data-metrics={metricsShown}>
       <header className="stage__top" inert={compare}>
@@ -325,7 +311,7 @@ export function Stage() {
         <dl>{state.card.facts.map(f => <div key={f.key + f.entranceId}>
           <dt>{f.question}</dt><dd>{f.key === "step_count" && f.source === "openstreetmap"
             ? f.value + " σκαλιά" : ({yes:"ναι", no:"όχι", limited:"μερικώς"}[f.value ?? ""] ?? f.value ?? "άγνωστο")}
-            {f.source === "citizens" && <small> · από δημότες</small>}</dd>
+            {f.source === "openstreetmap" && <small> · OpenStreetMap</small>}{f.source === "citizens" && <small> · από δημότες</small>}</dd>
         </div>)}</dl>
       </section>}
       {state.ready && state.phase === "idle" && !state.caption && !compare ? <Choices value={state.profile} onChoose={profile => {

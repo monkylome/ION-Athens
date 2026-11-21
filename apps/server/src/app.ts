@@ -608,7 +608,8 @@ export function createApp(deps: AppDeps) {
       ? await Promise.all([city.notes.get(undefined,2000),city.lifts.get(undefined,2000)]) : [];
     const station = lifts?.fetchedAt && !lifts.stale && !lifts.problem ? findStation(lifts.records,"Ακρόπολη") : null;
     const lift = station ? {working:station.lifts.filter(l=>l.working).length,total:station.lifts.length,fetchedAt:lifts!.fetchedAt} : null;
-    const loop = theatreLoop(routing.graph, board.all(active), board.confirmedObservations(), active, at, preset, notes?.records);
+    const baseline = active.filter(o => !(o.source.kind === "sandbox_request" && o.source.ref && receipts.ids.has(o.source.ref)));
+    const loop = theatreLoop(routing.graph, board.all(active), board.confirmedObservations(), baseline, at, preset, notes?.records);
     if (!loop) return c.json({demo:true,error:{code:"no_matching_loop",message:"No route met the crossing and detour requirements on the loaded graph."}},422);
     const museum = preset === "acropolis" ? venues.find(v=>v.id === "museum-acropolis-museum-w983921252") : null;
     const museumCard = museum && {

@@ -23,7 +23,7 @@ export interface PhraseContext {
 
 const NEAR_M = 15;
 
-const TURN: Record<TurnDirection, string> = {
+export const TURN: Record<TurnDirection, string> = {
   straight: "συνεχίστε ευθεία",
   slight_left: "συνεχίστε ελαφρά αριστερά",
   left: "στρίψτε αριστερά",

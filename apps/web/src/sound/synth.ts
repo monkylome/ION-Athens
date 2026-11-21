@@ -108,49 +108,6 @@ export class Synth {
     this.tone(at, 0.07, 1750, 0.07, "triangle", pan);
   }
 
-  /** A cane meeting metal: inharmonic partials that ring and die. */
-  private knock(at: number): void {
-    this.burst(at, 0.05, "bandpass", 2400, 1.2, 0.8);
-    this.burst(at, 0.14, "lowpass", 300, 0.8, 0.6);
-    const partials: [number, number, number][] = [
-      [412, 0.9, 0.34],
-      [1093, 1.5, 0.26],
-      [1688, 1.2, 0.2],
-      [2456, 0.8, 0.14],
-      [3310, 0.5, 0.09],
-      [4720, 0.3, 0.05],
-    ];
-    for (const [frequency, seconds, gain] of partials) this.tone(at, seconds, frequency, gain);
-  }
-
-  /** A street heard from the pavement: filtered noise that swells and falls. Returns a function that cuts it. */
-  private street(at: number, seconds: number): (cutAt: number) => void {
-    const ctx = this.ctx;
-    const to = this.out();
-    if (!ctx || !to || !this.noise) return () => undefined;
-    const source = ctx.createBufferSource();
-    source.buffer = this.noise;
-    source.loop = true;
-    const filter = ctx.createBiquadFilter();
-    filter.type = "lowpass";
-    filter.frequency.setValueAtTime(240, at);
-    // one vehicle passing
-    filter.frequency.linearRampToValueAtTime(900, at + seconds * 0.45);
-    filter.frequency.linearRampToValueAtTime(280, at + seconds * 0.85);
-    const amp = ctx.createGain();
-    amp.gain.setValueAtTime(0.0001, at);
-    amp.gain.linearRampToValueAtTime(0.16, at + 1.2);
-    amp.gain.linearRampToValueAtTime(0.26, at + seconds * 0.45);
-    amp.gain.linearRampToValueAtTime(0.14, at + seconds);
-    source.connect(filter).connect(amp).connect(to);
-    source.start(at);
-    source.stop(at + seconds + 0.1);
-    return (cutAt) => {
-      amp.gain.cancelScheduledValues(cutAt);
-      amp.gain.setValueAtTime(0, cutAt); // a cut, not a fade
-    };
-  }
-
   earcon(name: Earcon): void {
     const ctx = this.ctx;
     if (!ctx || !this.audible) return;
@@ -213,24 +170,17 @@ export class Synth {
     }, seconds * 1000);
   }
 
-  /**
-   * The opening, 9 seconds: a street, steps and a cane, a metallic knock at
-   * 6.2 s, and then nothing at all.
-   */
   opening(): number {
     const ctx = this.ctx;
     if (!ctx || !this.audible) return 0;
     const t = ctx.currentTime + 0.05;
     this.holdPreset(9);
-    const cut = this.street(t, 6.2);
     let step = 0;
     for (let at = 1.0; at < 5.9; at += STEP_S, step++) {
       const side = step % 2 === 0 ? -0.15 : 0.15;
       this.footstep(t + at, side);
       this.cane(t + at + STEP_S / 2, -side * 2.5);
     }
-    this.knock(t + 6.2);
-    cut(t + 6.2); // the street stops with the knock: what is left is the metal, then silence
     return 9000;
   }
 

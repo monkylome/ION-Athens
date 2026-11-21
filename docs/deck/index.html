@@ -139,12 +139,7 @@ a:focus-visible { outline:3px solid var(--accent); outline-offset:4px; }
 </style>
 <main aria-label="Παρουσίαση ION Athens">
 <section aria-label="Τίτλος"><h1>ION Athens</h1></section>
-<section class="slide" hidden aria-labelledby="problem">
-<h2 id="problem" tabindex="-1">Το πρόβλημα το ξέρουμε όλοι.</h2>
-<div class="columns two">
-<article><strong>17,8%</strong><p>των ανθρώπων 16+ στην Ελλάδα δηλώνουν περιορισμό σε συνήθεις δραστηριότητες για τουλάχιστον έξι μήνες.</p><a href="https://www.statistics.gr/documents/20181/a6439cf0-3519-1a38-f98e-51257f68c5b1">ΕΛΣΤΑΤ · Έρευνα εισοδήματος και συνθηκών διαβίωσης 2025, δείκτης GALI</a></article>
-<article><strong>22,8%</strong><p>του μόνιμου πληθυσμού της Ελλάδας είναι 65 ετών και άνω.</p><a href="https://www.statistics.gr/documents/20181/17911189/Booklet_65.pdf">ΕΛΣΤΑΤ · Απογραφή Πληθυσμού–Κατοικιών 2021</a></article></div>
-</section>
+<section class="slide" hidden aria-labelledby="quote"><h2 id="quote">«Από την πόρτα του ανελκυστήρα ξεκινάει ο οδηγός όδευσης τυφλών.»</h2><small>Δήμος Αθηναίων · Με Άλλα Μάτια · This is Athens: Προσβάσιμες Διαδρομές, Βόλτα στην Ακρόπολη</small></section>
 <section class="slide" hidden aria-labelledby="map">
 <h2 id="map" tabindex="-1" class="profiles">Με φωνή · με ρόδες · με ησυχία</h2>
 <div class="columns">
@@ -165,8 +160,8 @@ a:focus-visible { outline:3px solid var(--accent); outline-offset:4px; }
 <h2 id="pilot" tabindex="-1">Τι ζητάμε</h2>
 <div class="columns">
 <article><h3>άδεια</h3><p>Επαναχρησιμοποίηση της απογραφής πεζοδρομίων του Δήμου.</p></article>
-<article><h3>γειτονιά</h3><p>Μία γειτονιά για πιλοτική δοκιμή τριών μηνών.</p></article>
-<article><h3>θέσεις</h3><p>Αδιάθετες θέσεις στις δημοτικές σκηνές ως ανταμοιβή.</p></article>
+<article><h3>γειτονιά</h3><p>Μία γειτονιά για τρεις μήνες, με μία αρμόδια υπηρεσία του Δήμου.</p></article>
+<article><h3>δοκιμή</h3><p>Δοκιμή με τυφλούς ανθρώπους και έλεγχος από τον υπεύθυνο προστασίας δεδομένων πριν από χρήση από δημότες.</p></article>
 </div><small class="measure">Επιβεβαιωμένα σημεία · συμφωνία απαντήσεων με επιτόπιο έλεγχο · δημότες που επέστρεψαν</small>
 </section>
 <section class="slide" hidden aria-labelledby="today">
@@ -179,6 +174,14 @@ a:focus-visible { outline:3px solid var(--accent); outline-offset:4px; }
 </dl><p>Εκκρεμεί δοκιμή με τυφλό άτομο και άλλα άτομα με αναπηρία.</p>
 </section>
 <section hidden aria-label="Τέλος"></section>
+<section class="slide" hidden aria-labelledby="problem">
+<h2 id="problem" tabindex="-1">Το πρόβλημα το ξέρουμε όλοι.</h2>
+<div class="columns two">
+<article><strong>17,8%</strong><p>των ανθρώπων 16+ στην Ελλάδα δηλώνουν περιορισμό σε συνήθεις δραστηριότητες για τουλάχιστον έξι μήνες.</p><a href="https://www.statistics.gr/documents/20181/a6439cf0-3519-1a38-f98e-51257f68c5b1">ΕΛΣΤΑΤ · Έρευνα εισοδήματος και συνθηκών διαβίωσης 2025, δείκτης GALI</a></article>
+<article><strong>22,8%</strong><p>του μόνιμου πληθυσμού της Ελλάδας είναι 65 ετών και άνω.</p><a href="https://www.statistics.gr/documents/20181/17911189/Booklet_65.pdf">ΕΛΣΤΑΤ · Απογραφή Πληθυσμού–Κατοικιών 2021</a></article></div>
+</section>
+<section class="slide" hidden><h2>22 φωτογραφίες δρόμου</h2><p>Σκαλιά 4/4 · Ράμπες 4/4 · Όδευση 2/2 · Κείμενο πινακίδων 5/5 · Σηματοδοτημένες διαβάσεις 0/3.</p><p>Σε 5 φωτογραφίες πρότεινε ανύπαρκτα σκαλιά ή εμπόδια.</p></section>
+<section class="slide" hidden><h2>Τι είναι αρχείο, τι ζωντανό</h2><p>Αρχείο: γράφος OSM, απογραφή πεζοδρομίων και γραπτές διαδρομές του Δήμου.</p><p>Ζωντανά: ανελκυστήρες ΣΤΑΣΥ, καιρός, ΟΑΣΑ και Διαύγεια. Το AthensGov Sandbox επιστρέφει δοκιμαστικά δεδομένα.</p></section>
 </main>
 <script>
 const stage = document.querySelector("main");
@@ -196,7 +199,7 @@ document.addEventListener("keydown", event => {
     case "ArrowRight": case "ArrowDown": show(current+1); break;
     case "ArrowLeft": case "ArrowUp": show(current-1); break;
     case "Home": show(0); break;
-    case "End": show(frames.length-1); break;
+    case "End": show(frames.findIndex(f=>f.getAttribute("aria-label")==="Τέλος")); break;
     case "KeyB": stage.classList.toggle("black"); break;
     case "KeyF":
       (document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen()).catch(() => {});

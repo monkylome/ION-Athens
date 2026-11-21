@@ -1,3 +1,4 @@
+import { TURN } from "./phrases";
 import { discoveryEvent } from "../play/game";
 /**
  * The scenario state machine. One instance runs in the tab that hosts the demo
@@ -69,7 +70,7 @@ export const MOMENT = {
   voiceDelayMs: 600,
   turnSoundMs: 3000,
   /** Silence after the voice (and the turn sound) before the light returns. */
-  silenceMs: 900,
+  silenceMs: 2000,
   /** The new route is being drawn. */
   mendMs: 1600,
 } as const;
@@ -293,7 +294,7 @@ export class ScenarioEngine {
     } else {
       this.patch({ busy: false, destination: null, phase: "idle", notice: speech });
     }
-    this.say({ text: speech, kind: "info", urgent: true });
+    if (!loop || !destination) this.say({ text: speech, kind: "info", urgent: true });
   }
 
   private async start(): Promise<void> {
@@ -852,7 +853,7 @@ export class ScenarioEngine {
           },
           onEnd: () => {
             if (this.run !== run) return;
-            const sound = this.deps.soundOn?.() ?? false;
+            const sound = !this.state.loop && (this.deps.soundOn?.() ?? false);
             if (sound) this.deps.effect?.({ type: "turn_sound", toRight: !run.result.turnDirection?.endsWith("left") });
             run.lightAt = this.deps.now() + (sound ? MOMENT.turnSoundMs : 0) + MOMENT.silenceMs;
           },
@@ -893,6 +894,14 @@ export class ScenarioEngine {
             distanceToDecisionM: round5(run.result.distanceToDecisionM - walked),
           }
         : announcement;
+    const obstacle = run.obstacle;
+    if (live.type === "obstacle" && live.outcome === "reroute" && live.direction
+        && !live.lateWarning && "witnesses" in obstacle && typeof obstacle.witnesses === "number" && obstacle.witnesses >= 2) {
+      const age = this.deps.wallNow() - Date.parse(obstacle.observedAt);
+      const recent = age >= 0 && age < 600000 ? " πριν από λίγα λεπτά" : "";
+      const count = obstacle.witnesses === 2 ? "δύο" : String(obstacle.witnesses);
+      return `Υπάρχει εμπόδιο στο επόμενο τμήμα. Έγινε αναφορά${recent}. Το επιβεβαίωσαν ${count} δημότες. Η διαδρομή αλλάζει. Στην επόμενη γωνία, ${TURN[live.direction]}.`;
+    }
     return phraseFor(live, this.phraseContext());
   }
 
@@ -906,9 +915,11 @@ export class ScenarioEngine {
     if (this.route && this.isMoving()) {
       this.simT += dt * this.state.timeScale;
       const loop = this.activeLoop();
+      // Allow time for the spoken evidence before the junction in the staged Acropolis walk.
+      const holdM = loop ? Math.max(0, loop.walkerProgressM - (loop.preset === "acropolis" ? 12 : 0)) : 0;
       if (loop && !this.state.change && this.route.edges.includes(loop.obstacle.edgeId)
-          && this.simT * this.state.config.speedMps >= loop.walkerProgressM) {
-        this.simT = loop.walkerProgressM / this.state.config.speedMps;
+          && this.simT * this.state.config.speedMps >= holdM) {
+        this.simT = holdM / this.state.config.speedMps;
         this.advance();
         if (!this.state.waiting) this.deps.effect?.({ type: "walking", on: false });
         this.state.waiting = true;

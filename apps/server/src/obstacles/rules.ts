@@ -136,7 +136,7 @@ export interface Skipped {
   snapDistanceM?: number;
 }
 
-export type ReportOutcome = { obstacle: Obstacle } | { skipped: Skipped };
+export type ReportOutcome = { obstacle: Obstacle & { witnesses: number } } | { skipped: Skipped };
 
 const round1 = (n: number) => Math.round(n * 10) / 10;
 const round2 = (n: number) => Math.round(n * 100) / 100;
@@ -194,6 +194,7 @@ export function reportToObstacle(
   return {
     obstacle: {
       id: `sandbox:${report.id}`,
+      witnesses: 1 + report.upvotes,
       edgeId: match.edgeId,
       blocks: confirmed && confidence >= 0.5 ? "full" : "partial",
       type: report.category,

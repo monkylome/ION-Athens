@@ -5,14 +5,19 @@ import {fileURLToPath} from "node:url";
 import {execFileSync} from "node:child_process";
 import runtime from "./browser/runtime.cjs";
 import scan from "./browser/scan.cjs";
-import game from "./browser/game.cjs";
+
 const {launch,phone,stage,stageFlow}=runtime;
 const out=fileURLToPath(new URL("../data-local/backup/",import.meta.url));
 await fs.mkdir(out,{recursive:true});
 const work=await fs.mkdtemp(path.join(out,".record-"));
 const browser=await launch();
 try {
-  const flows = [["game",phone,game.gameFlow],["stage",stage,stageFlow],["scan",phone,scan.scanFlow]];
+  async function phoneAct(player, inspect, recording) {
+    const projector = await browser.newPage({viewport:stage});
+    try { await stageFlow(projector,async()=>{},recording,player,inspect); }
+    finally { await projector.close(); }
+  }
+  const flows = [["game",phone,phoneAct],["stage",stage,stageFlow],["scan",phone,scan.scanFlow]];
   const selected = process.env.ION_BACKUP_ONLY ? flows.filter(([name]) => name === process.env.ION_BACKUP_ONLY) : flows;
   if (!selected.length) throw Error("ION_BACKUP_ONLY must be game, stage or scan");
   for(const [name,size,flow] of selected){

@@ -366,9 +366,6 @@ kbd {
   font: 750 clamp(2rem, 4.5vw, 6rem)/1.08 var(--font-display, "Sofia Sans Condensed Variable", sans-serif);
 }
 .pitch-frame p, .pitch-frame strong { margin: 0; max-width: 24ch; }
-.pitch-seats { display: flex; gap: 1vw; margin-bottom: 2vh; }
-.pitch-seats i { width: 4vw; height: 3vw; border: .3vw solid white; border-bottom-width: .8vw; position: relative; }
-.pitch-seats i::after { content: ""; position: absolute; inset: 100% -.3vw auto; height: 1.4vw; border-inline: .3vw solid white; }
 .venue-reveal { position: relative; z-index: 3; background: #000; color: white; padding: 2vh 7vw; overflow: auto; }
 .venue-reveal h2 { margin: 0; font-size: 3.6vw; }
 .venue-reveal dl { margin: 1vh 0; }
@@ -378,8 +375,6 @@ kbd {
 .stage__map[hidden] { display: none; }
 
 .crossing-answer { white-space: normal; line-height: 1.12; max-width: 34ch; font-size: 2.2vw; text-transform: none; }
-.pitch-seats i { border-radius: .7vw .7vw 0 0; }
-.pitch-seats i::before { content: ""; position: absolute; bottom: -.8vw; inset-inline: -.65vw; height: .9vw; border-inline: .4vw solid white; }
 @media (prefers-reduced-motion: no-preference) {
   .venue-reveal dl div { animation: reveal-fact .18s ease-out backwards; }
   .venue-reveal dl div:nth-child(2) { animation-delay: .12s; }

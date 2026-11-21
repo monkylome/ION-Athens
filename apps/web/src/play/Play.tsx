@@ -69,7 +69,7 @@ export function Play() {
   const receipt = useLocation().state?.scanReceipt;
   const [params] = useSearchParams();
   const fakeParam = useMemo(() => parseFake(params.get("fake")), [params]);
-  const preset = params.get("loop") ?? "olympia";
+  const preset = params.get("loop") ?? "acropolis";
   const demo = params.get("demo") === "1";
   const fov = Number(params.get("fov")) > 10 ? Math.min(120, Number(params.get("fov"))) : CAMERA_FOV_DEG;
   const participant = useMemo(participantId, []);
@@ -84,7 +84,7 @@ export function Play() {
     playApi.demoLoop(preset).then((loop) => {
       if (!current) return;
       if (!loop.start) { setStageFailed(true); return; }
-      const at: LngLat = [loop.start.lng, loop.start.lat];
+      const at: LngLat = loop.obstacle?.position ?? [loop.start.lng, loop.start.lat];
       // Face the place the walk ends at, so the landmark is ahead.
       setStage({ at, heading: loop.destination ? bearingDeg(at, [loop.destination.lng, loop.destination.lat]) : 0 });
     }, () => { if (current) setStageFailed(true); });
@@ -317,7 +317,9 @@ export function Play() {
       let data: { observation?: Observation };
       try { data = JSON.parse(event.data); } catch { return; }
       const o = data.observation;
-      if (!o || o.type === "camera_discovery" || mine.current.has(o.missionId)) return; // my own confirmation is told on the card
+      if (!o || o.type === "camera_discovery") return;
+      setMoment(previous => previous?.mission.id === o.missionId
+        ? {...previous, outcome:outcome({mission:previous.mission, confirmed:o}, o.value === "no" ? "no" : "yes")} : previous);
       const seen = missionsRef.current.find((n) => n.mission.id === o.missionId);
       if (seen) flash(o.missionId, seen.mission.position, true);
       const text = `Ο χάρτης άλλαξε. ${changeSentence(o, seen?.mission.question)}`;
@@ -626,6 +628,12 @@ export function Play() {
                 {labels}
                 <Standing profile={profile} rewards={rewards} />
                 <nav className="pl-menu" aria-label="Μενού">
+                  <button type="button" className="btn" onClick={()=>{
+                    const next = new URL(window.location.href);
+                    next.searchParams.delete("fake");
+                    if (demo) next.searchParams.delete("demo"); else next.searchParams.set("demo","1");
+                    window.location.assign(next.href);
+                  }}>{demo ? "Πίσω στη θέση μου" : "Στη διαδρομή της επίδειξης"}</button>
                   <button type="button" className="btn" onClick={() => setPanel("album")}><BookOpen weight="fill" className="btn__icon" aria-hidden="true" />Το άλμπουμ μου<span className="pl-menu__count">{album.length}</span></button>
                   <button type="button" className="btn" onClick={() => setPanel("rewards")}><TicketIcon weight="fill" className="btn__icon" aria-hidden="true" />Προνόμια</button>
                   <button type="button" className="btn" onClick={() => setPanel("near")}><ListBullets weight="bold" className="btn__icon" aria-hidden="true" />Κοντά σας<span className="pl-menu__count">{inReach}</span></button>
@@ -711,6 +719,7 @@ export function Play() {
                   </>
                 ) : (
                   <>
+                    {demo && target.mission.type === "obstacle_check" && <p>Υπάρχει ήδη αναφορά επίδειξης. Βλέπετε κι εσείς το εμπόδιο;</p>}
                     {!venue && <p className="pl-card__where"><MapPin weight="fill" className="btn__icon" aria-hidden="true" />{target.mission.where || "Σημείο στον χάρτη"}</p>}
                     <h2 className="pl-card__question">{target.mission.question}</h2>
                     <p className="pl-card__meta">
