@@ -6,6 +6,7 @@
  * moves the simulated walker and the timeline of a route change forward.
  */
 import {
+  PROFILES,
   checkObstacleRemoved,
   describeObstacleRemoved,
   describeReroute,
@@ -78,6 +79,7 @@ const MOVING: readonly Phase[] = ["walking", "reported", "rerouting", "walking_n
 
 export function initialState(config: ScenarioConfig): ScenarioState {
   return {
+    profile: "voice",
     rev: 0,
     ready: false,
     phase: "idle",
@@ -197,6 +199,9 @@ export class ScenarioEngine {
 
   async dispatch(command: Command): Promise<void> {
     switch (command.type) {
+      case "chooseProfile":
+        if (this.state.phase === "idle" && !this.state.busy) this.patch({ profile: command.profile });
+        return;
       case "advance":
         if (this.state.phase === "idle") return this.setDestination(this.state.config.sentence);
         if (this.state.phase === "destination") return this.start();
@@ -278,14 +283,14 @@ export class ScenarioEngine {
     const { start, destination, busy, phase } = this.state;
     if (!start || !destination || busy || phase !== "destination") return;
     this.patch({ busy: true });
-    const result = await this.deps.api.route({ lng: start.lng, lat: start.lat }, { lng: destination.lng, lat: destination.lat });
+    const result = await this.deps.api.route({ lng: start.lng, lat: start.lat }, { lng: destination.lng, lat: destination.lat }, this.state.profile);
     this.note(result);
     let route: Route | null = result.ok && result.data && this.usable(result.data.route) ? result.data.route : null;
-    if (!route) {
+    if (!route && result.code !== "no_route") {
       const from = start.nodeId && this.deps.index.nodes.has(start.nodeId) ? start.nodeId : nearestNode(this.deps.index, [start.lng, start.lat])?.node.id;
       const to = destination.nodeId && this.deps.index.nodes.has(destination.nodeId) ? destination.nodeId : nearestNode(this.deps.index, [destination.lng, destination.lat])?.node.id;
       if (from && to) {
-        const local = findRoute(this.deps.index, from, to, { atTime: this.deps.wallNow(), obstacles: this.routingObstacles() });
+        const local = findRoute(this.deps.index, from, to, { cost: PROFILES[this.state.profile].cost, atTime: this.deps.wallNow(), obstacles: this.routingObstacles() });
         if (local.ok && local.route.edges.length > 0) {
           route = local.route;
           this.toast("ΔΙΑΔΡΟΜΗ ΥΠΟΛΟΓΙΣΜΕΝΗ ΤΟΠΙΚΑ · @ion/core", "local");
@@ -341,7 +346,7 @@ export class ScenarioEngine {
         minExtraM: config.minExtraM,
         maxExtraM: config.maxExtraM,
         targetExtraM: config.targetExtraM,
-        atTime: this.deps.wallNow(),
+        cost: PROFILES[this.state.profile].cost, atTime: this.deps.wallNow(),
         obstacles: this.routingObstacles(),
       });
       if (!planned) {
@@ -618,7 +623,7 @@ export class ScenarioEngine {
       return;
     }
     const check = checkObstacleRemoved(this.deps.index, route, walker.distanceM, {
-      atTime: this.deps.wallNow(),
+      cost: PROFILES[this.state.profile].cost, atTime: this.deps.wallNow(),
       obstacles: this.routingObstacles(),
     });
     if (check.outcome !== "shorter_available") {
@@ -664,7 +669,7 @@ export class ScenarioEngine {
     if (!MOVING.includes(this.state.phase) || this.state.moment) return;
     this.handled.add(obstacle.id);
     const result = rerouteForObstacle(this.deps.index, route, walker.distanceM, obstacle, {
-      atTime: this.deps.wallNow(),
+      cost: PROFILES[this.state.profile].cost, atTime: this.deps.wallNow(),
       obstacles: this.routingObstacles(obstacle.id),
     });
     if (result.outcome === "not_relevant") {

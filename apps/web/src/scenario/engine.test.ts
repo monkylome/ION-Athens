@@ -408,3 +408,13 @@ describe("two screens, one state", () => {
     link.close();
   });
 });
+
+it("keeps the chosen walking profile for the walk", async () => {
+  const { engine, walking, state } = setup();
+  expect(state().profile).toBe("voice");
+  await engine.dispatch({ type: "chooseProfile", profile: "wheels" });
+  await walking();
+  expect(state().phase).toBe("walking");
+  await engine.dispatch({ type: "chooseProfile", profile: "quiet" });
+  expect(state().profile).toBe("wheels");
+});

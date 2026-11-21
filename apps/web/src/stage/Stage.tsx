@@ -1,3 +1,5 @@
+import { Choices } from "../profiles/Choices";
+import { Compare } from "../profiles/Compare";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { fetchSources } from "../scenario/browser";
 import { captionSentences } from "../scenario/phrases";
@@ -15,6 +17,7 @@ const KEYS: [string, string][] = [
   ["2", "Επιβεβαίωση από άλλον άνθρωπο (ξανά, ώσπου να κλείσει το πεζοδρόμιο)"],
   ["3", "Το εμπόδιο απομακρύνθηκε"],
   ["0 μηδέν", "Επαναφορά: καθαρίζει και το sandbox"],
+  ["C", "Σύγκριση τριών διαδρομών"],
   ["P", "Παύση και συνέχεια"],
   ["R", "Επανάληψη της στιγμής"],
   ["S", "Πηγές δεδομένων"],
@@ -141,6 +144,7 @@ export function Stage() {
   const walkingSound = useRef(true);
   const { state, dispatch, problem } = useScenario("stage", { walkingSound: () => walkingSound.current });
   const query = useMemo(() => new URLSearchParams(window.location.search), []);
+  const [compare, setCompare] = useState(false);
   const [help, setHelp] = useState(false);
   const [showSources, setShowSources] = useState(false);
   // undefined: no answer yet. null: the server did not answer.
@@ -187,7 +191,10 @@ export function Stage() {
       if (synth.unlock()) setSound((s) => (s === "locked" ? "on" : s));
       // Physical keys, so a Greek keyboard layout works too.
       const key = event.key === "?" ? "Help" : event.code;
+      if (compare && (key === "Escape" || key === "KeyC")) { setCompare(false); event.preventDefault(); return; }
+      if (compare || ((key === "Enter" || key === "Space") && event.target instanceof HTMLButtonElement)) return;
       switch (key) {
+        case "KeyC": setCompare(true); setHelp(false); setShowSources(false); break;
         case "Enter": case "NumpadEnter": case "Space": dispatch({ type: "advance" }); break;
         case "Digit1": case "Numpad1": dispatch({ type: "report", at: "ahead" }); break;
         case "Digit2": case "Numpad2": dispatch({ type: "confirm" }); break;
@@ -221,7 +228,7 @@ export function Stage() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [dispatch, moving]);
+  }, [dispatch, moving, compare]);
 
   const beat = state.moment?.beat ?? "none";
   const offline = state.connection === "offline" || state.localFallback;
@@ -232,7 +239,7 @@ export function Stage() {
 
   return (
     <div className="stage" data-surface="stage" data-moment={beat} data-phase={state.phase} data-metrics={metricsShown}>
-      <header className="stage__top">
+      <header className="stage__top" inert={compare}>
         <p className="stage__brand">ION Athens</p>
         <ul className="provenance" aria-label="Τι είναι πραγματικό και τι όχι">
           <li className="plate"><span className="plate__name">OpenStreetMap</span><span className="plate__state">ΠΡΑΓΜΑΤΙΚΑ</span></li>
@@ -241,7 +248,7 @@ export function Stage() {
         </ul>
       </header>
 
-      <main className="stage__map">
+      <main className="stage__map" inert={compare}>
         <StageMap state={state} reducedMotion={reducedMotion} tiles={tiles} />
         <p className="credit">© OpenStreetMap{tiles ? ", OpenMapTiles, OpenFreeMap" : ""}</p>
 
@@ -275,7 +282,11 @@ export function Stage() {
         </ol>
       </main>
 
-      <CaptionBar state={state} />
+      {state.ready && state.phase === "idle" && !state.caption && !compare ? <Choices value={state.profile} onChoose={profile => {
+        dispatch({ type: "chooseProfile", profile });
+        dispatch({ type: "advance" });
+      }} /> : <CaptionBar state={state} />}
+      {compare && <Compare query={query} close={() => setCompare(false)} />}
 
       {showSources && <SourcesPanel sources={sources ?? BUILT_IN_SOURCES} builtIn={sources === undefined ? "waiting" : sources === null ? "failed" : null} />}
       {help && (

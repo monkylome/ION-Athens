@@ -1,3 +1,4 @@
+import { Choices } from "../profiles/Choices";
 import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { ArrowBendUpLeft, ArrowBendUpRight, ArrowUp, Flag, Microphone, PersonSimpleWalk } from "@phosphor-icons/react";
@@ -72,12 +73,14 @@ export function Phone() {
   const recognition = useRef<Recognition | null>(null);
   const input = useRef<HTMLInputElement>(null);
   const screen = useRef<HTMLElement>(null);
+  const [chose, setChose] = useState(false);
   const view = viewOf(state, mode === "pending");
 
   // One thing per screen: when the screen changes, focus goes to its heading.
   useEffect(() => {
     screen.current?.querySelector<HTMLElement>("h1")?.focus({ preventScroll: true });
-  }, [view]);
+    if (view !== "ask") setChose(false);
+  }, [view, chose]);
 
   // The device layer: a turn, an obstacle and the arrival are also felt.
   const lastSignal = useRef<number | null>(state.signal?.id ?? null);
@@ -161,7 +164,7 @@ export function Phone() {
       body = <h1 className="t-secondary" tabIndex={-1}>{problem ? `Ο χάρτης πεζών δεν φορτώθηκε. ${problem}` : "Φόρτωση του χάρτη πεζών."}</h1>;
       break;
     case "ask":
-      body = (
+      body = !chose ? <Choices value={state.profile} onChoose={profile => { dispatch({ type: "chooseProfile", profile }); setChose(true); }} /> : (
         <>
           <h1 className="t-instruction" tabIndex={-1}>Πού θέλετε να πάτε;</h1>
           <button type="button" className="btn btn--primary" data-on="accent" onClick={listen} disabled={state.busy} aria-pressed={listening}>

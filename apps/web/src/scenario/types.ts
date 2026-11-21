@@ -144,6 +144,7 @@ export interface Toast {
 }
 
 export interface ScenarioState {
+  profile: import("@ion/core").ProfileId;
   rev: number;
   ready: boolean;
   phase: Phase;
@@ -174,6 +175,7 @@ export interface ScenarioState {
 }
 
 export type Command =
+  | { type: "chooseProfile"; profile: import("@ion/core").ProfileId }
   | { type: "advance" }
   | { type: "setDestination"; text: string }
   | { type: "clearDestination" }

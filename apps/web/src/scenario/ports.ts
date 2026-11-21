@@ -11,6 +11,7 @@ export interface ApiResult<T> {
   method: "GET" | "POST";
   path: string;
   message?: string;
+  code?: string;
 }
 
 export interface ServerPlace {
@@ -59,7 +60,7 @@ type Point = { lng: number; lat: number };
 
 export interface ApiPort {
   destination(text: string, location?: Point): Promise<ApiResult<DestinationResponse>>;
-  route(from: Point, to: Point): Promise<ApiResult<RouteResponse>>;
+  route(from: Point, to: Point, profile: import("@ion/core").ProfileId): Promise<ApiResult<RouteResponse>>;
   report(input: Point & { category?: string; text?: string }): Promise<ApiResult<ReportResponse>>;
   confirm(reportId: string): Promise<ApiResult<ReportResponse>>;
   resolve(reportId: string): Promise<ApiResult<ReportResponse>>;

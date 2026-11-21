@@ -17,7 +17,8 @@
     "react": "^19",
     "react-aria-components": "^1",
     "react-dom": "^19",
-    "react-router-dom": "^7"
+    "react-router-dom": "^7",
+    "zzfx": "^1.4.0"
   },
   "devDependencies": {
     "@types/geojson": "^7946.0.16",

@@ -31,7 +31,7 @@ async function call<T>(method: "GET" | "POST", path: string, body?: unknown): Pr
       ...(method === "POST" ? { headers: { "Content-Type": "application/json" }, body: JSON.stringify(body ?? {}) } : {}),
       signal: AbortSignal.timeout(15000),
     });
-    const data = (await response.json().catch(() => null)) as (T & { error?: { message?: string } }) | null;
+    const data = (await response.json().catch(() => null)) as (T & { error?: { message?: string; code?: string } }) | null;
     // 5xx means the server, or the sandbox behind it, is not delivering: the screens fall back and say so.
     return {
       ok: response.ok && data !== null,
@@ -40,6 +40,7 @@ async function call<T>(method: "GET" | "POST", path: string, body?: unknown): Pr
       unreachable: response.status >= 500 || (response.ok && data === null),
       method,
       path,
+      ...(data?.error?.code ? { code: data.error.code } : {}),
       ...(data?.error?.message ? { message: data.error.message } : {}),
     };
   } catch {
@@ -49,7 +50,7 @@ async function call<T>(method: "GET" | "POST", path: string, body?: unknown): Pr
 
 export const browserApi: ApiPort = {
   destination: (text, location) => call("POST", "/destination", { text, ...(location ? { location } : {}) }),
-  route: (from, to) => call("POST", "/route", { from, to }),
+  route: (from, to, profile) => call("POST", "/route", { from, to, profile }),
   report: (input) => call("POST", "/reports", input),
   confirm: (id) => call("POST", `/reports/${encodeURIComponent(id)}/confirm`),
   resolve: (id) => call("POST", `/demo/resolve/${encodeURIComponent(id)}`),

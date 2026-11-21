@@ -112,6 +112,10 @@ export function useScenario(surface: "stage" | "phone", options: ScenarioOptions
           },
           config,
         );
+        try {
+          const profile = localStorage.getItem("ion-walk-profile");
+          if (profile === "quiet" || profile === "wheels") void instance.dispatch({ type: "chooseProfile", profile });
+        } catch { /* Storage is optional. */ }
         engine.current = instance;
         // For rehearsal and automated checks: read the live state from the console.
         (window as unknown as { __ionScenario?: ScenarioEngine }).__ionScenario = instance;

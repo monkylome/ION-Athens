@@ -1,0 +1,19 @@
+.walk-choice h1 { font: 950 clamp(3rem, 5vw, 6rem)/1.05 var(--font-display, "Sofia Sans Condensed Variable"); margin: 0 0 .4em; }
+.walk-choice > div { display: flex; flex-wrap: wrap; gap: 1rem; }
+.walk-choice .btn { font-size: clamp(1.7rem, 2.7vw, 3.4rem); }
+.walk-choice [aria-pressed=true] { border-color: var(--accent); border-bottom-width: .5rem; }
+.phone .walk-choice > div { flex-direction: column; }
+.stage .walk-choice { background: var(--bg); border-top: var(--border-accent); padding: 1.5vw 2vw; }
+.compare { position: absolute; inset: 0; z-index: 5; background: var(--bg); display: grid; grid-template-rows: auto minmax(0,1fr) auto; }
+.compare header { display: flex; gap: 1vw; padding: .8vw 2vw; border-bottom: var(--border); }
+.compare button { background: var(--bg); color: var(--fg); border: var(--border); font: inherit; font-size: 2.2vw; padding: .35vw 1vw; }
+.compare button[data-pattern]::before { content: ""; display: inline-block; width: 2.5vw; vertical-align: middle; margin-right: .6vw; border-top: .35vw dashed; }
+.compare button[data-pattern=wheels]::before { border-top-style: dotted; }
+.compare button[data-pattern=quiet]::before { border-image: repeating-linear-gradient(90deg,currentColor 0 12px,transparent 12px 17px,currentColor 17px 20px,transparent 20px 25px) 1; }
+.compare button[aria-pressed=true]::before { border: 0; height: .65vw; background: radial-gradient(circle,var(--bg) 18%,transparent 21%) 0 50%/.65vw .65vw repeat-x,var(--accent); }
+.compare__close { margin-left: auto; }
+.compare__frame { position: relative; }
+.compare__map { position: absolute; inset: 0; }
+.compare footer { border-top: var(--border-accent); padding: 1vw 2vw 1.5vw; }
+.compare footer h1 { margin: 0; font-size: 5.5vw; line-height: 1.05; }
+.compare footer p { margin: 0; font-size: 3.3vw; }

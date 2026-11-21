@@ -26,6 +26,7 @@ export interface PlacementOptions {
   targetExtraM: number;
   /** Shorter edges are skipped: a report on them snaps to a neighbour too easily. Default 8. */
   minEdgeLengthM?: number;
+  cost?: Partial<import("@ion/core").CostOptions>;
   atTime: number | string | Date;
   /** Obstacles already known to routing. */
   obstacles?: readonly Obstacle[];
@@ -92,6 +93,7 @@ export function findPlacements(
     const position = pointOnEdge(index, edgeId);
     if (!position) continue;
     const result = rerouteForObstacle(index, route, progressM, probeObstacle(edgeId, position, options.atTime), {
+      ...options.cost && { cost: options.cost },
       atTime: options.atTime,
       obstacles: options.obstacles ?? [],
       minWarningDistanceM: 0,
