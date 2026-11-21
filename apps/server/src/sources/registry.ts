@@ -1,6 +1,8 @@
 /** All city sources, built once from a fetch function, and the registry the jury reads. */
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
+import { stationsAdapter, entrancesAdapter, type Station, type LiftEntrance } from "./metro.ts";
+import { weatherAdapter, type parseWeather } from "./weather.ts";
 import { decisionAdapter, type Decision } from "./diavgeia.ts";
 import { CachedSource } from "./cache.ts";
 import { type GisPlace, LAYERS, gisAdapter } from "./gis.ts";
@@ -25,6 +27,9 @@ export interface CitySourcesOptions {
 export const DEFAULT_ROUTES_DIR = fileURLToPath(new URL("../../../../data-local/accessible-routes/", import.meta.url));
 
 export interface CitySources {
+  stations: CachedSource<Station>;
+  entrances: CachedSource<LiftEntrance>;
+  weather: CachedSource<ReturnType<typeof parseWeather>>;
   decisions: CachedSource<Decision>[];
   lifts: CachedSource<MetroStationLifts>;
   stops: CachedSource<BusStop, Point>;
@@ -53,7 +58,10 @@ export function createCitySources(opts: CitySourcesOptions = {}): CitySources {
   const trees = make(treesAdapter);
   const gis = LAYERS.map((def) => make(gisAdapter(def)));
   const decisions = [make(decisionAdapter(true)), make(decisionAdapter(false))];
-  return { decisions, lifts, stops, arrivals, stopRoutes, notes, duty, announcements, trees, gis, parts: [...decisions, lifts, stops, arrivals, stopRoutes, notes, duty, announcements, trees, ...gis] };
+  const stations = make(stationsAdapter(opts.readFile));
+  const entrances = make(entrancesAdapter);
+  const weather = make(weatherAdapter);
+  return { stations, entrances, weather, decisions, lifts, stops, arrivals, stopRoutes, notes, duty, announcements, trees, gis, parts: [stations, entrances, weather, ...decisions, lifts, stops, arrivals, stopRoutes, notes, duty, announcements, trees, ...gis] };
 }
 
 /** A registry whose sources never reach the network: used when the app is built without sources. */

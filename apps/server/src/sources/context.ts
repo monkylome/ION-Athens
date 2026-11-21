@@ -4,6 +4,7 @@ import { distanceM } from "../geo.ts";
 import { athensDate } from "./hospitals.ts";
 import type { CitySources } from "./registry.ts";
 import type { StreetIndex } from "./streets.ts";
+import { fold } from "./text.ts";
 import { findStation } from "./stasy.ts";
 import type { GisPlace } from "./gis.ts";
 import type { Snapshot } from "./types.ts";
@@ -55,7 +56,10 @@ export async function buildContext(city: CitySources, streets: StreetIndex, q: C
       : { ok, fetchedAt: s.fetchedAt, stale: s.stale, problem: s.problem };
   };
 
-  const [notes, lifts, duty, announcements, trees, stops, ...layers] = await Promise.all([
+  const [stations, entrances, weather, notes, lifts, duty, announcements, trees, stops, ...layers] = await Promise.all([
+    city.stations.get(undefined, WAIT_MS),
+    city.entrances.get(undefined, WAIT_MS),
+    city.weather.get(undefined, WAIT_MS),
     city.notes.get(undefined, WAIT_MS),
     city.lifts.get(undefined, WAIT_MS),
     city.duty.get(undefined, WAIT_MS),
@@ -64,6 +68,9 @@ export async function buildContext(city: CitySources, streets: StreetIndex, q: C
     city.stops.get({ lng: q.lng, lat: q.lat }, WAIT_MS),
     ...city.gis.map((g) => g.get(undefined, WAIT_MS)),
   ]);
+  note("osm-metro", stations);
+  note("stasy-entrances", entrances);
+  note("open-meteo", weather);
   note(ids.notes, notes);
   note(ids.lifts, lifts);
   note(ids.duty, duty);
@@ -118,10 +125,13 @@ export async function buildContext(city: CitySources, streets: StreetIndex, q: C
   );
 
   // Metro stations with the lifts that are out of service.
-  const metro = near(byCategory("metro_station"), p, q.radiusM).map((s) => {
+  const stationMap = new Map(byCategory("metro_station").map(s => [fold(s.name), {id:s.id,name:s.name,lng:s.lng,lat:s.lat,source:ids.gis as string}]));
+  for (const s of stations.records) stationMap.set(fold(s.name), {...s,source:"osm-metro"});
+  const metro = near([...stationMap.values()], p, q.radiusM).map((s) => {
     const st = lifts.fetchedAt ? findStation(lifts.records, s.name) : null;
     return {
-      source: ids.gis,
+      source: s.source,
+      entrances: entrances.records.filter(e => fold(e.station) === fold(s.name)),
       id: s.id,
       name: s.name,
       lng: s.lng,
@@ -177,6 +187,9 @@ export async function buildContext(city: CitySources, streets: StreetIndex, q: C
     notes: noteItems,
     busStops,
     metroStations: metro,
+    unmatchedLiftStations: [...stationMap.values()].filter(s=>!findStation(lifts.records,s.name)).map(s=>s.name),
+    weather: weather.records[0] ? {...weather.records[0],source:"open-meteo", stale:weather.stale,
+      speech: weather.stale ? null : weather.records[0].speech} : null,
     hospitals,
     disabledParking,
     announcements: announcementItems,

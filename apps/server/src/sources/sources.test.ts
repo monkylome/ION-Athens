@@ -128,6 +128,7 @@ function cityWorld(opts: { routes?: boolean } = {}) {
     retryDelayMs: 0,
     routesDir: "/virtual",
     readFile: async (p) => {
+      if (p.endsWith("/data/places.json")) return JSON.stringify([{ id:"test-station",kind:"metro_station",name:"Μοναστηράκι",lng:LNG,lat:LAT }]);
       if (opts.routes !== false && p.endsWith("visual-impairment-acropolis.json")) return NOTE_FILE;
       throw new Error("ENOENT");
     },
@@ -358,7 +359,7 @@ describe("GET /api/sources", () => {
     const app = appWith(city, () => world.now);
     const { body } = await get(app, "/api/sources");
     const byId = Object.fromEntries((body["sources"] as Json[]).map((s) => [s["id"], s]));
-    expect(Object.keys(byId).sort()).toEqual(["accessible-routes", "athens-announcements", "athens-gis", "athens-trees", "diavgeia-city", "diavgeia-police", "ion-sandbox", "moh-duty-hospitals", "oasa-telematics", "openstreetmap", "stasy-lifts"]);
+    expect(Object.keys(byId).sort()).toEqual(["accessible-routes", "athens-announcements", "athens-gis", "athens-trees", "diavgeia-city", "diavgeia-police", "ion-sandbox", "moh-duty-hospitals", "oasa-telematics", "open-meteo", "openstreetmap", "osm-metro", "stasy-entrances", "stasy-lifts"]);
     expect(byId["stasy-lifts"]).toMatchObject({ owner: expect.stringContaining("ΣΤΑΣΥ"), permission: "pending", data: "real", answering: true, records: 2 });
     expect(byId["athens-gis"]).toMatchObject({ permission: "open licence", answering: true, records: 7 });
     expect(byId["oasa-telematics"]).toMatchObject({ permission: "pending", terms: expect.stringContaining("προσωπική χρήση"), answering: true });
@@ -368,7 +369,7 @@ describe("GET /api/sources", () => {
     for (const s of Object.values(byId) as Json[]) {
       expect(s).toMatchObject({ name: expect.any(String), owner: expect.any(String), terms: expect.any(String), request: expect.any(String), kind: expect.stringMatching(/^(live|daily|static)$/) });
     }
-    expect(body["counts"]).toMatchObject({ total: 11, testData: 1 });
+    expect(body["counts"]).toMatchObject({ total: 14, testData: 1 });
   });
 
   it("lists Walkable Athens only when routing says its enrichment is loaded", () => {
@@ -413,7 +414,7 @@ describe("GET /api/context", () => {
     expect(body["busStops"]).toHaveLength(1); // the far stop is outside the radius
     expect(body["busStops"][0]).toMatchObject({ source: "oasa-telematics", code: 100, arrivals: [{ minutes: 2, lineId: null }, { minutes: 9, lineId: "035", lineDescr: "ΔΟΚΙΜΗ - ΤΕΛΟΣ" }] });
     expect(body["metroStations"]).toHaveLength(1); // the tram stop is not a metro station
-    expect(body["metroStations"][0]).toMatchObject({ source: "athens-gis", name: "ΜΟΝΑΣΤΗΡΑΚΙ", lifts: { source: "stasy-lifts", known: true, total: 4, working: 3, outOfService: ["Προς Πειραιά"] } });
+    expect(body["metroStations"][0]).toMatchObject({ source: "osm-metro", name: "Μοναστηράκι", lifts: { source: "stasy-lifts", known: true, total: 4, working: 3, outOfService: ["Προς Πειραιά"] } });
     expect(body["hospitals"][0]).toMatchObject({ source: "athens-gis", name: "ΔΟΚΙΜΑΣΤΙΚΟ ΝΟΣΟΚΟΜΕΙΟ", onDutyToday: null, dutyList: { source: "moh-duty-hospitals", date: "2026-11-21", pdfUrl: expect.stringContaining("fdl=11") } });
     expect(body["disabledParking"]).toHaveLength(1);
     expect(body["places"].map((p: Json) => p["category"]).sort()).toEqual(["drinking_fountain", "kep", "municipal_clinic"]);
@@ -421,7 +422,7 @@ describe("GET /api/context", () => {
     expect(body["announcements"]).toHaveLength(1);
     expect(body["announcements"][0]).toMatchObject({ source: "athens-announcements", id: 1, link: "https://example.test/p/1", hint: true, closesStreet: false });
     expect(body["announcements"][0].streetsNear.map((s: Json) => s["name"])).toEqual(["Ερμού", "Αιόλου"]);
-    expect(Object.keys(body["sources"]).sort()).toEqual(["accessible-routes", "athens-announcements", "athens-gis", "athens-trees", "moh-duty-hospitals", "oasa-telematics", "stasy-lifts"]);
+    expect(Object.keys(body["sources"]).sort()).toEqual(["accessible-routes", "athens-announcements", "athens-gis", "athens-trees", "moh-duty-hospitals", "oasa-telematics", "open-meteo", "osm-metro", "stasy-entrances", "stasy-lifts"]);
     expect(JSON.stringify(body["announcements"])).not.toContain("Κλειστή η οδός"); // the text itself is not republished
   });
 
@@ -438,7 +439,7 @@ describe("GET /api/context", () => {
     const { status, body } = await get(appWith(city, () => world.now), q("&radius=300"));
     expect(status).toBe(200);
     expect(body["busStops"]).toEqual([]);
-    expect(body["metroStations"]).toEqual([]);
+    expect(body["metroStations"][0]).toMatchObject({ source:"osm-metro", name:"Μοναστηράκι", lifts:{known:true} });
     expect(body["notes"]).toHaveLength(1);
     expect(body["treePlantings"]).toHaveLength(1);
     expect(body["sources"]["oasa-telematics"]).toMatchObject({ ok: false });

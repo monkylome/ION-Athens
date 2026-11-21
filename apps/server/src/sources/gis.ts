@@ -3,12 +3,13 @@ import { z } from "zod";
 import { SourceError, fetchJson } from "./http.ts";
 import type { SourceAdapter, SourceMeta } from "./types.ts";
 
+const MAPS = "https://maps.cityofathens.gr/geoserver/athens/ows";
 const OWS = "http://gis.cityofathens.gr/geoserver/ows";
 
 export const GIS_META: SourceMeta = {
   id: "athens-gis",
   name: "Γεωπύλη Δήμου Αθηναίων (GeoServer)",
-  owner: "Δήμος Αθηναίων (gis.cityofathens.gr)",
+  owner: "Δήμος Αθηναίων",
   gives: "Places: ΚΕΠ, hospitals, municipal clinics, metro/tram stations, disabled parking places, drinking fountains",
   kind: "static",
   data: "real",
@@ -16,7 +17,7 @@ export const GIS_META: SourceMeta = {
   termsUrl: "http://creativecommons.org/licenses/by/3.0/gr/",
   termsQuoted: true,
   permission: "open licence",
-  request: `GET ${OWS}?service=WFS&version=2.0.0&request=GetFeature&typeNames=geonode:<layer>&outputFormat=application/json&srsName=EPSG:4326 for kep, nosokomeia, iatreia, stasy2024, pidakes, parking_amea`,
+  request: `GET ${MAPS} WFS 1.0.0 (athens workspace); fallback GET ${OWS}?service=WFS&version=2.0.0&request=GetFeature&typeNames=geonode:<layer>&outputFormat=application/json&srsName=EPSG:4326 for kep, nosokomeia, iatreia, stasy2024, pidakes, parking_amea`,
 };
 
 export interface GisPlace {
@@ -48,7 +49,7 @@ interface LayerDef {
 export const LAYERS: LayerDef[] = [
   { layer: "kep", category: "kep", categoryName: "ΚΕΠ", name: (p) => str(p["label"]) ?? str(p["name"]), address: (p) => str(p["tax_diefth"]) ?? str(p["diefth"]) },
   { layer: "nosokomeia", category: "hospital", categoryName: "Νοσοκομείο", name: (p) => str(p["Label"]) ?? str(p["label"]), address: (p) => join(p["odos"], p["arith"]) },
-  { layer: "iatreia", category: "municipal_clinic", categoryName: "Δημοτικό ιατρείο", name: (p) => str(p["name"]), address: (p) => str(p["tax_diefth"]) ?? str(p["diefth"]) },
+  { layer: "iatreia", category: "municipal_clinic", categoryName: "Δημοτικό ιατρείο", name: (p) => str(p["name"]) ?? join(p["type"],p["diefth"]), address: (p) => str(p["tax_diefth"]) ?? str(p["diefth"]) },
   {
     layer: "stasy2024",
     category: (p) => (p["eidos"] === "ΜΕΤΡΟ" ? "metro_station" : p["eidos"] === "ΤΡΑΜ" ? "tram_stop" : "rail_station"),
@@ -109,6 +110,13 @@ export function gisAdapter(def: LayerDef): SourceAdapter<GisPlace> {
     ttlMs: 24 * 3600_000,
     timeoutMs: 6000,
     async fetch(_q, env) {
+      const layer = def.layer === "stasy2024" ? "MetroStations1-2-3" : def.layer;
+      const primary = `${MAPS}?service=WFS&version=1.0.0&request=GetFeature&typeName=athens:${layer}&outputFormat=application/json&srsName=EPSG:4326&maxFeatures=2000`;
+      try {
+        return parseGisLayer(def, await fetchJson(env, primary, `Athens Maps (${layer})`));
+      } catch {
+        // Legacy WFS provides the same category under the geonode workspace.
+      }
       const url = `${OWS}?service=WFS&version=2.0.0&request=GetFeature&typeNames=geonode:${def.layer}&outputFormat=application/json&srsName=EPSG:4326&count=2000`;
       return parseGisLayer(def, await fetchJson(env, url, `GET gis.cityofathens.gr/geoserver/ows (${def.layer})`));
     },
