@@ -10,15 +10,26 @@ if [[ "$(git symbolic-ref --quiet --short HEAD || true)" != main ]]; then
     exit 1
 fi
 
-if [[ -n "$(git status --porcelain --untracked-files=no)" ]] ||
-    git rev-parse --verify --quiet MERGE_HEAD >/dev/null; then
-    echo "Finish any in-progress merge and commit your work before syncing." >&2
+if git rev-parse --verify --quiet MERGE_HEAD >/dev/null; then
+    echo "Finish the in-progress merge and commit it before syncing." >&2
     exit 1
 fi
+
+# Uncommitted changes to tracked files only matter when a merge is needed.
+# Several agents can work in one tree, so a push of finished commits must not
+# wait for someone else's unfinished edits.
+dirty=$(git status --porcelain --untracked-files=no)
 
 for attempt in 1 2 3; do
     git fetch origin refs/heads/main
     remote_head=$(git rev-parse FETCH_HEAD)
+
+    if [[ -n "$dirty" ]] && ! git merge-base --is-ancestor "$remote_head" HEAD; then
+        echo "origin/main has new commits and tracked files have uncommitted changes:" >&2
+        echo "$dirty" >&2
+        echo "Commit or set aside those changes, then rerun scripts/sync-main." >&2
+        exit 1
+    fi
 
     if ! git merge --no-edit "$remote_head"; then
         echo "Inspect git status. Resolve any conflicts, verify, commit the merge, and rerun scripts/sync-main." >&2
