@@ -5,7 +5,8 @@
  * debugging.
  */
 import { existsSync, readFileSync } from "node:fs";
-import type { PedestrianGraph } from "@ion/core";
+import { fileURLToPath } from "node:url";
+import { applyEnrichment, type GraphEnrichment, type PedestrianGraph } from "@ion/core";
 import { CoreRouting } from "./core.ts";
 import { FallbackRouting } from "./fallback.ts";
 import { EMPTY_GRAPH, type RoutingPort } from "./port.ts";
@@ -20,18 +21,53 @@ export interface LoadedGraph {
   /** False when the graph file is missing or unreadable; the graph is then empty. */
   loaded: boolean;
   problem?: string;
+  /** Whether the City's pavement survey was laid over the graph, and on how many edges. */
+  enrichment: { applied: boolean; edgesCovered: number; problem?: string };
 }
 
-/** Reads the graph file if it exists. Never throws: a missing graph is a normal state. */
-export function loadGraph(path: string): LoadedGraph {
-  if (!existsSync(path)) return { graph: EMPTY_GRAPH, loaded: false, problem: "graph file not found" };
+/**
+ * The pavement survey matched to the graph by `tools/enrich-graph`. The file is
+ * not in the repository (the survey is not licensed for redistribution), so a
+ * missing file is the normal state and changes nothing.
+ */
+export function enrichmentPath(env: NodeJS.ProcessEnv = process.env): string {
+  return (
+    env["ION_ENRICHMENT_PATH"] ||
+    fileURLToPath(new URL("../../../../data-local/athens-centre.enrichment.json", import.meta.url))
+  );
+}
+
+function enrich(graph: PedestrianGraph, path: string): Pick<LoadedGraph, "graph" | "enrichment"> {
+  if (!existsSync(path)) return { graph, enrichment: { applied: false, edgesCovered: 0 } };
+  try {
+    const result = applyEnrichment(graph, JSON.parse(readFileSync(path, "utf8")) as GraphEnrichment);
+    return {
+      graph: result.graph,
+      enrichment: {
+        applied: result.applied,
+        edgesCovered: result.edgesCovered,
+        ...(result.problem ? { problem: result.problem } : {}),
+      },
+    };
+  } catch {
+    return { graph, enrichment: { applied: false, edgesCovered: 0, problem: "enrichment file is not valid JSON" } };
+  }
+}
+
+/**
+ * Reads the graph file if it exists, then lays the pavement survey over it in
+ * memory when its file exists. Never throws: a missing graph is a normal state.
+ */
+export function loadGraph(path: string, surveyPath: string = enrichmentPath()): LoadedGraph {
+  const none = { applied: false, edgesCovered: 0 };
+  if (!existsSync(path)) return { graph: EMPTY_GRAPH, loaded: false, problem: "graph file not found", enrichment: none };
   try {
     const graph = JSON.parse(readFileSync(path, "utf8")) as PedestrianGraph;
     if (!Array.isArray(graph.nodes) || !Array.isArray(graph.edges) || graph.edges.length === 0) {
-      return { graph: EMPTY_GRAPH, loaded: false, problem: "graph file has no edges" };
+      return { graph: EMPTY_GRAPH, loaded: false, problem: "graph file has no edges", enrichment: none };
     }
-    return { graph, loaded: true };
+    return { loaded: true, ...enrich(graph, surveyPath) };
   } catch {
-    return { graph: EMPTY_GRAPH, loaded: false, problem: "graph file is not valid JSON" };
+    return { graph: EMPTY_GRAPH, loaded: false, problem: "graph file is not valid JSON", enrichment: none };
   }
 }

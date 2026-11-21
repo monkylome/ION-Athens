@@ -7,9 +7,20 @@
  *   person to cross.
  * - An announcement is produced once. Every announcement has a `key`; the
  *   caller passes back the keys already announced.
+ * - A step may carry one surveyed fact about the stretch it leads onto
+ *   (`surveyNotice`). It is said once, as a second short sentence, the first
+ *   time the step is announced.
  */
 import type { RemovalResult, RerouteResult } from "./reroute.ts";
-import type { CrossingInfo, NodeId, Obstacle, Route, RouteStep, TurnDirection } from "./types.ts";
+import type {
+  CrossingInfo,
+  NodeId,
+  Obstacle,
+  Route,
+  RouteStep,
+  SurveyNotice,
+  TurnDirection,
+} from "./types.ts";
 
 export interface AnnouncementOptions {
   /** A step is announced as "ahead" once it is within this distance. Default 30. */
@@ -30,7 +41,14 @@ interface Base {
 }
 
 export type Announcement =
-  | (Base & { type: "depart"; direction?: TurnDirection; onto?: string; crossing?: CrossingInfo })
+  | (Base & {
+      type: "depart";
+      direction?: TurnDirection;
+      onto?: string;
+      crossing?: CrossingInfo;
+      /** The surveyed fact the text mentions, when it mentions one. */
+      surveyNotice?: SurveyNotice;
+    })
   | (Base & {
       type: "turn";
       phase: "ahead" | "now";
@@ -39,6 +57,7 @@ export type Announcement =
       distanceM: number;
       direction: TurnDirection;
       onto?: string;
+      surveyNotice?: SurveyNotice;
     })
   | (Base & {
       type: "crossing";
@@ -48,6 +67,7 @@ export type Announcement =
       crossing: CrossingInfo;
       /** Where the crossing lies relative to the walking direction. */
       direction?: TurnDirection;
+      surveyNotice?: SurveyNotice;
     })
   | (Base & { type: "arrival"; phase: "ahead" | "now"; atNode: NodeId; distanceM: number })
   | (Base & {
@@ -130,12 +150,43 @@ export function describeCrossing(crossing: CrossingInfo, direction?: TurnDirecti
   return text;
 }
 
+/**
+ * Greek sentence for a surveyed fact about the stretch ahead. A fact from the
+ * City's 2022 pavement survey, stated plainly; never an instruction.
+ */
+export function describeSurveyNotice(notice: SurveyNotice): string {
+  switch (notice.kind) {
+    case "no_pavement":
+      return "Στη συνέχεια δεν υπάρχει πεζοδρόμιο.";
+    case "pavement_narrows":
+      return "Στη συνέχεια το πεζοδρόμιο στενεύει.";
+    case "pavement_narrow":
+      return "Στη συνέχεια το πεζοδρόμιο είναι στενό.";
+    case "tactile_guidance_starts":
+      return notice.side === "left"
+        ? "Στη συνέχεια υπάρχει όδευση τυφλών, στα αριστερά σας."
+        : notice.side === "right"
+          ? "Στη συνέχεια υπάρχει όδευση τυφλών, στα δεξιά σας."
+          : "Στη συνέχεια υπάρχει όδευση τυφλών.";
+    case "crossing_no_ramp":
+      return "Η διάβαση δεν έχει ράμπες.";
+  }
+}
+
 function stepKey(step: RouteStep, phase: string): string {
   return `${step.kind}@${step.atNode}@${Math.round(step.atDistanceM)}@${step.direction ?? ""}:${phase}`;
 }
 
-function stepAnnouncement(step: RouteStep, phase: "ahead" | "now", distanceM: number): Announcement {
+function stepAnnouncement(
+  step: RouteStep,
+  phase: "ahead" | "now",
+  distanceM: number,
+  withNotice = false,
+): Announcement {
   const key = stepKey(step, phase);
+  const notice = withNotice ? step.surveyNotice : undefined;
+  const fact = notice ? ` ${describeSurveyNotice(notice)}` : "";
+  const extra = notice ? { surveyNotice: notice } : {};
   const lead = phase === "ahead" ? `${capitalise(inMetres(distanceM))}, ` : "";
   const say = (body: string) => (lead ? `${lead}${body}.` : `${capitalise(body)}.`);
   if (step.kind === "crossing") {
@@ -149,7 +200,8 @@ function stepAnnouncement(step: RouteStep, phase: "ahead" | "now", distanceM: nu
       distanceM,
       crossing,
       ...(step.direction ? { direction: step.direction } : {}),
-      text: lead ? `${lead}${body.charAt(0).toLocaleLowerCase("el")}${body.slice(1)}.` : `${body}.`,
+      ...extra,
+      text: (lead ? `${lead}${body.charAt(0).toLocaleLowerCase("el")}${body.slice(1)}.` : `${body}.`) + fact,
     };
   }
   if (step.kind === "arrive") {
@@ -174,7 +226,8 @@ function stepAnnouncement(step: RouteStep, phase: "ahead" | "now", distanceM: nu
     distanceM,
     direction,
     ...(step.onto ? { onto: step.onto } : {}),
-    text: say(describeTurn(direction, step.onto)),
+    ...extra,
+    text: say(describeTurn(direction, step.onto)) + fact,
   };
 }
 
@@ -182,12 +235,14 @@ function departAnnouncement(step: RouteStep): Announcement {
   let text = step.direction ? `${capitalise(describeTurn(step.direction, step.onto))}.` : "Ξεκινάτε.";
   if (!step.direction && step.onto) text = `Ξεκινάτε, προς ${step.onto}.`;
   if (step.crossing) text += ` ${describeCrossing(step.crossing)}.`;
+  if (step.surveyNotice) text += ` ${describeSurveyNotice(step.surveyNotice)}`;
   return {
     type: "depart",
     key: stepKey(step, "now"),
     ...(step.direction ? { direction: step.direction } : {}),
     ...(step.onto ? { onto: step.onto } : {}),
     ...(step.crossing ? { crossing: step.crossing } : {}),
+    ...(step.surveyNotice ? { surveyNotice: step.surveyNotice } : {}),
     text,
   };
 }
@@ -333,10 +388,12 @@ export function nextAnnouncements(
     if (rel < -now && step.kind !== "arrive") continue; // passed
     const nowAt = step.kind === "arrive" ? Math.min(now, 1) : now;
     if (rel <= nowAt) {
+      // The surveyed fact belongs to the "ahead" announcement; say it now only if that one never happened.
+      const heardAhead = seen.has(stepKey(step, "ahead"));
       seen.add(stepKey(step, "ahead")); // never fall back to "ahead" after "now"
-      emit(stepAnnouncement(step, "now", 0));
+      emit(stepAnnouncement(step, "now", 0, !heardAhead));
     } else if (rel <= ahead) {
-      emit(stepAnnouncement(step, "ahead", roundTo5(rel)));
+      emit(stepAnnouncement(step, "ahead", roundTo5(rel), true));
     }
   }
   return { announcements: out, announced: [...seen] };

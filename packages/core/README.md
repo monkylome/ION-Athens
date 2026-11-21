@@ -37,7 +37,11 @@ edgeCost(edge, obstacles, "2026-11-22T10:00:00Z", { crossingUnsignalledM: 400 })
 isObstacleActive(obstacle, atTime);              // expiresAt is null or later than atTime
 ```
 
-    cost = (length x kindFactor x tactileFactor + stepsPenalty + crossingPenalty) x obstacleFactor
+    cost = (length x pavementFactor x tactileFactor + stepsPenalty + crossingPenalty) x obstacleFactor
+
+Without survey values (see "Pavement survey" below) `pavementFactor` is
+`sharedRoadFactor` on a `shared_road` edge and 1 elsewhere, and `tactileFactor`
+is `tactilePavingFactor` when OSM says `"yes"`.
 
 | Option | Default | Meaning |
 | --- | --- | --- |
@@ -57,6 +61,71 @@ than a confirmed unsignalled crossing, because most OpenStreetMap crossings are
 untagged and pricing them all at 300 would bend every route. An edge of kind
 `crossing` without crossing info counts as all unknown. Several partial obstacles on one
 edge apply the factor once. Defaults are in `DEFAULT_COST_OPTIONS`.
+
+### Pavement survey (`enrichment.ts`, `cost.ts`)
+
+```ts
+const { graph, applied, edgesCovered, problem } = applyEnrichment(loadedGraph, enrichmentFile);
+const index = buildGraphIndex(graph);            // route on the enriched copy
+```
+
+The City's pavement survey ("Walkable Athens", City of Athens with NTUA, 2022)
+is matched to the graph by `tools/enrich-graph` and kept in a separate file
+outside the repository, because the survey is not licensed for redistribution.
+`applyEnrichment` lays that file over a loaded graph in memory and returns a
+new graph; it never writes, and the input graph is left as it was. A file made
+for another build of the graph (`meta.graphBuiltAt`) is refused whole, and an
+entry whose edge has changed length is skipped.
+
+What an edge can then carry, all optional:
+
+| Field | Values | From |
+| --- | --- | --- |
+| `pavement` | `yes`, `no` | whether a pavement exists |
+| `pavementWidth` | `narrow` (to about 1 m), `medium` (1 to 2 m), `wide` | width class |
+| `pavementWidthVaries` | boolean | |
+| `pavementCondition` | `poor`, `medium`, `good` | |
+| `tactileGuidance` | `none`, `part`, `whole` | guidance for the blind along the side |
+| `fixedObstacles` | list of `FixedObstacleKind` | kinds seen at least once; `[]` means none seen |
+| `pavementSides` | `{ left?, right? }` | both sides of a street, relative to `from` -> `to` |
+| `crossingMarkings` | `none`, `clear`, `worn` | zebra markings (crossing edges) |
+| `crossingRamps` | `none`, `one_end`, `both_ends` | kerb ramps (crossing edges) |
+| `survey` | `{ source, year, confidence, side?, featureIds?, distanceM? }` | where the values come from |
+
+On a street with two surveyed sides the edge takes the values of the better
+side, named in `survey.side`; both stay in `pavementSides`. Nodes can carry
+`surveyedRamp` and `surveyedCrossing`. The cost model reads edges only.
+
+How the survey changes the cost. A missing value never changes anything, and
+survey values count only when `survey.confidence >= surveyMinConfidence`:
+
+| Option | Default | Meaning and reason |
+| --- | --- | --- |
+| `surveyMinConfidence` | 0.5 | the floor the matching tool itself uses; raise it to trust fewer matches |
+| `pavedRoadFactor` | 1.2 | `shared_road` whose survey says a pavement exists. Replaces `sharedRoadFactor` (2), which stood for "nothing is known". Not 1: the match is by geometry, the data is from 2022, and side-street crossings along a street axis are not modelled, so a pavement mapped in OSM with the same survey still wins |
+| `noPavementRoadFactor` | 2.5 | `shared_road` whose survey says there is no pavement: now known to be the carriageway, so dearer than unknown |
+| `narrowPavementFactor` | 1.3 | up to about 1 m: room for one person, none for a guide or a dog beside them |
+| `widePavementFactor` | 0.95 | over 2 m. `medium` is 1 |
+| `poorPavementFactor` | 1.25 | "serious faults that are a danger to pedestrians" in the survey's words |
+| `goodPavementFactor` | 0.95 | `medium` is 1 |
+| `fixedObstacleFactor` | 1.06 | per kind of fixed obstacle present. The survey records a kind once however many there are, so the price per kind is small |
+| `fixedObstaclesMaxFactor` | 1.25 | ceiling for all kinds together: obstacles alone never outweigh "poor" |
+| `tactileGuidanceFactor` | 0.8 | tactile guidance along the whole length. Stronger than the OSM tag (0.9) because the survey says how much of the side has it. `part` earns nothing: guidance that stops is not a guide |
+| `crossingMarkingsClearM` / `WornM` / `NoneM` | -20 / -5 / +40 | zebra markings, added to the crossing penalty |
+| `crossingRampsBothM` / `OneEndM` / `NoneM` | -10 / +10 / +30 | kerb ramps, added to the crossing penalty |
+
+"medium" is the neutral class for width and condition, so an unknown value is
+priced neither as the best class nor as the worst. Width, condition and
+obstacles apply to `sidewalk`, `footway` and paved `shared_road` edges. On a
+`pedestrian` street only tactile guidance counts, because the whole street is
+walked and the pavement at its side does not describe it. The tactile bonus is
+the smaller of the OSM and survey factors, never their product. Crossing
+adjustments are small next to the signal penalties (10 to 300): signals and
+sound matter more to a blind person than paint, and a ramp matters less than
+either. The crossing penalty never goes below 0. The worst paved street
+(narrow, poor, obstructed: about 2.4) costs about as much as one with no
+pavement, and the best (about 1.08 before the tactile bonus) stays above a
+mapped pavement with the same survey values.
 
 ### Shortest path (`route.ts`)
 
@@ -138,6 +207,24 @@ announced = out.announced;                       // pass back on the next call
 for (const a of out.announcements) speak(a.text); // a.type, a.key, structured fields
 ```
 
+A `depart`, `turn` or `crossing` step can carry one `surveyNotice`: a fact from
+the pavement survey about the stretch the step leads onto. It is spoken once,
+as a second short sentence, with the first announcement of that step, and the
+announcement repeats it as a structured `surveyNotice` field.
+
+| `kind` | Sentence | When |
+| --- | --- | --- |
+| `crossing_no_ramp` | "Η διάβαση δεν έχει ράμπες." | the crossing has no ramp at either end |
+| `no_pavement` | "Στη συνέχεια δεν υπάρχει πεζοδρόμιο." | 20 m or more of street surveyed without pavement |
+| `pavement_narrows` | "Στη συνέχεια το πεζοδρόμιο στενεύει." | narrow ahead for 20 m or more, wider before |
+| `pavement_narrow` | "Στη συνέχεια το πεζοδρόμιο είναι στενό." | narrow ahead, nothing known before |
+| `tactile_guidance_starts` | "Στη συνέχεια υπάρχει όδευση τυφλών, στα δεξιά σας." | whole-length guidance begins, none in the 40 m before; the side is given as the person walks |
+
+At most one per step, in that order of priority. Nothing is said for a value
+that is missing or below `surveyMinConfidence`, and nothing is repeated while
+the fact stays the same. A change that happens where the route has no step
+(walking straight on) is not announced.
+
 Announcement types: `depart`, `turn`, `crossing`, `arrival`, `obstacle`,
 `obstacle_cleared`. Distances are rounded to 5 m. Each step gives at most two
 different announcements: `phase: "ahead"` within `aheadDistanceM` (default 30)
@@ -150,12 +237,19 @@ for the voice layer, which should build its own wording from the structured
 fields.
 
 Also exported: `describeCrossing`, `describeTurn`, `describeReroute`,
-`describeObstacleRemoved`, `roundTo5`.
+`describeObstacleRemoved`, `describeSurveyNotice`, `roundTo5`.
 
-## Addition to `types.ts`
+## Additions to `types.ts`
 
 `Route.startOffsetM?: number`, set only on a route that starts part-way along
-its first edge (a `turn_back` route). Nothing was renamed or removed.
+its first edge (a `turn_back` route).
+
+For the pavement survey, all optional: on `GraphEdge` the fields in the table
+under "Pavement survey"; on `GraphNode` `surveyedRamp` and `surveyedCrossing`;
+on `RouteStep` `surveyNotice`. New types: `PavementSurvey`, `SurveyedSide`,
+`SurveyedCrossing`, `SurveyedRamp`, `SurveyNote`, `SurveyNotice`,
+`FixedObstacleKind`, and for the enrichment file `GraphEnrichment`,
+`EdgeEnrichment`, `NodeEnrichment`. Nothing was renamed or removed.
 
 ## Left out on purpose
 
@@ -164,7 +258,12 @@ its first edge (a `turn_back` route). Nothing was renamed or removed.
 - A spatial index. `nearestNode` and `nearestEdge` are linear scans, fine for a
   city-centre graph and a demo, not for a hot loop.
 - Turning back when an obstacle is removed. `checkObstacleRemoved` only looks at junctions ahead.
-- Time-dependent costs, kerbs, slopes, surface quality, width and `wheelchair`.
-- Marked versus unmarked crossings: `marked` is carried through but not priced.
+- Time-dependent costs, kerbs, slopes, the OSM `surface` tag and `wheelchair`.
+- The OSM `marked` flag of a crossing is carried through but not priced; the
+  surveyed markings are.
+- Which side of a street to walk on. A street takes the values of its better
+  side and the route does not include crossing over to it.
+- A cost for turns: a route may take a few more turns to stay on tactile guidance.
+- Survey facts at nodes (`surveyedRamp`, `surveyedCrossing`) are carried, not priced.
 - Final wording, speech, and any language other than Greek.
 - Reading the clock. Time is always an argument.

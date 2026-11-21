@@ -5,7 +5,9 @@ import {
   UNKNOWN_CROSSING,
   edgeCost,
   isObstacleActive,
+  minCostPerMetre,
   resolveCostOptions,
+  surveyUsable,
   type CostOptions,
   type TimeInput,
 } from "./cost.ts";
@@ -26,6 +28,7 @@ import type {
   Obstacle,
   Route,
   RouteStep,
+  SurveyNotice,
   TurnDirection,
 } from "./types.ts";
 
@@ -50,6 +53,8 @@ export interface Coster {
   baseCost(edge: GraphEdge): number;
   /** Lower bound of cost per metre, used to keep the A* heuristic admissible. */
   minFactor: number;
+  /** The resolved cost options. Step notices use surveyMinConfidence from here; defaults when missing. */
+  options?: CostOptions;
 }
 
 export function createCoster(context: RoutingContext = {}): Coster {
@@ -78,10 +83,8 @@ export function createCoster(context: RoutingContext = {}): Coster {
       return c;
     },
     baseCost: (edge) => edgeCost(edge, none, atTime, options),
-    minFactor:
-      Math.max(0, Math.min(1, options.tactilePavingFactor)) *
-      Math.max(0, Math.min(1, options.sharedRoadFactor)) *
-      Math.max(0, Math.min(1, options.partialObstacleFactor)),
+    minFactor: minCostPerMetre(options),
+    options,
   };
 }
 
@@ -245,6 +248,70 @@ export function routeSpans(index: GraphIndex, route: Route): EdgeSpan[] {
   return spans;
 }
 
+/** A surveyed fact is announced only when it holds for at least this much of the stretch ahead. */
+const MIN_NOTICE_LENGTH_M = 20;
+/** Tactile guidance "starts" only when there was none on this much of the route just walked: a short gap is not a new start. */
+const GUIDANCE_GAP_M = 40;
+
+/**
+ * The one surveyed fact worth saying at a step, or undefined. `stretch` is the
+ * edges the step leads onto, up to the next step, each with the node it is
+ * entered from; `before` is the edges walked up to the step, nearest first,
+ * crossings left out.
+ *
+ * In order: a crossing without ramps, a stretch without pavement, a narrow
+ * pavement, tactile guidance beginning. A value that is missing never produces
+ * a notice.
+ */
+function surveyNoticeFor(
+  before: readonly GraphEdge[],
+  stretch: readonly { edge: GraphEdge; fromNode: NodeId }[],
+  options: CostOptions,
+): SurveyNotice | undefined {
+  const usable = (edge: GraphEdge | undefined): edge is GraphEdge => edge !== undefined && surveyUsable(edge, options);
+  const head = stretch[0];
+  if (!head) return undefined;
+  if (head.edge.kind === "crossing") {
+    if (usable(head.edge) && head.edge.crossingRamps === "none") return { kind: "crossing_no_ramp" };
+  }
+  const walked = stretch.filter((s) => s.edge.kind !== "crossing");
+  const first = walked[0];
+  if (!first) return undefined;
+  const lengthWhere = (test: (edge: GraphEdge) => boolean): number =>
+    walked.reduce((sum, s) => (usable(s.edge) && test(s.edge) ? sum + s.edge.lengthM : sum), 0);
+
+  const noPavement = (e: GraphEdge) => e.kind === "shared_road" && e.pavement === "no";
+  if (lengthWhere(noPavement) >= MIN_NOTICE_LENGTH_M) return { kind: "no_pavement" };
+
+  // Width is about the pavement walked on: a mapped pavement or footpath, or a street with a surveyed pavement.
+  const onPavement = (e: GraphEdge) =>
+    e.kind === "sidewalk" || e.kind === "footway" || (e.kind === "shared_road" && e.pavement === "yes");
+  const narrow = (e: GraphEdge) => onPavement(e) && e.pavementWidth === "narrow";
+  if (usable(first.edge) && narrow(first.edge) && lengthWhere(narrow) >= MIN_NOTICE_LENGTH_M) {
+    const previous = before[0];
+    const was = usable(previous) && onPavement(previous) ? previous.pavementWidth : undefined;
+    if (was === "medium" || was === "wide") return { kind: "pavement_narrows" };
+    if (was === undefined) return { kind: "pavement_narrow" };
+  }
+
+  const guided = (e: GraphEdge) => e.tactileGuidance === "whole";
+  let back = 0;
+  let guidedJustBefore = false;
+  for (const e of before) {
+    if (back >= GUIDANCE_GAP_M) break;
+    if (usable(e) && guided(e)) guidedJustBefore = true;
+    back += e.lengthM;
+  }
+  if (usable(first.edge) && guided(first.edge) && !guidedJustBefore && lengthWhere(guided) >= MIN_NOTICE_LENGTH_M) {
+    const side = first.edge.survey?.side;
+    if (!side) return { kind: "tactile_guidance_starts" };
+    // The surveyed side is relative to from -> to; turn it to the walking direction.
+    const forward = first.edge.from === first.fromNode;
+    return { kind: "tactile_guidance_starts", side: forward ? side : side === "left" ? "right" : "left" };
+  }
+  return undefined;
+}
+
 export interface BuildRouteOptions {
   /** Metres of the first edge to skip: the route starts part-way along it. */
   startOffsetM?: number;
@@ -298,6 +365,8 @@ export function buildRoute(
   }
 
   const steps: RouteStep[] = [];
+  /** For each step, the index of the edge it leads onto. */
+  const stepEdge: number[] = [];
   const depart: RouteStep = { atNode: nodes[0]!, atDistanceM: 0, kind: "depart" };
   if (options.departDirection) depart.direction = options.departDirection;
   let currentName: string | undefined;
@@ -310,6 +379,7 @@ export function buildRoute(
     }
   }
   steps.push(depart);
+  stepEdge.push(0);
 
   for (let j = 1; j < edges.length; j++) {
     const prev = edges[j - 1]!;
@@ -325,6 +395,7 @@ export function buildRoute(
         direction,
         crossing: { ...(next.crossing ?? UNKNOWN_CROSSING) },
       });
+      stepEdge.push(j);
       continue;
     }
     const degree = index.adjacency.get(node)?.length ?? 0;
@@ -337,7 +408,19 @@ export function buildRoute(
     const step: RouteStep = { atNode: node, atDistanceM: startOf[j]!, kind: "turn", direction };
     if (next.name) step.onto = next.name;
     steps.push(step);
+    stepEdge.push(j);
   }
+  const costOptions = coster.options ?? resolveCostOptions();
+  steps.forEach((step, k) => {
+    if (step.kind === "arrive") return;
+    const start = stepEdge[k]!;
+    const end = stepEdge[k + 1] ?? edges.length;
+    const stretch = edges.slice(start, end).map((edge, i) => ({ edge, fromNode: nodes[start + i]! }));
+    const before: GraphEdge[] = [];
+    for (let i = start - 1; i >= 0; i--) if (edges[i]!.kind !== "crossing") before.push(edges[i]!);
+    const notice = surveyNoticeFor(before, stretch, costOptions);
+    if (notice) step.surveyNotice = notice;
+  });
   steps.push({ atNode: nodes[nodes.length - 1]!, atDistanceM: lengthM, kind: "arrive" });
 
   const route: Route = {

@@ -1,0 +1,15 @@
+{
+  "name": "@ion/enrich-graph",
+  "private": true,
+  "type": "module",
+  "exports": "./src/index.ts",
+  "scripts": {
+    "build": "tsx src/index.ts",
+    "measure": "tsx src/index.ts --measure",
+    "routes": "tsx src/routes.ts",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@ion/core": "*"
+  }
+}

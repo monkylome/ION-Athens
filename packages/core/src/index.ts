@@ -2,6 +2,7 @@ export * from "./types.ts";
 export * from "./geo.ts";
 export * from "./graph.ts";
 export * from "./cost.ts";
+export * from "./enrichment.ts";
 export * from "./route.ts";
 export * from "./reroute.ts";
 export * from "./walker.ts";
