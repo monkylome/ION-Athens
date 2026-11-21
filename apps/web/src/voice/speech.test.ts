@@ -1,0 +1,22 @@
+import { afterEach, expect, it, vi } from "vitest";
+import { createSpeaker } from "./speech";
+afterEach(() => vi.unstubAllGlobals());
+it("preempts lower priorities and only captions the current utterance", () => {
+  vi.stubGlobal("SpeechSynthesisUtterance", class { constructor(public text: string) {} });
+  const engine = { speak: vi.fn(), cancel: vi.fn(), getVoices: () => [{ lang: "el-GR" }] };
+  const say = createSpeaker(engine as unknown as SpeechSynthesis);
+  const start = vi.fn();
+  say("one");
+  say("two");
+  say("urgent", { priority: 2, onStart: start });
+  expect(engine.cancel).toHaveBeenCalledOnce();
+  const interrupted = engine.speak.mock.calls[0]![0];
+  const urgent = engine.speak.mock.calls[1]![0];
+  interrupted.onend();
+  expect(start).not.toHaveBeenCalled();
+  urgent.onstart();
+  urgent.onend();
+  expect(start).toHaveBeenCalledOnce();
+  expect(urgent.voice.lang).toBe("el-GR");
+  expect(engine.speak).toHaveBeenCalledTimes(2);
+});
