@@ -1,0 +1,846 @@
+<!doctype html>
+<html lang="el">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ION Athens</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800&display=swap">
+<style>
+  /* Η Αθήνα στο σούρουπο γεμίζει την οθόνη· το κείμενο κάθε διαφάνειας κάθεται σε πάνελ κάτω αριστερά. */
+  :root {
+    --bg: #0d1226;
+    --ink: #f3f5ff;
+    --muted: #b3bcdb;
+    --route: #6ff2cf;
+    --danger: #ff5b4f;
+    --gold: #ffd27a;
+    --panel: rgba(12, 16, 34, 0.84);
+    --line: rgba(179, 188, 219, 0.25);
+    --font: "Manrope", "Segoe UI", system-ui, sans-serif;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 400 18px/1.55 var(--font);
+    overflow: hidden;
+  }
+  body.no3d { background: radial-gradient(circle at 70% 30%, #2a2650, var(--bg)); }
+  #scene { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+  body.no3d #scene { display: none; }
+
+  .slide {
+    position: fixed;
+    left: max(24px, env(safe-area-inset-left, 0px));
+    bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+    width: min(560px, calc(100% - 48px));
+    padding: 28px 30px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    backdrop-filter: blur(6px);
+  }
+  .slide h1, .slide h2 { margin: 0 0 12px; line-height: 1.15; text-wrap: balance; }
+  .slide h1 { font-size: clamp(40px, 6vw, 64px); font-weight: 800; letter-spacing: -0.02em; }
+  .slide h2 { font-size: clamp(26px, 3.4vw, 36px); font-weight: 800; }
+  .slide p { margin: 0 0 10px; }
+  .slide .lead { font-size: 22px; }
+  .slide .small { font-size: 15px; color: var(--muted); }
+  .slide ul { margin: 0 0 10px; padding-left: 20px; display: grid; gap: 6px; }
+  .eyebrow { font-size: 13px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--route); margin-bottom: 8px; }
+  .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; }
+
+  #caption {
+    position: fixed;
+    top: calc(24px + env(safe-area-inset-top, 0px));
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: min(720px, calc(100% - 32px));
+    padding: 12px 20px;
+    background: var(--panel);
+    border: 1px solid var(--route);
+    border-radius: 999px;
+    font-size: 19px;
+    font-weight: 600;
+    text-align: center;
+  }
+
+  nav {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 14px max(24px, env(safe-area-inset-right, 0px)) calc(14px + env(safe-area-inset-bottom, 0px)) max(24px, env(safe-area-inset-left, 0px));
+  }
+  nav .group { display: flex; gap: 8px; align-items: center; }
+  button {
+    font: 600 15px var(--font);
+    color: var(--ink);
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 9px 14px;
+    cursor: pointer;
+  }
+  button:hover { border-color: var(--muted); }
+  button:focus-visible { outline: 2px solid var(--route); outline-offset: 2px; }
+  button[aria-pressed="true"] { border-color: var(--route); color: var(--route); }
+  #counter { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 15px; min-width: 52px; text-align: center; }
+
+  @media (max-width: 640px) {
+    body { font-size: 16px; }
+    .slide { padding: 20px; bottom: calc(76px + env(safe-area-inset-bottom, 0px)); }
+    .slide .lead { font-size: 18px; }
+  }
+</style>
+</head>
+<body>
+<canvas id="scene" aria-hidden="true"></canvas>
+
+<div id="caption" role="status" aria-live="polite" hidden></div>
+
+<main id="deck">
+  <section class="slide" aria-label="Διαφάνεια 1 από 5">
+    <div class="eyebrow">Apps4Athens 3.0 Gov Hackathon</div>
+    <h1>ION Athens</h1>
+    <p class="lead">Μια πόλη που βλέπει τον δρόμο για όσους δεν βλέπουν.</p>
+    <p class="small">Στα αρχαία, «ἰών» σημαίνει αυτός που περπατάει. Το ION περπατάει μαζί σου στην Αθήνα και βλέπει τον δρόμο πριν από σένα.</p>
+  </section>
+
+  <section class="slide" aria-label="Διαφάνεια 2 από 5" hidden>
+    <div class="eyebrow">Το πρόβλημα</div>
+    <h2>Το εμπόδιο το μαθαίνεις όταν το βρεις</h2>
+    <p>Ένας άνθρωπος που δεν βλέπει καταλαβαίνει ότι υπάρχει σκαλωσιά μόνο όταν τη βρει με το μπαστούνι. Τότε πρέπει να γυρίσει πίσω και να βρει άλλο δρόμο, χωρίς να βλέπει.</p>
+    <p class="small">Οι εφαρμογές πλοήγησης ξέρουν τους δρόμους. Δεν ξέρουν τι υπάρχει πάνω τους σήμερα.</p>
+  </section>
+
+  <section class="slide" aria-label="Διαφάνεια 3 από 5" hidden>
+    <div class="eyebrow">Η λύση</div>
+    <h2>Η διαδρομή αλλάζει πριν φτάσεις</h2>
+    <p>Το ION ξέρει το εμπόδιο από πριν. Αλλάζει τη διαδρομή στην τελευταία γωνία πριν από αυτό και το λέει εγκαίρως στα ακουστικά οστεο-αγωγής, ώστε τα αυτιά να μένουν ελεύθερα για την κίνηση.</p>
+    <p class="small">Πληροφορεί, δεν διατάζει. Δεν λέει ποτέ «πέρνα». Και η φωνή μιλάει λίγο.</p>
+  </section>
+
+  <section class="slide" aria-label="Διαφάνεια 4 από 5" hidden>
+    <div class="eyebrow">Από πού το ξέρει</div>
+    <h2>Η πόλη ξέρει ήδη πολλά</h2>
+    <ul>
+      <li><span class="dot" style="background: var(--danger)"></span>Έργα του Δήμου, από το AthensGov Sandbox.</li>
+      <li><span class="dot" style="background: var(--route)"></span>Αναφορές πολιτών: «εμπόδιο εδώ», χωρίς όνομα.</li>
+      <li><span class="dot" style="background: var(--gold)"></span>Προορισμοί του Δήμου: Δημαρχείο, ΚΕΠ, κέντρα υγείας.</li>
+    </ul>
+    <p class="small">Οι κάμερες της πόλης περιγράφουν την πόλη, όχι τον άνθρωπο. Και από κοντά, το MK IV δείχνει στα δάχτυλα ό,τι υπάρχει στο επόμενο βήμα.</p>
+  </section>
+
+  <section class="slide" aria-label="Διαφάνεια 5 από 5" hidden>
+    <div class="eyebrow">Γιατί τώρα</div>
+    <h2>Ο Δήμος έχει τα κομμάτια. Το ION τα ενώνει.</h2>
+    <p>Walkable Athens, Προσβάσιμες Διαδρομές, Σχέδιο Αστικής Προσβασιμότητας, AthensGov. Το ION τα κάνει ζωντανά, ώστε να αλλάζουν όταν αλλάζει η πόλη.</p>
+    <p class="small">Δωρεάν, για κατοίκους και επισκέπτες. Επόμενο βήμα: πιλοτική εφαρμογή με τον Δήμο.</p>
+  </section>
+</main>
+
+<nav aria-label="Πλοήγηση στις διαφάνειες">
+  <div class="group">
+    <button id="voice" type="button" aria-pressed="false">Φωνή: κλειστή</button>
+    <button id="replay" type="button">Ξανά</button>
+  </div>
+  <div class="group">
+    <button id="prev" type="button" aria-label="Προηγούμενη διαφάνεια">←</button>
+    <span id="counter">1 / 5</span>
+    <button id="next" type="button" aria-label="Επόμενη διαφάνεια">→</button>
+  </div>
+</nav>
+
+<!-- Διαφάνειες, πλοήγηση και φωνή: απλό script, ώστε να δουλεύουν ακόμα κι αν δεν φορτώσει το 3D. -->
+<script>
+(function () {
+  var slides = Array.prototype.slice.call(document.querySelectorAll(".slide"));
+  var counter = document.getElementById("counter");
+  var caption = document.getElementById("caption");
+  var voiceBtn = document.getElementById("voice");
+  var current = 0;
+  var voiceOn = false;
+
+  window.ionSay = function (text) {
+    caption.textContent = text;
+    caption.hidden = false;
+    if (!voiceOn || !("speechSynthesis" in window)) return;
+    speechSynthesis.cancel();
+    var u = new SpeechSynthesisUtterance(text);
+    u.lang = "el-GR";
+    u.rate = 0.95;
+    speechSynthesis.speak(u);
+  };
+
+  function show(i) {
+    current = Math.max(0, Math.min(slides.length - 1, i));
+    slides.forEach(function (s, k) { s.hidden = k !== current; });
+    counter.textContent = (current + 1) + " / " + slides.length;
+    try { history.replaceState(null, "", "#s" + (current + 1)); } catch (e) {}
+    caption.hidden = true;
+    if ("speechSynthesis" in window) speechSynthesis.cancel();
+    if (window.ionStage) window.ionStage.enter(current);
+  }
+  window.ionShowCurrent = function () { show(current); };
+
+  voiceBtn.addEventListener("click", function () {
+    voiceOn = !voiceOn;
+    voiceBtn.setAttribute("aria-pressed", String(voiceOn));
+    voiceBtn.textContent = voiceOn ? "Φωνή: ανοιχτή" : "Φωνή: κλειστή";
+    if (!voiceOn && "speechSynthesis" in window) speechSynthesis.cancel();
+  });
+  document.getElementById("prev").addEventListener("click", function () { show(current - 1); });
+  document.getElementById("next").addEventListener("click", function () { show(current + 1); });
+  document.getElementById("replay").addEventListener("click", function () { show(current); });
+  addEventListener("keydown", function (e) {
+    if (["ArrowRight", "PageDown", " "].indexOf(e.key) >= 0) { e.preventDefault(); show(current + 1); }
+    if (["ArrowLeft", "PageUp"].indexOf(e.key) >= 0) { e.preventDefault(); show(current - 1); }
+    if (e.key === "r" || e.key === "R") show(current);
+  });
+
+  var m = location.hash.match(/^#s(\d)$/);
+  show(m ? parseInt(m[1], 10) - 1 : 0);
+  // Αν το 3D δεν ξεκινήσει σε λίγα δευτερόλεπτα, μένουμε στις διαφάνειες χωρίς αυτό.
+  setTimeout(function () { if (!window.ionStage) document.body.classList.add("no3d"); }, 8000);
+})();
+</script>
+
+<script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+</script>
+<script type="module">
+import * as THREE from "three";
+import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
+import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
+import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
+import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
+
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const say = (t) => window.ionSay && window.ionSay(t);
+
+try {
+  window.ionStage = buildStage();
+  window.ionShowCurrent();
+} catch (err) {
+  console.warn("Χωρίς 3D:", err);
+  document.body.classList.add("no3d");
+}
+
+function buildStage() {
+  // ---------- Renderer, ουρανός, φως σούρουπου ----------
+  const canvas = document.getElementById("scene");
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.05;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+  const scene = new THREE.Scene();
+  const sky = document.createElement("canvas");
+  sky.width = 2; sky.height = 256;
+  const sg = sky.getContext("2d");
+  const grad = sg.createLinearGradient(0, 0, 0, 256);
+  grad.addColorStop(0, "#0c1638");
+  grad.addColorStop(0.55, "#3b3566");
+  grad.addColorStop(0.8, "#b0607a");
+  grad.addColorStop(1, "#f3a76a");
+  sg.fillStyle = grad; sg.fillRect(0, 0, 2, 256);
+  const skyTex = new THREE.CanvasTexture(sky);
+  skyTex.colorSpace = THREE.SRGBColorSpace;
+  scene.background = skyTex;
+  scene.fog = new THREE.Fog(0x4a3a62, 90, 280);
+
+  const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 600);
+
+  scene.add(new THREE.HemisphereLight(0x9db7ff, 0x2a2230, 0.7));
+  const sun = new THREE.DirectionalLight(0xffb27a, 2.2);
+  sun.position.set(-60, 45, -25);
+  sun.castShadow = true;
+  sun.shadow.mapSize.set(2048, 2048);
+  Object.assign(sun.shadow.camera, { left: -80, right: 80, top: 80, bottom: -80, near: 1, far: 240 });
+  sun.shadow.bias = -0.0005;
+  scene.add(sun);
+
+  const std = (color, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.85, ...extra });
+
+  // ---------- Το πλέγμα της πόλης ----------
+  // Δρόμοι κάθε 16 μέτρα, πλάτους 3 μέτρων. Κάθε τετράγωνο έχει πεζοδρόμιο 13x13 και κτίρια μέσα σε 8.8x8.8,
+  // άρα μένει πεζοδρόμιο περίπου 2 μέτρων γύρω γύρω. Ο πεζός περπατάει 3 μέτρα από τον άξονα του δρόμου.
+  const BLOCK = 16, RANGE = 4, PAVE = 13, CURB = 0.18;
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(600, 600), std(0x2a2d36, { roughness: 0.95 }));
+  ground.rotation.x = -Math.PI / 2;
+  ground.receiveShadow = true;
+  scene.add(ground);
+
+  let seed = 11;
+  const rand = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
+  const M = (x, y, z, ry = 0, sx = 1, sy = 1, sz = 1, rx = 0) =>
+    new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, 0)), new THREE.Vector3(sx, sy, sz));
+  function instanced(geo, mat, matrices, shadows = true) {
+    const mesh = new THREE.InstancedMesh(geo, mat, matrices.length);
+    matrices.forEach((mx, i) => mesh.setMatrixAt(i, mx));
+    mesh.castShadow = shadows; mesh.receiveShadow = true;
+    scene.add(mesh);
+    return mesh;
+  }
+
+  // Προσόψεις: παράθυρα με μπαλκόνια, και μερικά παράθυρα αναμμένα.
+  function facadeTextures() {
+    const size = 512, bay = 128;
+    const c = document.createElement("canvas"); c.width = c.height = size;
+    const l = document.createElement("canvas"); l.width = l.height = size;
+    const g = c.getContext("2d"), gl = l.getContext("2d");
+    g.fillStyle = "#ffffff"; g.fillRect(0, 0, size, size);
+    gl.fillStyle = "#000000"; gl.fillRect(0, 0, size, size);
+    for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) {
+      const x = i * bay, y = j * bay;
+      g.fillStyle = "#3a4050"; g.fillRect(x + 34, y + 22, 60, 72);
+      g.fillStyle = "#c9c4b8"; g.fillRect(x + 34, y + 56, 60, 3);
+      g.fillStyle = "#8f8a80"; g.fillRect(x + 6, y + 98, bay - 12, 8);
+      g.fillStyle = "#6b675f";
+      for (let k = x + 10; k < x + bay - 8; k += 10) g.fillRect(k, y + 84, 2, 14);
+      if (rand() < 0.32) {
+        gl.fillStyle = rand() < 0.5 ? "#ffcf8a" : "#ffe3b8";
+        gl.fillRect(x + 36, y + 24, 56, 68);
+      }
+    }
+    const make = (cv) => {
+      const t = new THREE.CanvasTexture(cv);
+      t.colorSpace = THREE.SRGBColorSpace;
+      t.wrapS = t.wrapT = THREE.RepeatWrapping;
+      t.anisotropy = 4;
+      return t;
+    };
+    return { map: make(c), lit: make(l) };
+  }
+  const tex = facadeTextures();
+  const palette = [0xe8dcc4, 0xdcc9a2, 0xd3ab8a, 0xf1ece2, 0xcdbcab, 0xe6d1a8, 0xbfc6c9];
+  const facadeMats = palette.map((col) => std(col, { map: tex.map, emissiveMap: tex.lit, emissive: 0xffb15a, emissiveIntensity: 1.1 }));
+  const roofMat = std(0x8d8a86);
+  function facadeGeo(w, h, d) {
+    const geo = new THREE.BoxGeometry(w, h, d);
+    const uv = geo.attributes.uv, T = 12;
+    const dims = [[d, h], [d, h], [w, d], [w, d], [w, h], [w, h]];
+    for (let f = 0; f < 6; f++) for (let k = 0; k < 4; k++) {
+      const i = f * 4 + k;
+      uv.setXY(i, uv.getX(i) * dims[f][0] / T, uv.getY(i) * dims[f][1] / T);
+    }
+    return geo;
+  }
+
+  const HALL = { x: 24, z: 40 };
+  const pavementMats = [];
+  const paveMat = std(0xb8b0a0, { roughness: 0.9 });
+  const panelMat = std(0x1d2a4a, { metalness: 0.4, roughness: 0.4 });
+  const tankMat = std(0xe9e9e9);
+  const treeSpots = [], lampSpots = [];
+
+  for (let ix = -RANGE; ix < RANGE; ix++) {
+    for (let iz = -RANGE; iz < RANGE; iz++) {
+      const cx = ix * BLOCK + BLOCK / 2, cz = iz * BLOCK + BLOCK / 2;
+      pavementMats.push(M(cx, CURB / 2, cz));
+      // Δέντρα κοντά στο κράσπεδο, φανοστάτες στις γωνίες: το κέντρο του πεζοδρομίου μένει ελεύθερο.
+      for (const o of [-3, 3]) {
+        treeSpots.push([cx + o, cz - 6.0], [cx + o, cz + 6.0], [cx - 6.0, cz + o], [cx + 6.0, cz + o]);
+      }
+      for (const sx of [-1, 1]) for (const sz of [-1, 1]) lampSpots.push([cx + sx * 6.15, cz + sz * 6.15]);
+      if (cx === HALL.x && cz === HALL.z) continue;
+
+      // Πολυκατοικίες: ένα τετράγωνο έχει είτε ένα μεγάλο κτίριο είτε τέσσερα μικρότερα.
+      const lots = rand() < 0.3 ? [[0, 0, 8.8]] : [[-2.2, -2.2, 4.3], [2.2, -2.2, 4.3], [-2.2, 2.2, 4.3], [2.2, 2.2, 4.3]];
+      for (const [ox, oz, w] of lots) {
+        const h = 6 + Math.floor(rand() * 5) * 3 + (rand() < 0.15 ? 6 : 0);
+        const mat = facadeMats[Math.floor(rand() * facadeMats.length)];
+        const b = new THREE.Mesh(facadeGeo(w, h, w), [mat, mat, roofMat, roofMat, mat, mat]);
+        b.position.set(cx + ox, CURB + h / 2, cz + oz);
+        b.castShadow = b.receiveShadow = true;
+        scene.add(b);
+        // Ηλιακός θερμοσίφωνας στην ταράτσα, το πιο αθηναϊκό στοιχείο της στέγης.
+        if (rand() < 0.55) {
+          const top = CURB + h;
+          const panel = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.06, 0.9), panelMat);
+          panel.position.set(cx + ox, top + 0.45, cz + oz);
+          panel.rotation.x = -0.6;
+          const tank = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 1.5, 12), tankMat);
+          tank.rotation.z = Math.PI / 2;
+          tank.position.set(cx + ox, top + 0.85, cz + oz + 0.35);
+          panel.castShadow = tank.castShadow = true;
+          scene.add(panel, tank);
+        }
+      }
+    }
+  }
+  instanced(new THREE.BoxGeometry(PAVE, CURB, PAVE), paveMat, pavementMats, false);
+
+  // Νεραντζιές στα πεζοδρόμια και φανοστάτες στις γωνίες.
+  const trunkGeo = new THREE.CylinderGeometry(0.07, 0.1, 1.6, 6);
+  const crownGeo = new THREE.IcosahedronGeometry(0.85, 1);
+  instanced(trunkGeo, std(0x5a4030), treeSpots.map(([x, z]) => M(x, 0.98, z)));
+  instanced(crownGeo, std(0x2f5a34, { flatShading: true }), treeSpots.map(([x, z]) => {
+    const s = 0.8 + rand() * 0.45;
+    return M(x, 2.2, z, rand() * 3, s, s * 0.9, s);
+  }));
+  instanced(new THREE.CylinderGeometry(0.05, 0.06, 4, 6), std(0x2b2e36, { metalness: 0.6, roughness: 0.4 }), lampSpots.map(([x, z]) => M(x, 2.18, z)));
+  instanced(new THREE.SphereGeometry(0.2, 12, 8), new THREE.MeshStandardMaterial({ color: 0xffe2b0, emissive: 0xffc27a, emissiveIntensity: 4 }), lampSpots.map(([x, z]) => M(x, 4.25, z)), false);
+
+  // Διαγραμμίσεις και διαβάσεις πεζών.
+  const dashes = [], zebra = [];
+  for (let s = -RANGE * BLOCK; s <= RANGE * BLOCK; s += BLOCK) {
+    for (let t = -RANGE * BLOCK; t < RANGE * BLOCK; t += 3) {
+      const m = ((t % BLOCK) + BLOCK) % BLOCK;
+      if (m < 5 || m > BLOCK - 5) continue;
+      dashes.push(M(s, 0.012, t + 1.5), M(t + 1.5, 0.012, s, Math.PI / 2));
+    }
+    // Διαβάσεις εκεί όπου τα πεζοδρόμια συναντούν τον δρόμο, στη γραμμή που περπατάνε οι πεζοί (±3 m).
+    for (let s2 = -RANGE * BLOCK; s2 <= RANGE * BLOCK; s2 += BLOCK) {
+      for (let k = -1.2; k <= 1.21; k += 0.48) {
+        for (const side of [-1, 1]) {
+          zebra.push(M(s + k, 0.014, s2 + side * 3), M(s2 + side * 3, 0.014, s + k, Math.PI / 2));
+        }
+      }
+    }
+  }
+  const paint = std(0xe8e8e8, { roughness: 0.6 });
+  instanced(new THREE.BoxGeometry(0.1, 0.01, 1.3), paint, dashes, false);
+  instanced(new THREE.BoxGeometry(0.26, 0.012, 1.6), paint, zebra, false);
+
+  // ---------- Η Ακρόπολη, φωτισμένη στο βάθος ----------
+  const acro = new THREE.Group();
+  const hill = new THREE.Mesh(new THREE.CylinderGeometry(34, 60, 22, 11), std(0x6b5a4a, { flatShading: true }));
+  hill.position.y = 11;
+  hill.scale.z = 0.6;
+  acro.add(hill);
+  const marble = std(0xf2e2c4, { emissive: 0x6a4418, emissiveIntensity: 0.6 });
+  const stylobate = new THREE.Mesh(new THREE.BoxGeometry(31, 1.6, 14), marble);
+  stylobate.position.y = 22.8;
+  acro.add(stylobate);
+  const colPos = [];
+  for (let i = 0; i < 8; i++) { const x = -13.5 + i * (27 / 7); colPos.push([x, -6], [x, 6]); }
+  for (let j = 1; j < 6; j++) { const z = -6 + j * 2; colPos.push([-13.5, z], [13.5, z]); }
+  const cols = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.75, 0.85, 9, 10), marble, colPos.length);
+  colPos.forEach(([x, z], i) => cols.setMatrixAt(i, M(x, 28.1, z)));
+  acro.add(cols);
+  const entab = new THREE.Mesh(new THREE.BoxGeometry(30, 1.8, 13.4), marble);
+  entab.position.y = 33.5;
+  acro.add(entab);
+  const pedShape = new THREE.Shape();
+  pedShape.moveTo(-15, 0); pedShape.lineTo(15, 0); pedShape.lineTo(0, 3.2); pedShape.closePath();
+  const roof = new THREE.Mesh(new THREE.ExtrudeGeometry(pedShape, { depth: 13.4, bevelEnabled: false }), marble);
+  roof.position.set(0, 34.4, -6.7);
+  acro.add(roof);
+  acro.position.set(14, 0, 170);
+  scene.add(acro);
+  const flood = new THREE.PointLight(0xffc27a, 1200, 90, 2);
+  flood.position.set(14, 40, 140);
+  scene.add(flood);
+
+  // ---------- Δημαρχείο: νεοκλασικό, με κολόνες και αέτωμα ----------
+  const hall = new THREE.Group();
+  const hallMat = std(0xe0c48e, { emissive: 0x000000 });
+  const hallBody = new THREE.Mesh(new THREE.BoxGeometry(8.4, 6, 6), hallMat);
+  hallBody.position.y = 3.18;
+  hall.add(hallBody);
+  for (let k = -3.4; k <= 3.41; k += 1.36) {
+    const col = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.24, 5.4, 12), std(0xfff1d6));
+    col.position.set(k, 2.9, -3.4);
+    col.castShadow = true;
+    hall.add(col);
+  }
+  const hp = new THREE.Shape();
+  hp.moveTo(-4.4, 0); hp.lineTo(4.4, 0); hp.lineTo(0, 1.5); hp.closePath();
+  const hallPed = new THREE.Mesh(new THREE.ExtrudeGeometry(hp, { depth: 6.8, bevelEnabled: false }), std(0xfff1d6));
+  hallPed.position.set(0, 6.18, -3.8);
+  hall.add(hallPed);
+  hall.traverse((o) => { if (o.isMesh) { o.castShadow = o.receiveShadow = true; } });
+  hall.position.set(HALL.x, 0, HALL.z + 1.2);
+  scene.add(hall);
+  const hallLight = new THREE.PointLight(0xffd27a, 0, 30, 2);
+  hallLight.position.set(HALL.x, 5, HALL.z - 8);
+  scene.add(hallLight);
+
+  // ---------- Διαδρομές: φωτεινές λωρίδες πάνω στο πεζοδρόμιο ----------
+  // Ο πεζός περπατάει στη γραμμή x ή z = 16k ± 3 και περνάει απέναντι από τις διαβάσεις.
+  const v = (x, z) => new THREE.Vector3(x, 0, z);
+  const S = v(3, -40), DP = v(3, 13), D = v(HALL.x, 35);
+  const pathA1 = [S, DP];
+  const pathA2 = [DP, v(3, 35), D];
+  const pathB = [DP, v(19, 13), v(19, 35), D];
+  const ROUTE = new THREE.Color(0x6ff2cf).multiplyScalar(2.2);
+  const OLD = new THREE.Color(0x4a5368);
+  function makeRoute(points) {
+    const g = new THREE.Group();
+    const mat = new THREE.MeshBasicMaterial({ color: ROUTE.clone(), transparent: true });
+    for (let i = 0; i < points.length - 1; i++) {
+      const a = points[i], b = points[i + 1];
+      const strip = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.03, a.distanceTo(b) + 0.7), mat);
+      strip.position.set((a.x + b.x) / 2, CURB + 0.03, (a.z + b.z) / 2);
+      strip.rotation.y = Math.atan2(b.x - a.x, b.z - a.z);
+      g.add(strip);
+    }
+    g.userData.mat = mat;
+    scene.add(g);
+    return g;
+  }
+  const routeA1 = makeRoute(pathA1), routeA2 = makeRoute(pathA2), routeB = makeRoute(pathB);
+
+  // ---------- Εμπόδιο: σκαλωσιά με κόκκινες-λευκές μπάρες ----------
+  const obstacle = new THREE.Group();
+  const pole = std(0x9aa0a8, { metalness: 0.7, roughness: 0.35 });
+  for (const x of [-1.4, 1.4]) for (const z of [0, 1.4]) {
+    const p = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 4, 6), pole);
+    p.position.set(x, 2, z);
+    obstacle.add(p);
+  }
+  for (const y of [1.3, 2.6, 3.9]) {
+    const deck = new THREE.Mesh(new THREE.BoxGeometry(3, 0.08, 1.6), std(0x8a6a44));
+    deck.position.set(0, y, 0.7);
+    obstacle.add(deck);
+  }
+  const net = new THREE.Mesh(new THREE.PlaneGeometry(3, 4), std(0xff7a3a, { transparent: true, opacity: 0.35, side: THREE.DoubleSide, emissive: 0x401000 }));
+  net.position.set(0, 2, 1.45);
+  obstacle.add(net);
+  const red = std(0xff3b30, { emissive: 0xff2010, emissiveIntensity: 0.8 });
+  const white = std(0xf4f4f4);
+  for (let i = 0; i < 6; i++) {
+    const seg = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.22, 0.1), i % 2 ? white : red);
+    seg.position.set(-1.25 + i * 0.5, 0.9, -0.45);
+    obstacle.add(seg);
+  }
+  obstacle.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+  // Η σκαλωσιά κλείνει όλο το πλάτος του πεζοδρομίου, ακουμπώντας στην πρόσοψη.
+  obstacle.position.set(3.1, CURB, 24);
+  scene.add(obstacle);
+
+  // ---------- Δείκτες για τη διαφάνεια 4 ----------
+  function makePin(hex) {
+    const color = new THREE.Color(hex).multiplyScalar(1.8);
+    const g = new THREE.Group();
+    const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 4, 8), new THREE.MeshBasicMaterial({ color }));
+    stem.position.y = 2;
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.55, 20, 14), new THREE.MeshBasicMaterial({ color }));
+    head.position.y = 4.3;
+    const ring = new THREE.Mesh(new THREE.RingGeometry(0.8, 1.05, 40), new THREE.MeshBasicMaterial({ color, transparent: true, side: THREE.DoubleSide }));
+    ring.rotation.x = -Math.PI / 2;
+    ring.position.y = 0.08;
+    g.add(stem, head, ring);
+    g.userData.ring = ring;
+    scene.add(g);
+    return g;
+  }
+  const pinProject = makePin(0xff5b4f); pinProject.position.set(3.1, 4.4, 24);
+  const pinReport = makePin(0x6ff2cf); pinReport.position.set(-13, CURB, -20);
+  const pinPlace = makePin(0xffd27a); pinPlace.position.set(HALL.x, 7.9, HALL.z + 1.2);
+  const pins = [pinProject, pinReport, pinPlace];
+
+  // ---------- Ο πεζός: τουρίστας με σακίδιο, ακουστικά οστεο-αγωγής και λευκό μπαστούνι ----------
+  const person = makePerson();
+  const walker = person.root;
+  scene.add(walker);
+
+  function makePerson() {
+    const root = new THREE.Group();
+    const skin = std(0xd9a67e), shirt = std(0x2f6fd6), pants = std(0x2b3142), shoe = std(0x1b1b1f), hair = std(0x2a1c14);
+    const capsule = (r, len, mat) => {
+      const m = new THREE.Mesh(new THREE.CapsuleGeometry(r, len, 6, 12), mat);
+      m.castShadow = true;
+      return m;
+    };
+    function limb(upperLen, lowerLen, r, upperMat, lowerMat) {
+      const top = new THREE.Group();
+      const upper = capsule(r, upperLen, upperMat);
+      upper.position.y = -upperLen / 2;
+      const joint = new THREE.Group();
+      joint.position.y = -upperLen - r * 0.5;
+      const lower = capsule(r * 0.9, lowerLen, lowerMat);
+      lower.position.y = -lowerLen / 2;
+      joint.add(lower);
+      top.add(upper, joint);
+      return { top, joint, end: lowerLen };
+    }
+
+    const hips = new THREE.Group();
+    hips.position.y = 0.98;
+    root.add(hips);
+
+    const torso = capsule(0.19, 0.42, shirt);
+    torso.position.y = 0.36;
+    torso.scale.set(1.2, 1, 0.75);
+    hips.add(torso);
+    const pelvis = capsule(0.16, 0.08, pants);
+    pelvis.scale.set(1.3, 1, 0.8);
+    hips.add(pelvis);
+
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.13, 20, 16), skin);
+    head.position.y = 0.86;
+    const neck = capsule(0.05, 0.06, skin);
+    neck.position.y = 0.7;
+    const hairCap = new THREE.Mesh(new THREE.SphereGeometry(0.137, 20, 12, 0, Math.PI * 2, 0, Math.PI * 0.55), hair);
+    hairCap.position.y = 0.875;
+    hairCap.rotation.x = -0.25;
+    // Ακουστικά οστεο-αγωγής: λεπτή στεφάνη πίσω από το κεφάλι, με μαξιλαράκια μπροστά από τα αυτιά.
+    const band = new THREE.Mesh(new THREE.TorusGeometry(0.135, 0.012, 6, 24, Math.PI), std(0x111318, { metalness: 0.5 }));
+    band.position.set(0, 0.84, -0.02);
+    band.rotation.set(-1.75, 0, 0);
+    const pads = [-1, 1].map((s) => {
+      const p = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.05, 0.035), std(0x6ff2cf, { emissive: 0x6ff2cf, emissiveIntensity: 0.8 }));
+      p.position.set(s * 0.13, 0.84, 0.04);
+      return p;
+    });
+    hips.add(head, neck, hairCap, band, ...pads);
+
+    const pack = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.38, 0.15), std(0xc9772f));
+    pack.position.set(0, 0.4, -0.2);
+    pack.castShadow = true;
+    hips.add(pack);
+
+    const legL = limb(0.4, 0.4, 0.075, pants, pants);
+    const legR = limb(0.4, 0.4, 0.075, pants, pants);
+    legL.top.position.set(-0.1, -0.02, 0);
+    legR.top.position.set(0.1, -0.02, 0);
+    for (const leg of [legL, legR]) {
+      const foot = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.07, 0.26), shoe);
+      foot.position.set(0, -leg.end - 0.06, 0.06);
+      foot.castShadow = true;
+      leg.joint.add(foot);
+      hips.add(leg.top);
+    }
+
+    const armL = limb(0.27, 0.25, 0.055, shirt, skin);
+    const armR = limb(0.27, 0.25, 0.055, shirt, skin);
+    armL.top.position.set(-0.27, 0.58, 0);
+    armR.top.position.set(0.27, 0.58, 0);
+    hips.add(armL.top, armR.top);
+
+    // Το μπαστούνι: λευκό, με κόκκινη ζώνη και μύτη, χτισμένο κατά μήκος του -y και μετά στραμμένο.
+    const cane = new THREE.Group();
+    const stick = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 1.2, 8), std(0xffffff, { emissive: 0x555555 }));
+    stick.position.y = -0.6;
+    const band2 = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.22, 8), std(0xff3b30));
+    band2.position.y = -1.0;
+    const tip = new THREE.Mesh(new THREE.SphereGeometry(0.025, 8, 6), std(0x222222));
+    tip.position.y = -1.2;
+    const grip = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.14, 8), std(0x15161a));
+    grip.position.y = -0.04;
+    cane.add(stick, band2, tip, grip);
+    cane.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+    root.add(cane);
+
+    const hand = new THREE.Vector3(0.24, 0.86, 0.36);
+    const down = new THREE.Vector3(0, -1, 0);
+    function setCane(sweep) {
+      const tipPos = new THREE.Vector3(sweep, 0.03, 1.2);
+      const dir = tipPos.clone().sub(hand);
+      cane.position.copy(hand);
+      cane.scale.y = dir.length() / 1.2;
+      cane.quaternion.setFromUnitVectors(down, dir.normalize());
+    }
+
+    let phase = 0, amount = 0;
+    function animate(dt, moving) {
+      amount += ((moving ? 1 : 0) - amount) * Math.min(1, dt * 6);
+      if (moving) phase += dt * 7.5;
+      const s = Math.sin(phase) * amount;
+      legL.top.rotation.x = s * 0.55;
+      legR.top.rotation.x = -s * 0.55;
+      legL.joint.rotation.x = Math.max(0, Math.sin(phase + 1.4)) * 0.7 * amount;
+      legR.joint.rotation.x = Math.max(0, Math.sin(phase + 1.4 + Math.PI)) * 0.7 * amount;
+      armL.top.rotation.x = -s * 0.45;
+      armL.joint.rotation.x = -0.25;
+      armR.top.rotation.x = -0.75;
+      armR.joint.rotation.x = -0.35;
+      armR.top.rotation.z = 0.12;
+      hips.position.y = 0.98 + Math.abs(Math.cos(phase)) * 0.035 * amount;
+      torso.rotation.y = s * 0.08;
+      setCane(Math.sin(phase * 0.5) * 0.38 * amount);
+    }
+    animate(0, false);
+    return { root, animate };
+  }
+
+  // ---------- Περπάτημα πάνω σε πολυγραμμή ----------
+  let walk = null;
+  function pathLength(p) { let L = 0; for (let i = 0; i < p.length - 1; i++) L += p[i].distanceTo(p[i + 1]); return L; }
+  function pointAt(p, d) {
+    for (let i = 0; i < p.length - 1; i++) {
+      const seg = p[i].distanceTo(p[i + 1]);
+      if (d <= seg || i === p.length - 2) {
+        const t = Math.min(1, d / seg);
+        return { pos: p[i].clone().lerp(p[i + 1], t), dir: p[i + 1].clone().sub(p[i]).normalize() };
+      }
+      d -= seg;
+    }
+  }
+  function walkAlong(points, speed, onDone, triggers = []) {
+    walk = { points, d: 0, len: pathLength(points), speed, onDone, triggers };
+  }
+  let targetYaw = 0;
+  function place(p, dir, snap = false) {
+    walker.position.set(p.x, CURB, p.z);
+    if (dir) targetYaw = Math.atan2(dir.x, dir.z);
+    if (snap) walker.rotation.y = targetYaw;
+  }
+
+  // ---------- Κάμερα ----------
+  const camPos = new THREE.Vector3(70, 80, -70), camLook = new THREE.Vector3();
+  let shot = { pos: new THREE.Vector3(55, 70, -60), look: new THREE.Vector3(0, 0, 0), follow: null, orbit: false };
+  const timers = [];
+  const later = (ms, fn) => timers.push(setTimeout(fn, reduceMotion ? Math.min(ms, 300) : ms));
+
+  function setRoute(r, visible, color = ROUTE, opacity = 1) {
+    r.visible = visible;
+    r.userData.mat.color.copy(color);
+    r.userData.mat.opacity = opacity;
+  }
+  function reset() {
+    timers.splice(0).forEach(clearTimeout);
+    walk = null;
+    [routeA1, routeA2, routeB].forEach((r) => setRoute(r, false));
+    obstacle.visible = false;
+    obstacle.scale.setScalar(1);
+    pins.forEach((p) => (p.visible = false));
+    hallLight.intensity = 0;
+    hallMat.emissive.setHex(0x000000);
+    place(S, new THREE.Vector3(0, 0, 1), true);
+  }
+  function arrive() {
+    hallLight.intensity = 60;
+    hallMat.emissive.setHex(0x3a2a08);
+    say("Έφτασες στην είσοδο του Δημαρχείου.");
+  }
+
+  function enter(i) {
+    reset();
+    if (i === 0) {
+      shot = { pos: new THREE.Vector3(78, 70, -78), look: new THREE.Vector3(8, 6, 40), orbit: true };
+      [routeA1, routeB].forEach((r) => setRoute(r, true, ROUTE, 0.6));
+      place(D, new THREE.Vector3(0, 0, 1), true);
+      hallLight.intensity = 40;
+    }
+    if (i === 1) {
+      shot = { follow: { back: 5, up: 2.4, ahead: 6 } };
+      obstacle.visible = true;
+      walkAlong([S, v(3, 22.5)], 1.6 * 3, () => {
+        say("Τακ. Σκαλωσιά. Το πεζοδρόμιο είναι κλειστό.");
+        later(1600, () => walkAlong([v(3, 22.5), v(3, 16)], 2.6));
+      });
+    }
+    if (i === 2) {
+      shot = { follow: { back: 8, up: 5, ahead: 14 } };
+      setRoute(routeA1, true);
+      setRoute(routeA2, true);
+      walkAlong([S, DP, ...pathB.slice(1)], 1.6 * 3, arrive, [
+        { at: 30, fn: () => {
+          obstacle.visible = true;
+          obstacle.scale.setScalar(0.01);
+          setRoute(routeA2, true, OLD, 0.5);
+          setRoute(routeB, true);
+          say("Στην επόμενη γωνία στρίψε δεξιά. Το πεζοδρόμιο μπροστά είναι κλειστό.");
+        } },
+      ]);
+    }
+    if (i === 3) {
+      shot = { pos: new THREE.Vector3(-46, 54, -50), look: new THREE.Vector3(8, 0, 10) };
+      obstacle.visible = true;
+      setRoute(routeA1, true, ROUTE, 0.7);
+      setRoute(routeB, true, ROUTE, 0.7);
+      pins.forEach((p) => (p.visible = true));
+      place(D, new THREE.Vector3(0, 0, 1), true);
+      hallLight.intensity = 40;
+    }
+    if (i === 4) {
+      shot = { pos: new THREE.Vector3(-20, 32, -55), look: new THREE.Vector3(12, 18, 150), orbit: false };
+      setRoute(routeA1, true, ROUTE, 0.8);
+      setRoute(routeB, true, ROUTE, 0.8);
+      place(D, new THREE.Vector3(0, 0, 1), true);
+      hallLight.intensity = 60;
+      hallMat.emissive.setHex(0x3a2a08);
+    }
+    if (reduceMotion) snapCamera();
+  }
+
+  function targetCamera() {
+    if (shot.follow) {
+      const yaw = walker.rotation.y;
+      const fwd = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw));
+      const pos = walker.position.clone().addScaledVector(fwd, -shot.follow.back);
+      pos.y += shot.follow.up;
+      const look = walker.position.clone().addScaledVector(fwd, shot.follow.ahead);
+      look.y += 1.2;
+      return { pos, look };
+    }
+    return { pos: shot.pos, look: shot.look };
+  }
+  function snapCamera() { const t = targetCamera(); camPos.copy(t.pos); camLook.copy(t.look); }
+
+  // ---------- Εφέ λάμψης για τα φώτα και τη διαδρομή ----------
+  const composer = new EffectComposer(renderer);
+  composer.addPass(new RenderPass(scene, camera));
+  const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.55, 0.5, 0.9);
+  composer.addPass(bloom);
+  composer.addPass(new OutputPass());
+
+  function resize() {
+    const w = innerWidth, h = innerHeight;
+    renderer.setSize(w, h, false);
+    composer.setSize(w, h);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+  }
+  addEventListener("resize", resize);
+  resize();
+
+  const clock = new THREE.Clock();
+  let orbitAngle = 0;
+  renderer.setAnimationLoop(() => {
+    const dt = Math.min(clock.getDelta(), 0.05);
+    const t = clock.elapsedTime;
+
+    if (walk) {
+      walk.d = Math.min(walk.len, walk.d + walk.speed * dt);
+      const { pos, dir } = pointAt(walk.points, walk.d);
+      place(pos, dir);
+      for (const tr of walk.triggers) if (!tr.done && walk.d >= tr.at) { tr.done = true; tr.fn(); }
+      if (walk.d >= walk.len) { const done = walk.onDone; walk = null; if (done) done(); }
+    }
+    let dy = targetYaw - walker.rotation.y;
+    dy = Math.atan2(Math.sin(dy), Math.cos(dy));
+    walker.rotation.y += dy * Math.min(1, dt * 8);
+    person.animate(dt, !!walk);
+
+    if (obstacle.visible && obstacle.scale.x < 1) obstacle.scale.setScalar(Math.min(1, obstacle.scale.x + dt * 2.5));
+    pins.forEach((p, k) => {
+      if (!p.visible) return;
+      const s = 1 + ((t * 0.8 + k / 3) % 1) * 1.8;
+      p.userData.ring.scale.setScalar(s);
+      p.userData.ring.material.opacity = 1 - (s - 1) / 1.8;
+    });
+
+    let target = targetCamera();
+    if (shot.orbit && !reduceMotion) {
+      orbitAngle += dt * 0.05;
+      const r = Math.hypot(shot.pos.x, shot.pos.z);
+      target = { pos: new THREE.Vector3(Math.sin(orbitAngle + 2.4) * r, shot.pos.y, Math.cos(orbitAngle + 2.4) * r), look: shot.look };
+    }
+    const k = reduceMotion ? 1 : 1 - Math.pow(0.03, dt);
+    camPos.lerp(target.pos, k);
+    camLook.lerp(target.look, k);
+    camera.position.copy(camPos);
+    camera.lookAt(camLook);
+    composer.render();
+  });
+
+  return { enter };
+}
+</script>
+</body>
+</html>
