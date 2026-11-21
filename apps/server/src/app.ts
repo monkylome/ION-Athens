@@ -12,6 +12,8 @@ import type { ObstacleEvent } from "./obstacles/diff.ts";
 import { type EdgeLookup, type MappingOptions, DEFAULT_MAPPING_OPTIONS, reportToObstacle } from "./obstacles/rules.ts";
 import { ObstacleService } from "./obstacles/service.ts";
 import { isActive } from "./routing/fallback.ts";
+import { type MissionOptions, MissionBoard } from "./missions/missions.ts";
+import { type Benefit, toRewards } from "./missions/rewards.ts";
 import type { RoutingPort } from "./routing/port.ts";
 import { SandboxError, type SandboxClient } from "./sandbox/client.ts";
 import { REPORT_CATEGORIES, type SandboxPoi, type SandboxReport } from "./sandbox/schemas.ts";
@@ -27,6 +29,8 @@ export interface AppDeps {
   corsOrigins?: string[];
   demoEnabled?: boolean;
   useLlm?: boolean;
+  /** Rules for citizen missions; defaults in missions/missions.ts. */
+  missions?: Partial<MissionOptions>;
   now?: () => Date;
   log?: (line: string) => void;
 }
@@ -76,6 +80,15 @@ export function createApp(deps: AppDeps) {
     onError: (err) => log(`obstacles: ${describe(err)}`),
   });
   const destinations = new DestinationResolver(client, { useLlm: deps.useLlm ?? true });
+
+  // Citizen missions change the graph the router reads, so they share it.
+  const board = new MissionBoard(routing.graph, deps.missions);
+  type StreamEvent = { type: string };
+  const missionListeners = new Set<(event: StreamEvent) => void>();
+  const announce = (event: StreamEvent) => {
+    for (const listener of missionListeners) listener(event);
+  };
+  let benefits: { at: number; items: Benefit[] } | null = null;
   const places = new Map<string, { at: number; items: SandboxPoi[] }>();
   let health: { at: number; reachable: boolean; problem: string | null; llmLeft: number | null } | null = null;
 
@@ -293,17 +306,92 @@ export function createApp(deps: AppDeps) {
     return c.json(reportView(report));
   });
 
+  // --- citizen missions ---------------------------------------------------------------
+
+  const MISSION_ID = /^[a-z_]{3,24}:[A-Za-z0-9_-]{1,64}$/;
+  const answerSchema = z.object({
+    answer: z.enum(["yes", "no", "unsure"]),
+    /** A random id made on the device. Not a person. */
+    participant: z.string().regex(/^[A-Za-z0-9_-]{8,64}$/),
+  });
+  const placedAnswerSchema = answerSchema.merge(pointSchema);
+
+  const answerMission = async (c: Context, id: string, data: z.infer<typeof answerSchema>, at: LngLat | null) => {
+    const current = obstacles.current().obstacles;
+    const result = board.answer(id, data.participant, data.answer, at, now(), current);
+    if (!result.ok) {
+      const status = result.code === "not_found" ? 404 : result.code === "daily_limit" ? 429 : result.code === "too_far" ? 422 : 409;
+      return c.json({ error: { code: result.code, message: result.message, ...(result.distanceM !== undefined ? { distanceM: result.distanceM } : {}) } }, status);
+    }
+    // «Το έχω δει κι εγώ»: a yes on an obstacle check is the City's own confirmation.
+    let report: ReturnType<typeof reportView> | null = null;
+    if (result.mission.type === "obstacle_check" && data.answer === "yes" && result.mission.reportRef) {
+      report = reportView(await client.upvoteReport(result.mission.reportRef));
+      await obstacles.refreshAfterWrite();
+    }
+    announce({ type: "mission_answered", missionId: id, missionType: result.mission.type, position: result.mission.position, answers: result.mission.answers } as StreamEvent);
+    if (result.confirmed) announce({ type: "map_updated", observation: result.confirmed } as StreamEvent);
+    return c.json({ mission: result.mission, pointsEarned: result.pointsEarned, confirmed: result.confirmed, profile: result.profile, ...(report ? { report: report.report, obstacle: report.obstacle, sandbox: true } : {}) });
+  };
+
+  app.get("/api/missions", async (c) => {
+    const snap = await obstacles.snapshot();
+    const lng = Number(c.req.query("lng"));
+    const lat = Number(c.req.query("lat"));
+    const radius = Math.min(5000, Math.max(50, Number(c.req.query("radius")) || 500));
+    const limit = Math.min(100, Math.max(1, Number(c.req.query("limit")) || 20));
+    const summary = board.summary(snap.obstacles);
+    if (!Number.isFinite(lng) || !Number.isFinite(lat) || !c.req.query("lng")) return c.json({ summary, missions: board.all(snap.obstacles).slice(0, limit) });
+    return c.json({ summary, missions: board.near([lng, lat], snap.obstacles, radius, limit) });
+  });
+
+  app.get("/api/missions/observations", (c) => c.json({ observations: board.confirmedObservations() }));
+
+  app.get("/api/missions/profile", (c) => {
+    const participant = c.req.query("participant") ?? "";
+    if (!/^[A-Za-z0-9_-]{8,64}$/.test(participant)) return c.json({ error: { code: "invalid_request", message: "Bad participant id" } }, 400);
+    return c.json(board.profile(participant));
+  });
+
+  app.post("/api/missions/:id/answer", async (c) => {
+    const id = c.req.param("id");
+    if (!MISSION_ID.test(id)) return c.json({ error: { code: "invalid_request", message: "Bad mission id" } }, 400);
+    const b = await body(c, placedAnswerSchema);
+    if (!b.ok) return b.res;
+    return answerMission(c, id, b.data, [b.data.lng, b.data.lat]);
+  });
+
+  /** What the points unlock: the City's Athens Card benefits from the sandbox, which calls the programme fictional. */
+  app.get("/api/rewards", async (c) => {
+    const participant = c.req.query("participant") ?? "";
+    const points = /^[A-Za-z0-9_-]{8,64}$/.test(participant) ? board.profile(participant).points : 0;
+    if (!benefits || now().getTime() - benefits.at > 10 * 60_000) benefits = { at: now().getTime(), items: await client.listBenefits() };
+    return c.json({
+      sandbox: true,
+      fictional: true,
+      note: "Τα προνόμια προέρχονται από τη δοκιμαστική Κάρτα Αθηναίου του sandbox. Δεν αντιστοιχούν σε υπαρκτό πρόγραμμα του Δήμου.",
+      points,
+      rewards: toRewards(benefits.items, points),
+    });
+  });
+
   // --- events ------------------------------------------------------------------------
 
   app.get("/api/events", (c) =>
     streamSSE(c, async (stream) => {
-      const queue: ObstacleEvent[] = [];
+      const queue: StreamEvent[] = [];
       let wake: (() => void) | null = null;
       let open = true;
-      const unsubscribe = obstacles.subscribe((event) => {
+      const push = (event: StreamEvent) => {
         queue.push(event);
         wake?.();
-      });
+      };
+      const stopObstacles = obstacles.subscribe(push);
+      missionListeners.add(push);
+      const unsubscribe = () => {
+        stopObstacles();
+        missionListeners.delete(push);
+      };
       stream.onAbort(() => {
         open = false;
         unsubscribe();
@@ -364,6 +452,15 @@ export function createApp(deps: AppDeps) {
     await client.reset();
     await obstacles.refreshAfterWrite();
     return c.json({ sandbox: true, demo: true, reset: true, obstacles: obstacles.current().obstacles.length });
+  });
+
+  /** Answers a mission from the stage, without being at the place. Demo only. */
+  demo.post("/missions/:id/answer", async (c) => {
+    const id = c.req.param("id");
+    if (!MISSION_ID.test(id)) return c.json({ sandbox: true, error: { code: "invalid_request", message: "Bad mission id" } }, 400);
+    const b = await body(c, answerSchema);
+    if (!b.ok) return b.res;
+    return answerMission(c, id, b.data, null);
   });
 
   app.route("/api/demo", demo);

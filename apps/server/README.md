@@ -209,6 +209,28 @@ The sandbox has no test data on the demo streets, so the team creates the obstac
 | `POST /api/demo/resolve/:id` | Sets the report to `resolved`; the obstacle disappears and `obstacle_removed` is sent. Works only for reports this key created (otherwise 403 `sandbox_forbidden`). |
 | `POST /api/demo/reset` | `POST /v1/sandbox/reset`: removes everything this key created (reports, conversations, bookings). Answers `{ "sandbox": true, "demo": true, "reset": true, "obstacles": 2 }`. |
 
+## Citizen missions
+
+People who can see fill the gaps in the map for people who cannot. A mission is one yes-or-no question about one place, answered on the spot. The rules are in `src/missions/missions.ts` and tested in `missions.test.ts`.
+
+- **Where missions come from.** Crossings whose audible signal is untagged (`crossing_sound`), crossings whose tactile paving is untagged (`crossing_tactile`), and citizen reports that one person made and nobody confirmed yet (`obstacle_check`). On the Athens graph of 21 November 2026 that is 15 + 165 open missions.
+- **When an answer counts.** When two different participants give the same answer. Then the fact is written onto the graph the router reads (`crossing.sound`, `tactilePaving`), the mission closes, and `map_updated` is sent on `/api/events`. A "yes" on an obstacle check is sent to the sandbox as «Το έχω δει κι εγώ», so two of them close the pavement and reroute.
+- **Abuse.** The person must be within 60 m of the place, answers once per mission, and at most 40 times a day.
+- **Privacy.** A participant is a random id made on the device. The position sent with an answer is used for the distance check and not stored.
+- **Rewards.** Points unlock benefits of the sandbox's Athens Card (`GET /v1/athens-card/benefits`). Benefits from the City's own venues unlock first, because they cost the City almost nothing. The sandbox states that this programme is fictional.
+- **State is in memory.** Answers, points and confirmed facts are lost when the server restarts.
+
+| Endpoint | What it does |
+| --- | --- |
+| `GET /api/missions?lng=&lat=&radius=&limit=` | Open missions nearest to a point, with a summary. Without a point: the first missions. |
+| `POST /api/missions/:id/answer` | Body `{ "answer": "yes" \| "no" \| "unsure", "participant": "<8-64 chars>", "lng": 0, "lat": 0 }`. Answers: points earned, the confirmation if this answer completed one, and the profile. Errors: 404 `not_found`, 409 `already_answered` or `closed`, 422 `too_far`, 429 `daily_limit`. |
+| `GET /api/missions/profile?participant=` | Points, answers, confirmed answers, level and the next level. |
+| `GET /api/missions/observations` | Facts confirmed so far. |
+| `GET /api/rewards?participant=` | Athens Card benefits with the points each needs and whether they are unlocked. |
+| `POST /api/demo/missions/:id/answer` | The same answer without being at the place, for a presentation. Body without `lng`/`lat`. |
+
+Checked live: two answers confirmed a crossing's audible signal and changed the graph; a new report became an `obstacle_check` mission, two "yes" answers made it a full block, and the route from Monastiraki to the City Hall went from 327 m to 341 m.
+
 ## Mapping rules
 
 One module, `src/obstacles/rules.ts`, pure and tested (`rules.test.ts`). Every number is an option in `DEFAULT_MAPPING_OPTIONS`.

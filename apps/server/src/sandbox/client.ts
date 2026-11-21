@@ -11,6 +11,7 @@
  *   the sandbox gave, so a burst cannot dig the hole deeper.
  */
 import type { ZodType, ZodTypeDef } from "zod";
+import { type Benefit, benefitPageSchema } from "../missions/rewards.ts";
 import {
   type AssistantReply, type NluParse, type SandboxInfo, type SandboxPoi, type SandboxProject,
   type SandboxReport, assistantReplySchema, conversationSchema, nluParseSchema, poiPageSchema,
@@ -186,6 +187,14 @@ export class SandboxClient {
         radius_km: q.radiusKm, open_now: q.openNow, size: q.size ?? 20,
       },
     });
+    return res.items;
+  }
+
+  // --- Athens Card ---------------------------------------------------------
+
+  /** Benefits of the sandbox's Athens Card, a programme the sandbox itself calls fictional. */
+  async listBenefits(): Promise<Benefit[]> {
+    const res = await this.call("GET", "/v1/athens-card/benefits", { schema: benefitPageSchema, query: { size: 50 } });
     return res.items;
   }
 
