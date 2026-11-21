@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+gh issue list --repo monkylome/ION-Athens --assignee @me --state open \
+    --limit 100 --json number,title,url \
+    --jq '.[] | select(.title | startswith("[Agent question] ")) | "#\(.number) \(.title) \(.url)"'

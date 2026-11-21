@@ -10,7 +10,7 @@ if [[ "$(git symbolic-ref --quiet --short HEAD || true)" != main ]]; then
     exit 1
 fi
 
-if [[ -n "$(git status --porcelain)" ]] ||
+if [[ -n "$(git status --porcelain --untracked-files=no)" ]] ||
     git rev-parse --verify --quiet MERGE_HEAD >/dev/null; then
     echo "Finish any in-progress merge and commit your work before syncing." >&2
     exit 1
