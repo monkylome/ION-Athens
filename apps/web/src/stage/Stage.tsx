@@ -272,6 +272,7 @@ export function Stage() {
         <StageMap state={state} reducedMotion={reducedMotion} tiles={tiles} />
 
         <div className="stage__flags">
+          {state.discoveryNotice && <p className="flag crossing-answer" role="status">{state.discoveryNotice.label} · Ανακάλυψη από την κάμερα · {state.discoveryNotice.seenBy} δημότες</p>}
           {state.crossingNotice && !state.change && !state.waiting && <p className="flag crossing-answer" role="status">{state.crossingNotice}</p>}
           {state.loopFallback && <p className="flag">Εφεδρικό σενάριο · Δημαρχείο</p>}
           {state.injected && <p className="flag">ΕΠΙΔΕΙΞΗ</p>}

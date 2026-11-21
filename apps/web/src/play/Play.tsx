@@ -12,7 +12,7 @@
  * people (`data-local/catalogue/GAME-TOOLING.md`, section 4).
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { Dialog, Modal, ModalOverlay } from "react-aria-components";
 import { motion, useReducedMotion } from "motion/react";
 import { ArrowLeft, ArrowsIn, ArrowsOut, ArrowUp, BookOpen, Camera as CameraIcon, Eye, HandHeart, Info, Lifebuoy, ListBullets, MapPin, Microphone, Path, Scan, SpeakerHigh, SpeakerSlash, Ticket as TicketIcon, X } from "@phosphor-icons/react";
@@ -24,7 +24,7 @@ import { Camera, cameraObstacle } from "./Camera";
 import { feel, unlock } from "./feel";
 import {
   MERGE_M, addStamp, albumTiles, changeSentence, crossed, describeNearby, nearby, outcome, outsideLine, parseSpokenAnswer, places, pointsWords,
-  readDiscovery, readNeighbourhood, refusal, visionReady, type Answer, type Board as BoardData, type Discovery, type Mission, type Nearby, type Neighbourhood, type Observation, type Outcome,
+  discoveryEvent, mergeDiscoveries, readDiscovery, readNeighbourhood, refusal, visionReady, type Answer, type Board as BoardData, type Discovery, type Mission, type Nearby, type Neighbourhood, type Observation, type Outcome,
   type Place, type Profile, type Reward, type Rewards, type StampRecord, type Venue,
 } from "./game";
 import { bearingDeg, CAMERA_FOV_DEG, distanceM, distanceWords, directionWords, moveBy, reachM, REACH_M, shortDistance } from "./geo";
@@ -66,6 +66,7 @@ function recognitionCtor(): (new () => Recognition) | null {
 }
 
 export function Play() {
+  const receipt = useLocation().state?.scanReceipt;
   const [params] = useSearchParams();
   const fakeParam = useMemo(() => parseFake(params.get("fake")), [params]);
   const demo = params.get("demo") === "1";
@@ -117,7 +118,7 @@ export function Play() {
   const [refresh, setRefresh] = useState(0);
   const [scan, setScan] = useState(false);
   const [discoveries, setDiscoveries] = useState<Discovery[]>([]);
-  const [shownPoints, setShownPoints] = useState<number | null>(null);
+  const [shownPoints, setShownPoints] = useState<number | null>(receipt?.before ?? null);
 
   const answered = useMemo(() => new Set(album.map((s) => s.id)), [album]);
   const walk = useFakeWalk(stage?.at ?? null, stage?.heading ?? 0, !moment && !(sheet && !sheet.camera) && takeovers.length === 0 && panel === null);
@@ -315,31 +316,43 @@ export function Play() {
       let data: { observation?: Observation };
       try { data = JSON.parse(event.data); } catch { return; }
       const o = data.observation;
-      if (!o || mine.current.has(o.missionId)) return; // my own confirmation is told on the card
+      if (!o || o.type === "camera_discovery" || mine.current.has(o.missionId)) return; // my own confirmation is told on the card
       const seen = missionsRef.current.find((n) => n.mission.id === o.missionId);
       if (seen) flash(o.missionId, seen.mission.position, true);
       const text = `Ο χάρτης άλλαξε. ${changeSentence(o, seen?.mission.question)}`;
       setToast({ text, confirmed: true });
       sayRef.current(text, 1);
     };
-    // A discovery made in the scan mode drops onto the map. The event's name is the other team's to choose, so the likely ones are heard.
+    // One camera observation and its independent confirmation share a server id.
     const onDiscovery = (event: MessageEvent<string>) => {
       let d: Discovery | null = null;
-      try { d = readDiscovery(JSON.parse(event.data)); } catch { return; }
+      try { d = discoveryEvent(JSON.parse(event.data)); } catch { return; }
       if (!d) return;
       const found = d;
-      setDiscoveries((list) => [...list.filter((x) => x.id !== found.id), found]);
-      flash(`discovery:${found.id}`, found.at, true);
-      const text = `Νέα ανακάλυψη στον χάρτη: ${found.label}.`;
-      setToast({ text, confirmed: true });
-      feel.confirm();
+      setDiscoveries((list) => mergeDiscoveries(list, [found]));
+      flash(`discovery:${found.id}`, found.at, found.confirmed);
+      const text = found.confirmed ? `${found.label} · Επιβεβαίωσαν ${found.seenBy} δημότες.` : `${found.label} · Χρειάζεται δεύτερη μαρτυρία.`;
+      setToast({ text, confirmed: found.confirmed });
+      if (found.confirmed) feel.confirm();
       sayRef.current(text, 1);
     };
-    for (const name of ["discovery", "discovery_added", "discovery_confirmed", "vision_discovery"]) stream.addEventListener(name, onDiscovery as EventListener);
+    for (const name of ["discovery_added", "discovery_confirmed"]) stream.addEventListener(name, onDiscovery as EventListener);
     stream.addEventListener("mission_answered", onAnswered as EventListener);
     stream.addEventListener("map_updated", onUpdated as EventListener);
-    stream.addEventListener("open", again);
-    return () => stream.close();
+    let subscribed = true;
+    const restore = () => {
+      again();
+      void playApi.discoveries().then(({ discoveries }) => {
+        if (!subscribed) return;
+        const incoming = discoveries.flatMap(raw => {
+          const found = readDiscovery(raw);
+          return found ? [found] : [];
+        });
+        setDiscoveries(previous => mergeDiscoveries(previous, incoming));
+      }, () => undefined);
+    };
+    stream.addEventListener("open", restore);
+    return () => { subscribed = false; stream.close(); };
   }, [flash]);
   useEffect(() => {
     if (!toast) return;
@@ -351,13 +364,14 @@ export function Play() {
   useEffect(() => {
     let current = true;
     playApi.visionStatus().then((body) => { if (current) setScan(visionReady(body)); }, () => { if (current) setScan(false); });
-    playApi.discoveries().then((body) => {
-      if (!current) return;
-      const list = Array.isArray(body) ? body : Array.isArray((body as { discoveries?: unknown[] } | null)?.discoveries) ? (body as { discoveries: unknown[] }).discoveries : [];
-      setDiscoveries(list.flatMap((raw) => { const d = readDiscovery(raw); return d ? [d] : []; }));
-    }, () => undefined);
     return () => { current = false; };
   }, []);
+
+  useEffect(() => {
+    if (!receipt) return;
+    flash("scan", receipt.at, receipt.confirmed);
+    setToast({text: receipt.text, confirmed: receipt.confirmed});
+  }, [receipt, flash]);
 
   // The counter at the top left changes only when the map is in view, so the roll-up is seen.
   const hidden = !!sheet || takeovers.length > 0;
@@ -530,6 +544,9 @@ export function Play() {
   const nextTakeover = () => setTakeovers((list) => list.slice(1));
 
   // What keeps the demo honest, as one small tag that never leaves the screen.
+  const scanParams = new URLSearchParams(params);
+  if (walk && point) scanParams.set("fake", point.join(","));
+  const scanUrl = "/play/scan?" + scanParams;
   const tag = walk && demo ? "ΘΕΣΗ ΚΑΙ ΑΠΑΝΤΗΣΗ ΕΠΙΔΕΙΞΗΣ" : walk ? "ΘΕΣΗ ΕΠΙΔΕΙΞΗΣ" : demo ? "ΑΠΑΝΤΗΣΗ ΕΠΙΔΕΙΞΗΣ" : "";
   const labels = tag ? <p className="pl-tag">{tag}</p> : null;
   // More questions about the same spot: the encounter offers the next one, unless a level or a ticket is waiting.
@@ -583,7 +600,7 @@ export function Play() {
             </button>
           )
         ) : <p className="pl-action pl-action--idle">{waitingWords}</p>}
-        {scan && <Link className="btn pl-scan" to="/play/scan"><Eye weight="fill" aria-hidden="true" />Σάρωση</Link>}
+        {scan && <Link className="btn pl-scan" to={scanUrl}><Eye weight="fill" aria-hidden="true" />Σάρωση</Link>}
       </div>
 
       {flying && (
@@ -618,7 +635,7 @@ export function Play() {
                     {voice ? "Φωνή: ανοιχτή" : "Φωνή: κλειστή, για αναγνώστη οθόνης"}
                   </button>
                   <Link className="btn" to="/play/trail"><Path weight="bold" className="btn__icon" aria-hidden="true" />Καταγραφή διαδρομής μέσα σε χώρο</Link>
-                  {scan && <Link className="btn" to="/play/scan"><Scan weight="bold" className="btn__icon" aria-hidden="true" />Σάρωση με την κάμερα</Link>}
+                  {scan && <Link className="btn" to={scanUrl}><Scan weight="bold" className="btn__icon" aria-hidden="true" />Σάρωση με την κάμερα</Link>}
                   <Link className="btn" to="/phone/help"><Lifebuoy weight="bold" className="btn__icon" aria-hidden="true" />Ζητήστε βοήθεια</Link>
                   <Link className="btn" to="/missions/help"><HandHeart weight="bold" className="btn__icon" aria-hidden="true" />Δώστε βοήθεια</Link>
                   <button type="button" className="btn" onClick={toggleFullscreen}>{full ? <ArrowsIn weight="bold" className="btn__icon" aria-hidden="true" /> : <ArrowsOut weight="bold" className="btn__icon" aria-hidden="true" />}{full ? "Έξοδος από πλήρη οθόνη" : "Πλήρης οθόνη"}</button>
@@ -645,7 +662,7 @@ export function Play() {
               </section>
             )}
             {panel === "rewards" && <RewardsView rewards={rewards} points={profile?.points ?? 0} onClose={() => setPanel("menu")} />}
-            {panel === "album" && <Album tiles={tiles} total={album.length} neighbourhood={neighbourhood} venues={albumVenues} discoveries={discoveries.filter((d) => !d.participant || d.participant === participant)} onClose={() => setPanel("menu")} />}
+            {panel === "album" && <Album tiles={tiles} total={album.length} neighbourhood={neighbourhood} venues={albumVenues} discoveries={discoveries} onClose={() => setPanel("menu")} />}
           </Dialog>
         </Modal>
       </ModalOverlay>

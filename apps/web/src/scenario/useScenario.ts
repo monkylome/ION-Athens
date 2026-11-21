@@ -12,7 +12,7 @@ import { selectTransport } from "./relay";
 import type { Transport } from "./transport";
 import type { Command, ScenarioState, ServerEvent } from "./types";
 
-const STREAM_EVENTS = ["snapshot", "obstacle_added", "obstacle_changed", "obstacle_removed", "mission_answered", "map_updated"] as const;
+const STREAM_EVENTS = ["snapshot", "obstacle_added", "obstacle_changed", "obstacle_removed", "mission_answered", "discovery_confirmed", "map_updated"] as const;
 
 export interface Scenario {
   state: ScenarioState;

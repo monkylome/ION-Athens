@@ -41,6 +41,18 @@ async function rehearsal(live: boolean) {
 }
 
 describe("the theatre rehearsal",()=>{
+  it("shows only independent camera confirmation in the live room", async () => {
+    const live = await rehearsal(true);
+    const scripted = await rehearsal(false);
+    const single = {id:"t1", label:"Ράμπα", position:[23.72,37.98], confirmed:false, seenBy:1};
+    live.engine.serverEvent({type:"discovery_confirmed", discovery:single});
+    expect(live.state().discoveryNotice).toBeUndefined();
+    const discovery = {...single, confirmed:true, seenBy:2};
+    for (const run of [live, scripted]) run.engine.serverEvent({type:"discovery_confirmed", discovery});
+    expect(live.state().discoveryNotice).toEqual({label:single.label, at:single.position, seenBy:2});
+    expect(scripted.state().discoveryNotice).toBeUndefined();
+  });
+
   it("holds the walker until a live report on the selected edge is confirmed",async()=>{
     const s=await rehearsal(true);
     s.run(12);

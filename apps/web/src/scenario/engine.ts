@@ -1,3 +1,4 @@
+import { discoveryEvent } from "../play/game";
 /**
  * The scenario state machine. One instance runs in the tab that hosts the demo
  * and both screens render its state, so they cannot disagree.
@@ -550,7 +551,7 @@ export class ScenarioEngine {
       ...this.state,
       phase: "idle",
       busy: false,
-      waiting: false, closing: false, injected: false, card: null, crossingNotice: "",
+      waiting: false, closing: false, injected: false, card: null, discoveryNotice: undefined, crossingNotice: "",
       request: this.state.config.sentence,
       destination: null,
       route: null,
@@ -606,6 +607,11 @@ export class ScenarioEngine {
         const known = this.tracked.get(event.obstacle.id);
         if (known && !known.createdHere) this.toast("SSE obstacle_removed · SANDBOX", "ok");
         this.remove(event.obstacle.id);
+        break;
+      }
+      case "discovery_confirmed": {
+        const found = discoveryEvent(event);
+        if (this.state.citizen === "live" && found) this.state.discoveryNotice = { label: found.label, at: found.at, seenBy: found.seenBy };
         break;
       }
       case "mission_answered": {

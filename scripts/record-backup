@@ -4,6 +4,7 @@ import path from "node:path";
 import {fileURLToPath} from "node:url";
 import {execFileSync} from "node:child_process";
 import runtime from "./browser/runtime.cjs";
+import scan from "./browser/scan.cjs";
 import game from "./browser/game.cjs";
 const {launch,phone,stage,stageFlow}=runtime;
 const out=fileURLToPath(new URL("../data-local/backup/",import.meta.url));
@@ -11,7 +12,10 @@ await fs.mkdir(out,{recursive:true});
 const work=await fs.mkdtemp(path.join(out,".record-"));
 const browser=await launch();
 try {
-  for(const [name,size,flow] of [["game",phone,game.gameFlow],["stage",stage,stageFlow]]){
+  const flows = [["game",phone,game.gameFlow],["stage",stage,stageFlow],["scan",phone,scan.scanFlow]];
+  const selected = process.env.ION_BACKUP_ONLY ? flows.filter(([name]) => name === process.env.ION_BACKUP_ONLY) : flows;
+  if (!selected.length) throw Error("ION_BACKUP_ONLY must be game, stage or scan");
+  for(const [name,size,flow] of selected){
     const ctx=await browser.newContext({viewport:size,permissions:["camera"],recordVideo:{dir:work,size}});
     const p=await ctx.newPage();
     const badge=path.join(work,name+"-label.png");
@@ -43,5 +47,5 @@ try {
     const seconds=execFileSync("ffprobe",["-v","error","-show_entries","format=duration","-of","csv=p=0",target],{encoding:"utf8"}).trim();
     console.log(path.join(out,name+".webm"), Number(seconds).toFixed(1)+" s");
   }
-  for(const name of ["game.webm","stage.webm"]) await fs.rename(path.join(work,name),path.join(out,name));
+  for(const [name] of selected) await fs.rename(path.join(work,name+".webm"),path.join(out,name+".webm"));
 } finally {await browser.close();await fs.rm(work,{recursive:true,force:true});}

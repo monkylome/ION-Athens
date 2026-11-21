@@ -149,7 +149,7 @@ export function Album({ tiles, total, neighbourhood, venues, discoveries, onClos
       {discoveries.length > 0 && <>
         <h2>Ανακαλύψεις</h2>
         <ul className="pl-album">
-          {discoveries.map((d) => <li key={d.id} className="pl-tile"><Eye weight="fill" className="pl-tile__glyph" aria-hidden="true" /><span className="pl-tile__label">{d.label}</span></li>)}
+          {discoveries.map((d) => <li key={d.id} className="pl-tile"><Eye weight="fill" className="pl-tile__glyph" aria-hidden="true" /><span className="pl-tile__label">{d.label} · {d.confirmed ? "Επιβεβαιώθηκε" : "Μία μαρτυρία"}</span></li>)}
         </ul>
       </>}
     </section>

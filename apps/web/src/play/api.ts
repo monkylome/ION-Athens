@@ -52,7 +52,7 @@ export const playApi = {
   demoLoop: () => call<{ start?: { lng: number; lat: number }; destination?: { lng: number; lat: number } }>("/demo/loop"),
   /** The scan mode's own endpoints. They may not exist: every caller treats a failure as "no scan mode". */
   visionStatus: () => call<unknown>("/vision/status"),
-  discoveries: () => call<unknown>("/vision/discoveries"),
+  discoveries: () => call<{ discoveries: unknown[] }>("/vision/discoveries"),
   neighbourhoods: () => call<unknown>("/neighbourhoods"),
   /** A real answer carries the position for the server's distance check; the server does not store it. */
   answer: (id: string, participant: string, answer: Answer, at: LngLat) =>
