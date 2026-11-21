@@ -31,7 +31,7 @@ export function moveWalker(map: Map, point: LngLat, previous?: Marker) {
   return previous ? previous.setLngLat(point) : marker(map, point, "walker", "Θέση πεζού");
 }
 
-export function AthensMap({ route, obstacles, walker }: { route?: Route; obstacles?: Obstacle[]; walker?: LngLat }) {
+export function AthensMap({ route, obstacles, walker, missions, center }: { missions?: {position: LngLat; question: string}[]; center?: LngLat; route?: Route; obstacles?: Obstacle[]; walker?: LngLat }) {
   const container = useRef<HTMLDivElement>(null);
   const walkerMarker = useRef<Marker | undefined>(undefined);
   const [map, setMap] = useState<Map>();
@@ -51,5 +51,13 @@ export function AthensMap({ route, obstacles, walker }: { route?: Route; obstacl
     if (map && walker) walkerMarker.current = moveWalker(map, walker, walkerMarker.current);
     else { walkerMarker.current?.remove(); walkerMarker.current = undefined; }
   }, [map, walker]);
+  useEffect(() => {
+    if (map && center) map.jumpTo({ center });
+  }, [map, center]);
+  useEffect(() => {
+    if (!map) return;
+    const marks = missions?.map(m => marker(map, m.position, "mission-pin", m.question));
+    return () => marks?.forEach(m => m.remove());
+  }, [map, missions]);
   return <div ref={container} className="map" aria-label="Χάρτης κεντρικής Αθήνας" />;
 }

@@ -1,0 +1,50 @@
+import { afterEach, expect, it, vi } from "vitest";
+import { BluetoothOutput, uartRx, uartService } from "./bluetooth";
+import { patterns, phone, Simulation } from "./signals";
+afterEach(() => vi.unstubAllGlobals());
+it("uses four vibration patterns with a shared warning", async () => {
+  const vibrate = vi.fn(() => true);
+  vi.stubGlobal("navigator", { vibrate });
+  expect(new Set(Object.values(patterns).map(p => p.join(","))).size).toBe(4);
+  expect(patterns.attention).toEqual(patterns.obstacle_ahead);
+  expect(await phone.signal("turn_right")).toBe(true);
+  expect(vibrate).toHaveBeenCalledWith(patterns.turn_right);
+});
+it("connects to the selected service, writes a byte and observes disconnect", async () => {
+  const write = vi.fn();
+  const getCharacteristic = vi.fn(async () => ({ properties: { writeWithoutResponse: true }, writeValueWithoutResponse: write }));
+  const getPrimaryService = vi.fn(async () => ({ getCharacteristic }));
+  const device = Object.assign(new EventTarget(), { gatt: { connect: async () => ({ getPrimaryService }), disconnect: vi.fn() } });
+  const requestDevice = vi.fn(async () => device);
+  vi.stubGlobal("navigator", { bluetooth: { requestDevice } });
+  const state = vi.fn();
+  const adapter = new BluetoothOutput(state);
+  await adapter.connect(uartService, uartRx);
+  expect(requestDevice).toHaveBeenCalledWith({ filters: [{ services: [uartService] }] });
+  expect(getCharacteristic).toHaveBeenCalledWith(uartRx);
+  expect(state).toHaveBeenLastCalledWith("ready");
+  expect(await adapter.signal("obstacle_ahead")).toBe(true);
+  expect(write).toHaveBeenCalledWith(Uint8Array.of(3));
+  device.dispatchEvent(new Event("gattserverdisconnected"));
+  expect(state).toHaveBeenLastCalledWith("disconnected");
+  expect(await adapter.signal("attention")).toBe(false);
+});
+it("reports unsupported and cancelled states", async () => {
+  const state = vi.fn();
+  const adapter = new BluetoothOutput(state);
+  vi.stubGlobal("navigator", {});
+  await adapter.connect(uartService, uartRx);
+  expect(state).toHaveBeenLastCalledWith("unsupported");
+  vi.stubGlobal("navigator", { bluetooth: { requestDevice: async () => { throw new DOMException("Cancelled", "NotFoundError"); } } });
+  await adapter.connect(uartService, uartRx);
+  expect(state).toHaveBeenLastCalledWith("cancelled");
+});
+it("simulates a detection only while a listener is subscribed", () => {
+  const sim = new Simulation(vi.fn());
+  const listener = vi.fn();
+  const unsubscribe = sim.subscribe(listener);
+  sim.detectNearbyObject();
+  unsubscribe();
+  sim.detectNearbyObject();
+  expect(listener).toHaveBeenCalledTimes(1);
+});

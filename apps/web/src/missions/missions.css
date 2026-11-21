@@ -1,0 +1,7 @@
+.missions { max-width: 46rem; margin: auto; line-height: 1.5; }
+.missions .map { height: clamp(12rem, 32vh, 24rem); }
+.missions section { padding: 1rem; border: 1px solid var(--text); }
+.missions .choices { display: flex; flex-wrap: wrap; gap: .6rem; margin-top: 1rem; }
+.missions button { min-height: 3rem; font: inherit; }
+.missions :focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.mission-pin { width: .8rem; height: .8rem; background: var(--accent); border: 2px solid var(--background); transform: rotate(45deg); }
