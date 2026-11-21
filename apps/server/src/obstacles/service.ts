@@ -29,6 +29,8 @@ export interface ObstacleSnapshot {
 }
 
 export interface ObstacleServiceOptions {
+  refreshDecisions?: () => Promise<void>;
+  decisionObstacles?: (now: Date) => Obstacle[];
   client: Pick<SandboxClient, "listAllReports" | "listProjects">;
   edges: EdgeLookup;
   mapping?: Partial<MappingOptions>;
@@ -59,7 +61,7 @@ export class ObstacleService {
   private timer: ReturnType<typeof setInterval> | null = null;
 
   constructor(options: ObstacleServiceOptions) {
-    this.o = { pollMs: 5000, maxAgeMs: 4000, projectsMaxAgeMs: 300_000, now: () => new Date(), ...options };
+    this.o = { refreshDecisions: async () => {}, decisionObstacles: () => [], pollMs: 5000, maxAgeMs: 4000, projectsMaxAgeMs: 300_000, now: () => new Date(), ...options };
   }
 
   /** Current obstacles. Asks the sandbox only when the cached answer is older than `maxAgeMs`. */
@@ -120,6 +122,7 @@ export class ObstacleService {
   private async doRefresh(): Promise<void> {
     const nowMs = this.o.now().getTime();
     this.attemptedAt = nowMs;
+    const decisions = this.o.refreshDecisions().catch(err => this.o.onError?.(err));
     try {
       const needProjects = this.projectsAt === 0 || nowMs - this.projectsAt >= this.o.projectsMaxAgeMs;
       const [reports, projects] = await Promise.all([
@@ -135,13 +138,15 @@ export class ObstacleService {
       this.problem = err instanceof SandboxError ? err.code : "internal";
       this.o.onError?.(err);
     }
+    await decisions;
     this.remap();
   }
 
   /** Applies the rules to the data in memory and announces the differences. */
-  private remap(): void {
+  remap(): void {
     const now = this.o.now();
     const mapped = mapSandboxData(this.reports, this.projects, this.o.edges, now, this.o.mapping);
+    mapped.obstacles.push(...this.o.decisionObstacles(now));
     const events = diffObstacles(this.obstacles, mapped.obstacles, now);
     this.obstacles = mapped.obstacles;
     this.skipped = mapped.skipped;

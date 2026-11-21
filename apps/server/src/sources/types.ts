@@ -39,6 +39,7 @@ export interface SourceAdapter<R, Q = void> {
   /** Which request of the source this is, when a source makes several. */
   part?: string;
   ttlMs: number;
+  retryAfterFailureMs?: number;
   timeoutMs: number;
   /** Cache key for a query; defaults to one entry. */
   key?(q: Q): string;

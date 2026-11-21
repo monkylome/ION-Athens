@@ -10,10 +10,12 @@
  * No personal data: a participant is a random id made on the device, and the
  * position sent with an answer is used for the distance check and not kept.
  */
+import { createHash } from "node:crypto";
+import { localDay } from "../sources/decision-parser.ts";
 import type { GraphEdge, LngLat, Obstacle, PedestrianGraph, Tri } from "@ion/core";
 import { distanceM } from "../geo.ts";
 
-export type MissionType = "crossing_sound" | "crossing_tactile" | "obstacle_check";
+export type MissionType = "crossing_sound" | "crossing_tactile" | "obstacle_check" | "pavement_check";
 export type Answer = "yes" | "no" | "unsure";
 
 export interface Mission {
@@ -61,9 +63,10 @@ export const DEFAULT_MISSION_OPTIONS: MissionOptions = {
   unsurePoints: 2,
 };
 
-const POINTS: Record<MissionType, number> = { crossing_sound: 15, crossing_tactile: 10, obstacle_check: 20 };
+const POINTS: Record<MissionType, number> = { crossing_sound: 15, crossing_tactile: 10, pavement_check: 15, obstacle_check: 20 };
 
 const QUESTIONS: Record<MissionType, string> = {
+  pavement_check: "Είναι ελεύθερο το πεζοδρόμιο εδώ;",
   crossing_sound: "Έχει ηχητικό σήμα το φανάρι σε αυτή τη διάβαση;",
   crossing_tactile: "Υπάρχει οδηγός όδευσης τυφλών σε αυτή τη διάβαση;",
   obstacle_check: "Υπάρχει ακόμα εμπόδιο στο πεζοδρόμιο εδώ;",
@@ -120,7 +123,7 @@ export class MissionBoard {
   private readonly daily = new Map<string, number>();
   private mapMissions: Mission[] = [];
 
-  constructor(private readonly graph: PedestrianGraph, opts: Partial<MissionOptions> = {}) {
+  constructor(private readonly graph: PedestrianGraph, opts: Partial<MissionOptions> = {}, private readonly now = () => new Date()) {
     this.opts = { ...DEFAULT_MISSION_OPTIONS, ...opts };
     this.rebuild();
   }
@@ -169,7 +172,17 @@ export class MissionBoard {
   /** Reports that one person made and nobody confirmed yet become missions too. */
   private obstacleMissions(obstacles: readonly Obstacle[]): Mission[] {
     const out: Mission[] = [];
+    const groups = new Map<string, Mission>();
     for (const o of obstacles) {
+      if (o.source.kind === "open_data" && o.type === "traffic_decision" && o.blocks === "partial" && o.position && o.source.ref) {
+        const id = this.pavementId(o.source.ref, this.now());
+        if (this.closed.has(id)) continue;
+        const previous = groups.get(id);
+        if (previous) previous.edgeIds.push(o.edgeId);
+        else groups.set(id, {id, type:"pavement_check", question:QUESTIONS.pavement_check, position:o.position, edgeIds:[o.edgeId],
+          points:POINTS.pavement_check, answers:this.counts(id), where:this.graph.edges.find(e=>e.id===o.edgeId)?.name});
+        continue;
+      }
       if (o.source.kind !== "sandbox_request" || o.blocks !== "partial" || !o.source.ref || !o.position) continue;
       const id = `obstacle_check:${o.source.ref}`;
       if (this.closed.has(id)) continue;
@@ -179,7 +192,21 @@ export class MissionBoard {
         points: POINTS.obstacle_check, answers: this.counts(id), reportRef: o.source.ref, ...(where ? { where } : {}),
       });
     }
-    return out;
+    return [...out, ...groups.values()];
+  }
+
+  private pavementId(ref: string, date: Date) {
+    return "pavement_check:" + createHash("sha256").update(ref + localDay(date)).digest("hex").slice(0,32);
+  }
+
+  applyPavementAnswers(obstacles: Obstacle[], now: Date): Obstacle[] {
+    return obstacles.flatMap(o => {
+      if (o.blocks !== "partial" || !o.source.ref || o.type !== "traffic_decision") return [o];
+      const id = this.pavementId(o.source.ref, now);
+      const confirmed = this.observations.find(v => v.missionId === id);
+      if (!confirmed) return [o];
+      return confirmed.value === "yes" ? [] : [{...o, blocks:"full", confidence:1}];
+    });
   }
 
   all(obstacles: readonly Obstacle[] = []): Mission[] {

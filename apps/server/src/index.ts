@@ -10,10 +10,11 @@ import { createCitySources } from "./sources/index.ts";
 const config = readConfig();
 const log = (line: string) => console.log(`[ion-server] ${line}`);
 
-const { graph, loaded, problem } = loadGraph(config.graphPath);
+const { graph, loaded, problem, enrichment } = loadGraph(config.graphPath);
 log(loaded ? `graph loaded: ${graph.nodes.length} nodes, ${graph.edges.length} edges` : `no graph (${problem}); obstacles cannot be matched to streets yet`);
 
 const client = new SandboxClient({ baseUrl: config.sandboxBaseUrl, apiKey: config.sandboxKey });
+log(enrichment.applied ? `pavement survey applied to ${enrichment.edgesCovered} edges` : `no pavement survey (${enrichment.problem ?? "file not found"}); routing uses OpenStreetMap only`);
 if (!client.configured) log("SANDBOX or SANDBOX_KEY is not set: every sandbox call will fail with not_configured");
 
 const routing = createRouting(graph);
@@ -22,6 +23,7 @@ const { app, obstacles } = createApp({
   routing,
   edges: { nearestEdge: (p, max) => routing.nearestEdge(p, max), edgesInBBox: (() => { const index = new EdgeIndex(graph); return (box) => index.edgesInBBox(box); })() },
   graphLoaded: loaded,
+  enrichment,
   citySources: createCitySources({ log }),
   pollMs: config.pollMs,
   corsOrigins: config.corsOrigins,

@@ -41,7 +41,7 @@ export class CachedSource<R, Q = void> {
     const entry = this.entries.get(key);
     if (entry && t - entry.at < this.adapter.ttlMs) return this.snapshot(entry, false, null);
     const failed = this.failures.get(key);
-    if (!failed || t - failed.at >= RETRY_AFTER_FAILURE_MS) {
+    if (!failed || t - failed.at >= (this.adapter.retryAfterFailureMs ?? RETRY_AFTER_FAILURE_MS)) {
       let run = this.inflight.get(key);
       if (!run) {
         run = this.refresh(key, q).finally(() => this.inflight.delete(key));

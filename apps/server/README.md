@@ -391,3 +391,11 @@ src/routing/edge-index.ts    grid index: nearest edge, edges in an area
 src/sources/                 city sources: adapters, cache, registry, context (see "City sources")
 src/testing/fixtures.ts      a 6-node street grid for tests
 ```
+
+## Official traffic decisions
+
+`GET /api/decisions` lists both Diavgeia feeds, freshness, original subjects, parsed restrictions and matched graph edge IDs. The police and municipality feeds use a rolling 21-day window, independent 15-minute caches and last-known-good results. A cold or failed feed does not prevent sandbox routing. Publication licence confirmation is pending for both authorities.
+
+Placement requires a named street and an unambiguous connected stretch between two named junctions, or an explicit whole-street restriction. Building numbers cannot be located with this graph. Placement and current validity are separate. Athens local dates, weekday lists, time ranges and overnight windows gate routing. Exceptions, extensions and multiple daily schedules need review. For one opaque subject per feed per refresh the adapter checks the detail record and, when available, extracts a review excerpt with pdftotext. A PDF excerpt alone does not activate an obstacle.
+
+Currently applicable decisions appear in the obstacle snapshot and event stream with their ADA and publication link. Roadway restrictions add a partial cost. Explicit pedestrian prohibitions can close a segment. One pavement mission covers each uncertain decision stretch per Athens calendar day. Two independent matching answers remove the effect or close the stretch for that day, subject to the official decision remaining active. Votes and overrides live in server memory.

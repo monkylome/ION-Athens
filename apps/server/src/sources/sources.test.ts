@@ -358,7 +358,7 @@ describe("GET /api/sources", () => {
     const app = appWith(city, () => world.now);
     const { body } = await get(app, "/api/sources");
     const byId = Object.fromEntries((body["sources"] as Json[]).map((s) => [s["id"], s]));
-    expect(Object.keys(byId).sort()).toEqual(["accessible-routes", "athens-announcements", "athens-gis", "athens-trees", "ion-sandbox", "moh-duty-hospitals", "oasa-telematics", "openstreetmap", "stasy-lifts"]);
+    expect(Object.keys(byId).sort()).toEqual(["accessible-routes", "athens-announcements", "athens-gis", "athens-trees", "diavgeia-city", "diavgeia-police", "ion-sandbox", "moh-duty-hospitals", "oasa-telematics", "openstreetmap", "stasy-lifts"]);
     expect(byId["stasy-lifts"]).toMatchObject({ owner: expect.stringContaining("ΣΤΑΣΥ"), permission: "pending", data: "real", answering: true, records: 2 });
     expect(byId["athens-gis"]).toMatchObject({ permission: "open licence", answering: true, records: 7 });
     expect(byId["oasa-telematics"]).toMatchObject({ permission: "pending", terms: expect.stringContaining("προσωπική χρήση"), answering: true });
@@ -368,7 +368,7 @@ describe("GET /api/sources", () => {
     for (const s of Object.values(byId) as Json[]) {
       expect(s).toMatchObject({ name: expect.any(String), owner: expect.any(String), terms: expect.any(String), request: expect.any(String), kind: expect.stringMatching(/^(live|daily|static)$/) });
     }
-    expect(body["counts"]).toMatchObject({ total: 9, testData: 1 });
+    expect(body["counts"]).toMatchObject({ total: 11, testData: 1 });
   });
 
   it("lists Walkable Athens only when routing says its enrichment is loaded", () => {

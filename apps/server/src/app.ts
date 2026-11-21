@@ -17,6 +17,7 @@ import { type Benefit, toRewards } from "./missions/rewards.ts";
 import type { RoutingPort } from "./routing/port.ts";
 import { SandboxError, type SandboxClient } from "./sandbox/client.ts";
 import { REPORT_CATEGORIES, type SandboxPoi, type SandboxReport } from "./sandbox/schemas.ts";
+import { streetIndex, placeDecision, decisionObstacles, type Placed } from "./sources/diavgeia.ts";
 import { type CitySources, gisPlaces, offlineCitySources, registerCityRoutes } from "./sources/index.ts";
 
 export interface AppDeps {
@@ -25,6 +26,8 @@ export interface AppDeps {
   /** Edge queries for the obstacle rules. */
   edges: EdgeLookup;
   graphLoaded: boolean;
+  /** Whether the pavement survey was applied to the graph, from loadGraph. */
+  enrichment?: { applied: boolean; edgesCovered: number; problem?: string };
   mapping?: Partial<MappingOptions>;
   pollMs?: number;
   corsOrigins?: string[];
@@ -75,7 +78,22 @@ export function createApp(deps: AppDeps) {
   const { client, routing } = deps;
   const city = deps.citySources ?? offlineCitySources();
   const mapping = { ...DEFAULT_MAPPING_OPTIONS, ...deps.mapping };
+  const board = new MissionBoard(routing.graph, deps.missions, now);
+  const index = streetIndex(routing.graph);
+  let decisions: Placed[] = [];
+  let cacheKey = "";
+  async function refreshDecisions(waitMs?: number) {
+    const feeds = await Promise.all(city.decisions.map(feed => feed.get(undefined, waitMs)));
+    const key = feeds.map(f => f.fetchedAt).join("|");
+    if (key !== cacheKey) {
+      decisions = [...new Map(feeds.flatMap(f => f.records).map(d => [d.ada, d])).values()].map(d => placeDecision(d,index));
+      cacheKey = key;
+    }
+    return feeds.map(({ stale, problem, fetchedAt }) => ({ stale, problem, fetchedAt }));
+  }
   const obstacles = new ObstacleService({
+    refreshDecisions: async () => { if (deps.citySources) await refreshDecisions(50); },
+    decisionObstacles: date => board.applyPavementAnswers(decisions.flatMap(d => decisionObstacles(d,date)),date),
     client,
     edges: deps.edges,
     mapping,
@@ -86,7 +104,7 @@ export function createApp(deps: AppDeps) {
   const destinations = new DestinationResolver(client, { useLlm: deps.useLlm ?? true });
 
   // Citizen missions change the graph the router reads, so they share it.
-  const board = new MissionBoard(routing.graph, deps.missions);
+
   type StreamEvent = { type: string };
   const missionListeners = new Set<(event: StreamEvent) => void>();
   const announce = (event: StreamEvent) => {
@@ -204,7 +222,14 @@ export function createApp(deps: AppDeps) {
         edges: routing.graph.edges.length,
         builtAt: routing.graph.meta.builtAt || null,
       },
-      routing: { engine: routing.engine },
+      routing: {
+        engine: routing.engine,
+        enrichment: {
+          loaded: deps.enrichment?.applied ?? false,
+          records: deps.enrichment?.edgesCovered ?? 0,
+          ...(deps.enrichment?.problem ? { problem: deps.enrichment.problem } : {}),
+        },
+      },
       obstacles: { count: snap.obstacles.length, stale: snap.stale, updatedAt: snap.updatedAt },
     });
   });
@@ -334,6 +359,7 @@ export function createApp(deps: AppDeps) {
       report = reportView(await client.upvoteReport(result.mission.reportRef));
       await obstacles.refreshAfterWrite();
     }
+    if (result.confirmed?.type === "pavement_check") obstacles.remap();
     announce({ type: "mission_answered", missionId: id, missionType: result.mission.type, position: result.mission.position, answers: result.mission.answers } as StreamEvent);
     if (result.confirmed) announce({ type: "map_updated", observation: result.confirmed } as StreamEvent);
     return c.json({ mission: result.mission, pointsEarned: result.pointsEarned, confirmed: result.confirmed, profile: result.profile, ...(report ? { report: report.report, obstacle: report.obstacle, sandbox: true } : {}) });
@@ -350,6 +376,11 @@ export function createApp(deps: AppDeps) {
     return c.json({ summary, missions: board.near([lng, lat], snap.obstacles, radius, limit) });
   });
 
+  app.get("/api/decisions", async c => {
+    const feeds = await refreshDecisions();
+    const placed = decisions.filter(d => d.edges.length).length;
+    return c.json({ total: decisions.length, placed, feeds, decisions: decisions.map(({edges,...d}) => ({...d, edgeIds: edges.map(e=>e.id)})) });
+  });
   app.get("/api/missions/observations", (c) => c.json({ observations: board.confirmedObservations() }));
 
   app.get("/api/missions/profile", (c) => {
