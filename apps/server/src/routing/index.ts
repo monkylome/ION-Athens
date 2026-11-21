@@ -1,18 +1,18 @@
 /**
- * THE ONE FILE TO CHANGE to plug in the real routing engine.
- *
- * `createRouting` is the only place that decides which implementation the
- * server uses. When `packages/core` exports its engine, replace the body with
- * an adapter that implements `RoutingPort` (`./port.ts`) on top of it, with
- * `engine: "core"`. Nothing else in the server imports the fallback.
+ * `createRouting` is the only place that decides which routing implementation
+ * the server uses: the engine in `@ion/core`. Set ION_ROUTING=fallback to use
+ * the plain stand-in instead, for example to rule the engine out while
+ * debugging.
  */
 import { existsSync, readFileSync } from "node:fs";
 import type { PedestrianGraph } from "@ion/core";
+import { CoreRouting } from "./core.ts";
 import { FallbackRouting } from "./fallback.ts";
 import { EMPTY_GRAPH, type RoutingPort } from "./port.ts";
 
 export function createRouting(graph: PedestrianGraph): RoutingPort {
-  return new FallbackRouting(graph);
+  if (process.env.ION_ROUTING === "fallback") return new FallbackRouting(graph);
+  return new CoreRouting(graph);
 }
 
 export interface LoadedGraph {

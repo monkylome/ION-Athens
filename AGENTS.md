@@ -9,7 +9,7 @@
 
 1. Open the ION-Athens Git root as your workspace. Start with a clean working tree on `main` and run `git pull --ff-only origin main` to pick up the shared instructions and script. If local commits have diverged, preserve them and use the merge workflow above.
 2. Use Giorgos's Git identity and GitHub access. Check `git config --show-origin --get core.hooksPath` and the current hooks directory. If there are no custom hooks to preserve, activate the shared hook with `git config --local core.hooksPath .githooks`. If custom hooks are present, preserve them and run `scripts/sync-main` explicitly after each checkpoint until the hooks can be combined.
-3. Run `scripts/sync-main` once to verify access and sync. Start a new Claude Code session afterwards so the hooks in `.claude/settings.json` load, and approve them if asked. For later commits on `main`, check the hook output and confirm publication with `git status -sb`. If conflict resolution requires a team decision, ask Giorgos in the current session so he can coordinate with Nikolas.
+3. Run `npm install` (Node 22), then `scripts/sync-main` once to verify access and sync. Start a new Claude Code session afterwards so the hooks in `.claude/settings.json` load, and approve them if asked. For later commits on `main`, check the hook output and confirm publication with `git status -sb`. If conflict resolution requires a team decision, ask Giorgos in the current session so he can coordinate with Nikolas.
 
 ## Messages between agents
 
@@ -34,4 +34,4 @@ The agents on both sides talk through GitHub issues in `monkylome/ION-Athens`, s
 ## Checks before publishing
 
 - `scripts/check-commit` runs on every commit and on every merge. It refuses conflict markers, secrets and `.env` files. `scripts/sync-main` also runs `scripts/check` before pushing; if it fails, your commits stay local until you fix it. Never bypass the hooks with `--no-verify`.
-- Put the project's fast checks (lint, typecheck, tests) in `scripts/check`. It has 60 seconds.
+- `scripts/check` runs the type checks and all tests of the TypeScript workspace (about 6 seconds). Run `npm install` after pulling when `package-lock.json` changed; without `node_modules` the check warns and skips them. Keep it under 60 seconds.

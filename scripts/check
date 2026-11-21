@@ -15,4 +15,12 @@ for f in scripts/* .githooks/*; do
     esac
 done
 
+# TypeScript workspace: types and tests, when dependencies are installed.
+if [[ -f package.json && -d node_modules ]]; then
+    npm run --silent typecheck || failed=1
+    npx vitest run --silent || failed=1
+elif [[ -f package.json ]]; then
+    echo "scripts/check: node_modules is missing, so types and tests were not checked. Run npm install." >&2
+fi
+
 exit "$failed"
