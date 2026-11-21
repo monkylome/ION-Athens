@@ -1,0 +1,20 @@
+/* Indoor trail recorder. Tokens only. */
+.trail__sim { display: block; padding: var(--space-1) var(--space-2); background: var(--accent); color: var(--on-accent); border: var(--border-accent); font-family: var(--font-display); font-weight: var(--weight-instruction); font-size: var(--t-secondary); }
+.trail__problem { padding: var(--space-2); border: var(--border); border-color: var(--alert); }
+.trail__honesty { padding-top: var(--space-2); border-top: var(--border); font-weight: var(--weight-secondary); }
+.trail__counter { text-align: left; }
+.trail__count { font-family: var(--font-display); font-weight: var(--weight-instruction); font-size: calc(var(--t-instruction) * 3); line-height: var(--t-lh-instruction); font-variant-numeric: tabular-nums; }
+.trail__segments { padding-left: 0; list-style: none; }
+.trail__segments li { padding: var(--space-1) 0; border-top: var(--border); font-family: var(--font-display); font-weight: var(--weight-secondary); font-size: var(--t-secondary); }
+.trail__sides { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-1); }
+.trail__sides button { justify-content: center; padding-inline: var(--space-1); }
+.trail__text { font-family: var(--font-display); font-weight: var(--weight-secondary); font-size: var(--t-secondary); line-height: 1.15; }
+.trail__stepper { display: grid; grid-template-columns: var(--target-min) 1fr var(--target-min); gap: var(--space-1); align-items: center; }
+.trail__stepper button { justify-content: center; padding: 0; }
+.trail__stepper p { text-align: center; font-family: var(--font-display); font-weight: var(--weight-secondary); font-size: var(--t-secondary); }
+/* The shared page styles outrank .btn--primary on buttons, so the one primary action is restated here. */
+.page button.btn--primary { background: var(--accent); color: var(--on-accent); border: var(--border-accent); font-weight: var(--weight-instruction); font-size: var(--t-secondary); }
+.page button.btn--primary:disabled { background: var(--bg); color: var(--map-label); border: var(--border); border-style: dashed; border-color: var(--map-label); }
+.page button.btn--tall { min-height: calc(var(--target-min) * 1.75); }
+/* Fieldsets inside this section are the panels; the section itself draws no second frame. */
+.page section.trail__plain { padding: 0; border: 0; }
