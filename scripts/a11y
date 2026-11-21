@@ -1,0 +1,51 @@
+#!/usr/bin/env node
+import runtime from "./browser/runtime.cjs";
+import fs from "node:fs";
+import game from "./browser/game.cjs";
+const {launch,webRequire,phone,stage,button,go,stageFlow}=runtime;
+const rows=[];
+const tags=["wcag2a","wcag2aa","wcag21a","wcag21aa","wcag22a","wcag22aa"];
+async function audit(p,state) {
+  await p.addScriptTag({path:webRequire.resolve("axe-core/axe.min.js")});
+  const issues=await p.evaluate(async tags=>{
+    const r=await axe.run(document,{runOnly:{type:"tag",values:tags}});
+    return r.violations.map(({id,impact,nodes})=>({id,impact,nodes:nodes.map(n=>({target:n.target,details:n.failureSummary}))}));
+  },tags);
+  const row={screen:new URL(p.url()).pathname,state,issues};
+  rows.push(row);
+  console.log(row.screen,state,...["critical","serious","moderate","minor"].map(i=>issues.filter(v=>v.impact===i).length),issues.map(v=>v.id).join(","));
+}
+async function main(){
+  const browser=await launch();
+  try {
+    console.log("Screen State Critical Serious Moderate Minor Rules");
+    const ctx=await browser.newContext({viewport:phone,reducedMotion:"reduce",permissions:["camera"]});
+    const p=await ctx.newPage(); p.setDefaultTimeout(12000);
+    for(const route of ["/","/about","/missions","/phone/devices","/phone/help","/missions/help","/play/scan"]){
+      await go(p,route); await p.locator("main").first().waitFor(); await audit(p,"initial");
+    }
+    await go(p,"/phone?voice=off");
+    await button(p,"Με φωνή").click(); await audit(p,"question");
+    await button(p,/Θέλω να πάω στο Δημαρχείο/).click(); await button(p,"Ξεκινήστε").waitFor(); await audit(p,"destination");
+    await button(p,"Ξεκινήστε").click(); await button(p,"Εμπόδιο εδώ").waitFor(); await audit(p,"walking");
+    await go(p,"/play/trail?sim=1"); await audit(p,"before"); await button(p,"Έναρξη").click();
+    await button(p,"Τέλος").waitFor(); await audit(p,"during"); await button(p,"Τέλος").click();
+    await button(p,"Ακούστε το").waitFor(); await audit(p,"after");
+    await go(p,"/play?demo=1&fake=23.706284,37.973388"); await p.locator(".pl-action").waitFor(); await audit(p,"map");
+    const menu=()=>button(p,"Μενού").click();
+    await menu(); await audit(p,"menu"); await button(p,/Το άλμπουμ μου/).click(); await audit(p,"album");
+    await button(p,"Πίσω").click(); await button(p,"Προνόμια").click(); await p.locator("#rewards-title").waitFor(); await audit(p,"rewards");
+    await button(p,"Πίσω").click(); await button(p,/Κοντά σας/).click(); await p.locator(".pl-mitem--reach").first().waitFor(); await audit(p,"near");
+    await p.locator(".pl-mitem--reach").first().click(); await p.locator(".pl-card__question").waitFor(); await audit(p,"mission");
+    await button(p,"Δείτε το με την κάμερα").click(); await button(p,"Χωρίς κάμερα").waitFor(); await audit(p,"camera");
+    await button(p,"Χωρίς κάμερα").click(); await p.locator(".pl-card__question").waitFor(); await audit(p,"camera fallback");
+    await game.gameFlow(p,(page,state)=>state==="ticket" ? audit(page,state) : Promise.resolve());
+    await ctx.close();
+    const large=await browser.newPage({viewport:stage,reducedMotion:"reduce"}); await stageFlow(large,audit);
+    if(rows.some(r=>r.issues.some(i=>["serious","critical"].includes(i.impact))))process.exitCode=1;
+  } finally {
+    if(process.env.ION_AXE_REPORT)fs.writeFileSync(process.env.ION_AXE_REPORT,JSON.stringify(rows,null,2));
+    await browser.close();
+  }
+}
+main().catch(e=>{console.error(e);process.exitCode=1;});

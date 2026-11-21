@@ -1,0 +1,47 @@
+#!/usr/bin/env node
+import fs from "node:fs/promises";
+import path from "node:path";
+import {fileURLToPath} from "node:url";
+import {execFileSync} from "node:child_process";
+import runtime from "./browser/runtime.cjs";
+import game from "./browser/game.cjs";
+const {launch,phone,stage,stageFlow}=runtime;
+const out=fileURLToPath(new URL("../data-local/backup/",import.meta.url));
+await fs.mkdir(out,{recursive:true});
+const work=await fs.mkdtemp(path.join(out,".record-"));
+const browser=await launch();
+try {
+  for(const [name,size,flow] of [["game",phone,game.gameFlow],["stage",stage,stageFlow]]){
+    const ctx=await browser.newContext({viewport:size,permissions:["camera"],recordVideo:{dir:work,size}});
+    const p=await ctx.newPage();
+    const badge=path.join(work,name+"-label.png");
+    let corner;
+    try {
+      await flow(p,async(page,state)=>{
+        const label=page.getByText("ΗΧΟΓΡΑΦΗΜΕΝΟ",{exact:true});
+        await label.waitFor();
+        if (!corner) {
+          corner=await label.boundingBox();
+          await label.screenshot({path:badge});
+        }
+        console.log(name,state);
+        await page.waitForTimeout(state==="ticket" || state==="closing"?2200:950);
+      },true);
+    } finally {await ctx.close();}
+    const source=await p.video().path();
+    const target=path.join(work,name+".webm");
+    // Chromium records even-sized frames. Restore the phone's last row and omit
+    // blank navigation frames. Composite the page's own badge during transitions too.
+    const filter = [
+      "[0:v]format=yuv444p,pad="+size.width+":"+size.height+",",
+      "signalstats,metadata=mode=select:key=lavfi.signalstats.YAVG:value=232:function=less,",
+      "setpts=N/(25*TB)[screen];",
+      "[screen][1:v]overlay=x="+Math.round(corner.x)+":y="+Math.round(corner.y)+":format=yuv444,format=yuv420p",
+    ].join("");
+    execFileSync("ffmpeg",["-loglevel","error","-i",source,"-i",badge,"-filter_complex",filter,
+      "-c:v","libvpx-vp9","-deadline","realtime","-cpu-used","8","-row-mt","1","-crf","30","-b:v","0",target]);
+    const seconds=execFileSync("ffprobe",["-v","error","-show_entries","format=duration","-of","csv=p=0",target],{encoding:"utf8"}).trim();
+    console.log(path.join(out,name+".webm"), Number(seconds).toFixed(1)+" s");
+  }
+  for(const name of ["game.webm","stage.webm"]) await fs.rename(path.join(work,name),path.join(out,name));
+} finally {await browser.close();await fs.rm(work,{recursive:true,force:true});}

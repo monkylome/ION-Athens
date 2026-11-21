@@ -366,3 +366,13 @@
   .pl-cam__panel .pl-answer { min-height: 4rem; font-size: 2rem; }
   .pl-card__question { font-size: clamp(2.25rem, 11vw, 3.5rem); }
 }
+
+@media (max-width: 300px) {
+  .pl-sheet__dialog, .pl-pane, .pl-card, .pl-cam__panel { min-width: 0; overflow-wrap: anywhere; }
+  .pl-pane, .pl-card, .pl-cam__panel { grid-template-columns: minmax(0, 1fr); }
+  .pl-pad, .pl-cam__panel .pl-pad { grid-template-columns: repeat(4,minmax(0,1fr)); }
+  .pl-pad .pl-pad__key { width: 100%; min-width: 0; }
+  .pl-cam__foot, .pl-cam__bar { flex-wrap: wrap; }
+  .pl-answers { grid-template-columns: minmax(0,1fr); }
+  .pl-answer--unsure { grid-column: 1; }
+}

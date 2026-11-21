@@ -194,6 +194,7 @@ export function Person() {
   const busy = phase === "asking" || phase === "waiting" || phase === "connecting" || phase === "live";
   return (
     <main className="page assist" data-surface="phone" data-phase={phase}>
+      <h1 className="visually-hidden">Ζωντανή βοήθεια από δημότη</h1>
       {!busy && <Link className="btn btn--quiet page__back" to="/phone">Πίσω</Link>}
       {secure && phase === "idle" && (
         <section aria-labelledby="secure-h">

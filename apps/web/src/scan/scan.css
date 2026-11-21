@@ -1,0 +1,124 @@
+/* The scan screen. Tokens only: black, white, one yellow, hard edges. */
+.scan {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
+  min-height: 100dvh;
+  height: 100dvh;
+  background: var(--bg);
+  color: var(--fg);
+}
+.scan button, .scan .btn { cursor: pointer; }
+.scan__top { border-bottom: var(--border); background: var(--bg); }
+.scan__notice {
+  padding: var(--space-1) var(--space-2);
+  font-family: var(--font-display);
+  font-weight: var(--weight-secondary);
+  font-size: var(--t-body);
+  line-height: 1.15;
+}
+/* Switched on, the line turns into a warning block: shape and weight as well as colour. */
+.scan__notice[data-keep="true"] { background: var(--accent); color: var(--on-accent); font-weight: var(--weight-instruction); }
+.scan__modes { display: grid; grid-template-columns: 1fr 1fr; border-top: var(--border); }
+.scan__modes button {
+  min-height: var(--target-min);
+  padding: var(--space-1);
+  background: var(--bg);
+  color: var(--fg);
+  border: 0;
+  border-radius: var(--radius);
+  font-family: var(--font-display);
+  font-weight: var(--weight-secondary);
+  font-size: var(--t-body);
+  line-height: 1.1;
+}
+.scan__modes button + button { border-left: var(--border); }
+.scan__modes button[aria-pressed="true"] { background: var(--fg); color: var(--bg); font-weight: var(--weight-instruction); text-decoration: underline; text-decoration-thickness: 4px; text-underline-offset: 6px; }
+
+.scan__view { position: relative; min-height: 0; overflow: hidden; background: var(--bg); }
+.scan__view video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.scan__plate {
+  position: absolute; left: var(--space-2); right: var(--space-2); top: var(--space-2);
+  display: grid; gap: var(--space-2);
+  padding: var(--space-2);
+  background: var(--bg);
+  border: var(--border);
+  font-family: var(--font-display);
+  font-weight: var(--weight-secondary);
+  font-size: var(--t-body);
+}
+.scan__tiles {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  display: grid; gap: var(--space-1);
+  max-height: 100%; overflow-y: auto;
+  margin: 0; padding: var(--space-1); list-style: none;
+}
+.scan__tile {
+  display: grid; gap: var(--space-1);
+  padding: var(--space-2);
+  background: var(--bg);
+  border: var(--border);
+}
+.scan__tile[data-discovery="true"] { border: var(--border-accent); }
+.scan__tile[data-state="wrong"], .scan__tile[data-state="error"] { border-style: dashed; }
+.scan__tile-head { display: grid; grid-template-columns: auto 1fr; gap: var(--space-2); align-items: start; }
+.scan__glyph { width: 3rem; height: 3rem; color: var(--accent); flex: none; }
+.scan__found {
+  display: inline-block; margin-bottom: var(--space-1); padding: 2px var(--space-1);
+  background: var(--accent); color: var(--on-accent);
+  font-family: var(--font-display); font-weight: var(--weight-instruction); font-size: var(--t-body); line-height: 1.1;
+}
+.scan__label { font-family: var(--font-display); font-weight: var(--weight-instruction); font-size: var(--t-secondary); line-height: 1.05; }
+.scan__evidence, .scan__question { font-size: var(--t-body); line-height: var(--t-lh-body); }
+.scan__question { color: var(--map-label); }
+.scan__tile-actions { display: grid; grid-template-columns: 3fr 2fr; gap: var(--space-1); }
+.scan__result { font-family: var(--font-display); font-weight: var(--weight-secondary); font-size: var(--t-body); line-height: 1.2; }
+.scan__speech {
+  position: absolute; left: var(--space-1); right: var(--space-1); bottom: var(--space-1);
+  max-height: 80%; overflow-y: auto;
+  padding: var(--space-2); background: var(--bg); border: var(--border-accent);
+  font-family: var(--font-display); font-weight: var(--weight-instruction); font-size: var(--t-secondary); line-height: 1.1;
+}
+
+.scan__controls { display: grid; gap: var(--space-1); padding: var(--space-1) var(--space-2); border-top: var(--border); background: var(--bg); }
+.scan__plain { font-family: var(--font-display); font-weight: var(--weight-secondary); font-size: var(--t-body); display: grid; gap: var(--space-1); }
+.scan__btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 100%; min-height: var(--target-min);
+  padding: var(--space-1) var(--space-2);
+  background: var(--bg); color: var(--fg);
+  border: var(--border); border-radius: var(--radius);
+  font-family: var(--font-display); font-weight: var(--weight-secondary); font-size: var(--t-secondary); line-height: 1.05;
+}
+.scan__btn--primary { background: var(--accent); color: var(--on-accent); border: var(--border-accent); font-weight: var(--weight-instruction); }
+.scan__btn--primary:focus-visible { outline-color: var(--focus-on-accent); }
+.scan__controls > .scan__btn--primary { min-height: calc(var(--target-min) * 1.5); font-size: var(--t-instruction); }
+.scan__btn--huge { min-height: 34dvh !important; font-size: 3.25rem !important; text-wrap: balance; }
+.scan__btn:disabled { background: var(--bg); color: var(--map-label); border: var(--border); border-style: dashed; border-color: var(--map-label); cursor: not-allowed; }
+.scan__switch {
+  display: grid; grid-template-columns: auto 1fr; gap: var(--space-2); align-items: center; text-align: left;
+  width: 100%; min-height: var(--target-min); padding: var(--space-1) var(--space-2);
+  background: var(--bg); color: var(--fg); border: var(--border); border-radius: var(--radius);
+  font-family: var(--font-display); font-weight: var(--weight-secondary); font-size: var(--t-body); line-height: 1.1;
+}
+.scan__switch-box {
+  min-width: 4.5rem; padding: 2px var(--space-1); text-align: center;
+  border: var(--border); font-weight: var(--weight-instruction);
+}
+.scan__switch[aria-checked="true"] .scan__switch-box { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.scan__switch[aria-checked="true"] { border-color: var(--accent); }
+.scan__switch:disabled { color: var(--map-label); border-style: dashed; border-color: var(--map-label); cursor: not-allowed; }
+.scan__switch--small { font-size: var(--t-body); }
+.scan__count { font-family: var(--font-display); font-weight: var(--weight-secondary); font-size: var(--t-body); text-align: center; }
+.scan__line { min-height: 0; padding: 0 var(--space-2) var(--space-1); font-size: var(--t-body); line-height: var(--t-lh-body); color: var(--map-label); }
+.scan__line:empty { display: none; }
+.scan .btn { display: flex; align-items: center; min-height: var(--target-min); padding: var(--space-1) var(--space-2); border: var(--border); font-family: var(--font-display); font-weight: var(--weight-secondary); font-size: var(--t-body); line-height: 1.1; text-decoration: none; }
+.scan .btn--primary { background: var(--accent); color: var(--on-accent); border: var(--border-accent); }
+
+.scan__tile[data-compact="true"] { padding: var(--space-1) var(--space-2); }
+.scan__tile[data-compact="true"] .scan__glyph { width: 2rem; height: 2rem; }
+.scan__tile[data-compact="true"] .scan__label { font-size: var(--t-body); }
+.scan__tiles { max-height: 70%; }
+.scan__line { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.scan__controls { padding-top: var(--space-1); padding-bottom: var(--space-1); }
+.scan__controls > .scan__btn--primary { min-height: calc(var(--target-min) * 1.25); }
+.scan__speech { font-size: var(--t-body); font-weight: var(--weight-instruction); max-height: 85%; }

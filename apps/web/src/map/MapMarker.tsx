@@ -9,6 +9,10 @@ export function MapMarker({ map, at, anchor = "center", className, children }: {
   useEffect(() => {
     const element = document.createElement("div");
     const marker = new Marker({ element, anchor }).setLngLat(at).addTo(map);
+    // The wrapper groups the React label or button. MapLibre supplies a generic image name
+    // that otherwise replaces the actual street, destination or obstacle text.
+    element.removeAttribute("role");
+    element.removeAttribute("aria-label");
     setHost({ marker, element });
     return () => {
       marker.remove();

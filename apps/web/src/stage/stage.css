@@ -294,12 +294,10 @@
 .caption__signal { margin-left: auto; }
 
 /* ---- the moment: a hard cut to near black. Only the caption remains. ---- */
-.stage[data-moment="dark"] .stage-canvas,
-.stage[data-moment="dark"] .credit,
-.stage[data-moment="dark"] .metrics { opacity: 0.1; }
-/* What says "this is not live" stays readable in the dark. */
-.stage[data-moment="dark"] .stage__top,
-.stage[data-moment="dark"] .stage__flags { opacity: 0.4; }
+.stage[data-moment="dark"] .maplibregl-canvas { opacity: 0.1; }
+/* The blackout removes map labels. The caption and simulation flags stay at full contrast. */
+.stage[data-moment="dark"] .maplibregl-marker,
+.stage[data-moment="dark"] .metrics { visibility: hidden; }
 .stage[data-moment="dark"] .toasts,
 .stage[data-moment="dark"] .stage__foot { visibility: hidden; }
 

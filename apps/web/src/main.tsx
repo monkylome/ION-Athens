@@ -1,5 +1,5 @@
 import { createRoot } from "react-dom/client";
-import { BrowserRouter, Link, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Link, Route, Routes, useLocation } from "react-router-dom";
 import "@fontsource-variable/sofia-sans-condensed";
 import "@fontsource-variable/sofia-sans";
 import "./styles/app.css";
@@ -12,6 +12,13 @@ import { Person } from "./assist/Person";
 import { Helper } from "./assist/Helper";
 import { Trail } from "./trail/Trail";
 import { About } from "./about/About";
+import { Scan } from "./scan/Scan";
+
+function BackupLabel() {
+  const { pathname, search } = useLocation();
+  if (!(pathname === "/stage" || pathname === "/play") || new URLSearchParams(search).get("backup") !== "1") return null;
+  return <span className="backup-label" lang="el">ΗΧΟΓΡΑΦΗΜΕΝΟ</span>;
+}
 
 function Home() {
   return (
@@ -34,6 +41,7 @@ function Home() {
 
 createRoot(document.getElementById("root")!).render(
   <BrowserRouter>
+    <BackupLabel />
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/stage" element={<Stage />} />
@@ -44,6 +52,7 @@ createRoot(document.getElementById("root")!).render(
       <Route path="/phone/help" element={<Person />} />
       <Route path="/missions/help" element={<Helper />} />
       <Route path="/play/trail" element={<Trail />} />
+      <Route path="/play/scan" element={<Scan />} />
       <Route path="/about" element={<About />} />
     </Routes>
   </BrowserRouter>,

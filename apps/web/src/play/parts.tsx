@@ -337,7 +337,7 @@ export function NearTiles({ items, answered, heading, accuracyM, onOpen }: {
         const far = distanceWords(n.distance, accuracyM);
         return (
           <li key={n.mission.id}>
-            <button type="button" className={`pl-mitem${n.reachable && !mine ? " pl-mitem--reach" : ""}`} onClick={() => onOpen(n)}
+            <button type="button" data-mission-id={n.mission.id} className={`pl-mitem${n.reachable && !mine ? " pl-mitem--reach" : ""}`} onClick={() => onOpen(n)}
               aria-label={`${missionLine(n, heading, accuracyM)} ${mine ? "Έχετε ήδη απαντήσει." : n.reachable ? "" : "Πλησιάστε για να απαντήσετε."}`.trim()}>
               <span className="pl-mitem__sign">{mine ? <Check weight="bold" aria-hidden="true" /> : <Glyph mission={n.mission} />}</span>
               <span className="pl-mitem__text">

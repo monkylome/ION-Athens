@@ -253,7 +253,7 @@ export function Stage() {
   }, [state.loop, query]);
 
   if (state.closing) return <main className="pitch-frame">
-    <div className="pitch-seats" aria-label="Δύο καθίσματα θεάτρου"><i/><i/></div>
+    <div className="pitch-seats" role="img" aria-label="Δύο καθίσματα θεάτρου"><i/><i/></div>
     <p>Το θέατρο ήταν πάντα εκεί. Ο δρόμος ως την πόρτα του δεν ήταν γραμμένος πουθενά.</p>
     <strong>Απόψε τον έγραψε η πόλη.</strong>
   </main>;
