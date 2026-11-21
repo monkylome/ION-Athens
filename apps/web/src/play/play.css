@@ -1,0 +1,368 @@
+/* /play: a game on a map. The map is the screen; everything else floats over it as hard-edged plates.
+   Tokens only; sizes in rem; nothing below 1.5rem. Classes carry a prefix because every screen's CSS is loaded together.
+   Yellow keeps its meaning: the object you can act on now, the one action, the way to it, a change to the map. */
+
+.play { position: fixed; inset: 0; height: 100dvh; overflow: hidden; background: var(--bg); color: var(--fg); }
+/* A game surface: a touch is a move, never a text selection (which on Android opens the browser's search sheet). */
+.play, .pl-sheet { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; touch-action: manipulation; }
+.play p, .pl-sheet p { margin: 0; }
+.play ul, .play ol, .pl-sheet ul, .pl-sheet ol { margin: 0; padding: 0; list-style: none; }
+
+/* ---- the board ---- */
+.pl-board, .pl-board__map { position: absolute; inset: 0; }
+.pl-board__map { background: var(--bg); }
+
+/* Objects standing in the city: a head on a stem, a foot on the ground. Compact scale (--hud-*): the map is the content. */
+.ob-host { z-index: 1; }
+.ob-host--near { z-index: 2; }
+.ob-host--player { z-index: 3; }
+.ob-host--reach, .ob-host--flash { z-index: 4; }
+.ob {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  margin: 0;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: var(--radius);
+  color: var(--fg);
+  font-family: var(--font-display);
+  font-weight: var(--weight-instruction);
+  line-height: 1;
+  cursor: pointer;
+}
+/* Every object answers a touch of at least --hud-target, whatever the size of its mark. */
+.ob::before { content: ""; position: absolute; left: 50%; top: 50%; width: 100%; height: 100%; min-width: var(--hud-target); min-height: var(--hud-target); transform: translate(-50%, -50%); }
+.ob__head { position: relative; display: flex; align-items: center; justify-content: center; gap: 0.2rem; background: var(--bg); color: var(--fg); border: var(--hud-border) solid var(--fg); }
+.ob__glyph { flex: none; width: 1rem; height: 1rem; }
+.ob__stem { width: var(--hud-border); height: 0.75rem; background: var(--fg); }
+.ob__foot { width: 0.6rem; height: 0.3rem; background: var(--fg); }
+/* Far: small and hollow, only the sign. */
+.ob--far .ob__head { width: var(--hud-marker-far); height: var(--hud-marker-far); }
+/* Near: the head grows and shows what it is worth. */
+.ob--near .ob__head { min-width: 4rem; height: var(--hud-marker); padding: 0 0.4rem; font-size: var(--hud-text-strong); }
+.ob--near .ob__glyph { width: 1.4rem; height: 1.4rem; }
+.ob--near .ob__stem { height: 1.25rem; }
+/* In reach: solid yellow, larger, on a longer stem, with a hard ring that steps outward. */
+.ob--reach .ob__head { min-width: 5rem; height: var(--hud-marker-reach); padding: 0 0.4rem; background: var(--accent); color: var(--on-accent); border-color: var(--bg); font-size: 1.75rem; }
+.ob--reach .ob__glyph { width: 1.75rem; height: 1.75rem; }
+.ob--reach .ob__stem { height: 1.75rem; width: 5px; background: var(--accent); }
+.ob--reach .ob__foot { width: 1rem; height: 0.4rem; background: var(--accent); }
+.ob--reach .ob__head::after { content: ""; position: absolute; inset: -0.45rem; border: var(--hud-border) solid var(--accent); animation: ob-ring 1.5s steps(3, end) infinite; }
+@keyframes ob-ring {
+  from { transform: scale(1); }
+  to { transform: scale(1.35); }
+}
+.ob--done .ob__head { width: 2rem; height: 2rem; background: var(--fg); color: var(--bg); border-color: var(--bg); }
+.ob__count { font-size: var(--hud-text); }
+/* The object the bottom action points at: a second frame. */
+.ob--aim:not(.ob--reach) .ob__head { outline: var(--hud-border) solid var(--accent); outline-offset: 2px; }
+/* A place is a landmark, the biggest object: its name, how full its card is, one cell per fact. Never wider than --hud-landmark-max. */
+.ob--place { max-width: var(--hud-landmark-max); }
+.ob__name { max-width: var(--hud-landmark-max); margin-bottom: 2px; padding: 0 0.3rem; background: var(--fg); color: var(--bg); font-size: var(--hud-text); line-height: 1.15; white-space: nowrap; overflow: hidden; }
+.ob--place.ob--near .ob__head, .ob--place.ob--reach .ob__head { min-width: 6rem; height: var(--hud-marker-reach); font-size: 2rem; }
+.ob--place.ob--near .ob__glyph, .ob--place.ob--reach .ob__glyph { width: 1.75rem; height: 1.75rem; }
+.ob--place.ob--near .ob__stem { height: 2rem; width: 5px; }
+.ob--place.ob--reach .ob__stem { height: 2.5rem; }
+.ob--place.ob--far .ob__head { width: auto; height: var(--hud-marker-far); padding: 0 0.25rem; font-size: var(--hud-text); }
+.ob__cells { display: flex; gap: 2px; margin-top: 2px; padding: 2px; background: var(--bg); }
+.ob__cell { width: 0.6rem; height: 0.6rem; background: var(--bg); border: 2px solid var(--fg); }
+.ob__cell--full { background: var(--fg); }
+.pl-flash { display: grid; place-items: center; width: var(--hud-marker); height: var(--hud-marker); background: var(--fg); color: var(--bg); border: var(--hud-border) solid var(--bg); transform: rotate(-5deg); }
+.pl-flash .ob__glyph { width: 1.5rem; height: 1.5rem; }
+.pl-flash--confirmed { background: var(--accent); color: var(--on-accent); }
+
+/* The player: a hard arrowhead, white in a yellow frame, pointing where they face. The board turns under it. */
+.pl-player { position: relative; display: grid; place-items: center; width: 3.5rem; height: 3.5rem; }
+.pl-player__mark, .pl-player__ring, .pl-player__core { display: grid; place-items: center; clip-path: polygon(50% 0, 100% 100%, 50% 76%, 0 100%); }
+.pl-player__mark { position: relative; width: 3.5rem; height: 3.5rem; background: var(--bg); }
+.pl-player__ring { width: 2.9rem; height: 2.9rem; margin-top: 0.2rem; background: var(--accent); }
+.pl-player__core { width: 1.7rem; height: 1.7rem; margin-top: 0.4rem; background: var(--fg); }
+/* No heading yet: a square, which claims no direction. */
+.pl-player--still .pl-player__mark, .pl-player--still .pl-player__ring, .pl-player--still .pl-player__core { clip-path: none; margin-top: 0; }
+.pl-player--still .pl-player__mark { width: 2.75rem; height: 2.75rem; }
+.pl-player--still .pl-player__ring { width: 2.25rem; height: 2.25rem; }
+.pl-player--still .pl-player__core { width: 1.25rem; height: 1.25rem; }
+.pl-player__cone {
+  position: absolute;
+  bottom: 60%;
+  left: 50%;
+  width: 7rem;
+  height: 5.5rem;
+  margin-left: -3.5rem;
+  background: repeating-linear-gradient(to bottom, var(--fg) 0 3px, transparent 3px 10px);
+  clip-path: polygon(50% 100%, 0 0, 100% 0);
+}
+/* Street names: plates in the system's type, quieter than any object. */
+.ob-host--street { z-index: 0; pointer-events: none; }
+.pl-street { display: block; padding: 0 0.3rem; background: var(--bg); color: var(--map-label); font-family: var(--font-display); font-weight: var(--weight-secondary); font-size: var(--hud-text); line-height: 1.15; white-space: nowrap; }
+
+/* ---- the HUD: four fixed things over the map. Progress to the next reward, the menu, the action, the demo tag. ---- */
+.play__top, .play__bottom { position: absolute; left: 0; right: 0; z-index: 6; display: grid; gap: var(--space-1); pointer-events: none; }
+.play__top { top: 0; padding: max(var(--space-1), env(safe-area-inset-top)) max(var(--space-1), env(safe-area-inset-right)) 0 max(var(--space-1), env(safe-area-inset-left)); }
+.play__bottom { bottom: 0; padding: 0 max(var(--space-1), env(safe-area-inset-right)) max(var(--space-1), env(safe-area-inset-bottom)) max(var(--space-1), env(safe-area-inset-left)); }
+.play__top button, .play__bottom button, .pl-callout { pointer-events: auto; }
+
+.pl-hud { display: flex; align-items: start; justify-content: space-between; gap: var(--space-1); }
+.pl-progress {
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: center;
+  gap: 2px 0.4rem;
+  min-height: var(--hud-target);
+  padding: 4px 0.5rem;
+  background: var(--bg);
+  border: var(--hud-border) solid var(--fg);
+  font-family: var(--font-display);
+  font-weight: var(--weight-instruction);
+  font-size: var(--hud-text-strong);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.pl-progress__icon { width: 1.4rem; height: 1.4rem; }
+/* The thin bar is the path to the reward: yellow for the part walked. */
+.pl-progress__bar { grid-column: 1 / -1; display: block; height: 6px; min-width: 5.5rem; background: var(--map-road); }
+.pl-progress__bar span { display: block; height: 100%; background: var(--accent); transition: width var(--dur-draw) var(--ease-hard); }
+.pl-hud__menu { display: grid; place-items: center; width: var(--hud-target); height: var(--hud-target); margin: 0; padding: 0; background: var(--bg); color: var(--fg); border: var(--hud-border) solid var(--fg); border-radius: var(--radius); cursor: pointer; pointer-events: auto; }
+.pl-hud__menu svg { width: 1.75rem; height: 1.75rem; }
+
+.play__notes { display: grid; justify-items: start; gap: 4px; }
+.pl-plate { max-width: 100%; padding: 2px 0.4rem; background: var(--bg); color: var(--fg); border: var(--hud-border) solid var(--fg); font-family: var(--font-display); font-weight: var(--weight-secondary); font-size: var(--hud-text); line-height: 1.15; }
+.pl-plate--route { border-color: var(--accent); }
+.pl-tag { justify-self: start; padding: 0 0.3rem; background: var(--fg); color: var(--bg); font-family: var(--font-display); font-weight: var(--weight-instruction); font-size: var(--hud-text); line-height: 1.2; letter-spacing: 0.015em; }
+
+/* From afar a tap gives a direction, never a dead end. */
+.pl-callout { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 4px var(--space-1); padding: 6px; background: var(--bg); border: var(--hud-border) solid var(--accent); font-family: var(--font-display); font-size: var(--hud-text); line-height: 1.1; }
+.pl-callout__glyph { width: 1.75rem; height: 1.75rem; }
+.pl-callout__text { display: grid; font-weight: var(--weight-secondary); }
+.pl-callout__where { font-weight: var(--weight-instruction); font-size: var(--hud-text-strong); line-height: 1; overflow-wrap: anywhere; }
+.pl-callout__close { display: grid; place-items: center; width: var(--hud-target); height: var(--hud-target); margin: 0; padding: 0; background: var(--bg); color: var(--fg); border: var(--hud-border) solid var(--fg); border-radius: var(--radius); cursor: pointer; }
+.pl-callout__close svg { width: 1.5rem; height: 1.5rem; }
+.pl-callout__jump { grid-column: 1 / -1; min-height: var(--hud-target); font-size: var(--hud-text); border-width: var(--hud-border); }
+
+/* The one action: a verb and at most one short line under it. */
+.pl-action { min-height: calc(var(--hud-target) + var(--space-2)); gap: 0.75rem; padding: 6px 0.75rem; border-width: var(--hud-border); pointer-events: auto; }
+.pl-action__glyph { flex: none; width: 2.25rem; height: 2.25rem; transition: transform var(--dur-snap) linear; }
+.pl-action__text { display: grid; gap: 2px; min-width: 0; }
+.pl-action__verb { font-weight: var(--weight-instruction); font-size: 1.75rem; line-height: 1; }
+.pl-action__sub { font-weight: var(--weight-secondary); font-size: var(--hud-text); line-height: 1.1; }
+.pl-action--idle { display: flex; align-items: center; background: var(--bg); border: var(--hud-border) solid var(--fg); font-family: var(--font-display); font-weight: var(--weight-instruction); font-size: var(--hud-text); line-height: 1.1; }
+
+.pl-pad { display: grid; grid-template-columns: repeat(4, var(--target-min)); gap: var(--space-1); }
+.pl-pad__key { display: grid; place-items: center; width: var(--target-min); height: var(--target-min); margin: 0; padding: 0; background: var(--bg); color: var(--fg); border: var(--border); border-radius: var(--radius); cursor: pointer; }
+.pl-pad__key svg { width: 2.25rem; height: 2.25rem; }
+.pl-pad__key:active { background: var(--fg); color: var(--bg); }
+.pl-menu { display: grid; gap: var(--space-1); }
+.pl-menu__count { margin-left: auto; min-width: 2.25rem; padding: 0 0.3rem; background: var(--fg); color: var(--bg); text-align: center; font-weight: var(--weight-instruction); font-variant-numeric: tabular-nums; }
+.pl-pane__head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-1); }
+.pl-standing { display: grid; gap: var(--space-1); font-family: var(--font-display); font-weight: var(--weight-secondary); line-height: 1.15; }
+.pl-standing__level { font-weight: var(--weight-instruction); font-size: var(--t-secondary); line-height: 1; }
+.pl-strip { height: 1.25rem; background: var(--bg); border: var(--border); }
+.pl-strip__done {
+  height: 100%;
+  background-color: var(--accent);
+  background-image: radial-gradient(circle, var(--on-accent) 0 0.16rem, transparent 0.16rem);
+  background-size: 0.8rem 100%;
+  background-position: left center;
+  transition: width var(--dur-draw) var(--ease-hard);
+}
+
+/* The capture: the object flies into the menu, where the album is. */
+.pl-fly { position: absolute; z-index: 40; display: grid; place-items: center; width: 5rem; height: 5rem; margin: -2.5rem 0 0 -2.5rem; background: var(--accent); color: var(--on-accent); border: 4px solid var(--bg); pointer-events: none; }
+.pl-fly svg { width: 3rem; height: 3rem; }
+
+/* ---- sheets: the encounter, the album, the ticket. Full screen, black. ---- */
+.pl-sheet { position: fixed; inset: 0; z-index: 50; background: var(--bg); color: var(--fg); font-family: var(--font-body); font-weight: var(--weight-body); font-size: var(--t-body); line-height: var(--t-lh-body); }
+.pl-sheet__modal, .pl-sheet__dialog { height: 100%; }
+.pl-sheet__dialog { overflow: hidden auto; outline: none; padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
+.pl-pane { display: grid; align-content: start; gap: var(--space-2); max-width: 44rem; padding: var(--space-2); }
+.pl-pane h1 { font-size: 3rem; }
+.pl-pane h2 { font-size: var(--t-secondary); }
+.pl-pane h1:focus, .pl-pane h2:focus { outline: none; }
+.pl-pane__close { width: auto; justify-self: start; }
+.pl-pane__lead { font-family: var(--font-display); font-weight: var(--weight-secondary); line-height: 1.15; }
+.pl-pane__caption { padding-left: var(--space-2); border-left: var(--space-1) solid var(--fg); }
+.pl-pane a { color: var(--fg); }
+.pl-note { color: var(--map-label); font-size: var(--t-body); line-height: 1.2; }
+
+/* Tiles of the tray: the sign, the question, the way. */
+.pl-mlist, .pl-rewards { display: grid; gap: var(--space-1); }
+.pl-mitem {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-1);
+  width: 100%;
+  min-height: var(--target-min);
+  margin: 0;
+  padding: var(--space-1);
+  background: var(--bg);
+  color: var(--fg);
+  border: var(--border);
+  border-radius: var(--radius);
+  font-family: var(--font-display);
+  font-size: var(--t-body);
+  font-weight: var(--weight-secondary);
+  line-height: 1.1;
+  text-align: left;
+  cursor: pointer;
+}
+.pl-mitem__sign { display: grid; place-items: center; width: 3rem; height: 3rem; border: var(--border); }
+.pl-mitem__sign svg, .pl-mitem__state svg { width: 1.75rem; height: 1.75rem; }
+.pl-mitem__text { display: grid; gap: 2px; min-width: 0; }
+.pl-mitem__question { font-weight: var(--weight-instruction); line-height: 1.05; }
+.pl-mitem__state { display: grid; place-items: center; min-width: 3rem; font-weight: var(--weight-instruction); font-size: var(--t-secondary); }
+.pl-mitem--reach { border: var(--border-accent); }
+.pl-mitem--reach .pl-mitem__sign { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+
+/* The album: a grid of signs with counts. An empty slot is a broken outline. */
+.pl-complete { display: grid; gap: var(--space-1); font-family: var(--font-display); }
+.pl-complete__figure { font-weight: var(--weight-instruction); font-size: 5rem; line-height: 0.95; font-variant-numeric: tabular-nums; }
+.pl-complete__name { font-weight: var(--weight-secondary); line-height: 1.1; }
+.pl-album { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-1); }
+.pl-tile { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 0 var(--space-1); min-height: 7rem; padding: var(--space-1); border: var(--border); font-family: var(--font-display); line-height: 1.05; }
+.pl-tile__glyph { width: 3rem; height: 3rem; }
+.pl-tile__count { justify-self: end; font-weight: var(--weight-instruction); font-size: 3.5rem; line-height: 1; font-variant-numeric: tabular-nums; }
+.pl-tile__label { grid-column: 1 / -1; font-weight: var(--weight-instruction); overflow-wrap: anywhere; }
+.pl-tile--empty { border-style: dashed; border-color: var(--map-label); color: var(--map-label); }
+
+.pl-reward { display: grid; gap: var(--space-1); justify-items: start; padding: var(--space-2); border: var(--border); font-family: var(--font-display); line-height: 1.1; }
+.pl-reward .pl-strip { justify-self: stretch; }
+.pl-reward__state { display: flex; align-items: center; gap: var(--space-1); font-weight: var(--weight-secondary); }
+.pl-reward--unlocked .pl-reward__state { padding: 2px var(--space-1); background: var(--fg); color: var(--bg); font-weight: var(--weight-instruction); }
+.pl-reward:not(.pl-reward--unlocked) { border-style: dashed; }
+.pl-reward__title { font-weight: var(--weight-instruction); font-size: var(--t-secondary); line-height: 1.05; }
+.pl-reward__partner { font-weight: var(--weight-secondary); }
+.pl-demo { padding: 2px var(--space-1); background: var(--fg); color: var(--bg); font-family: var(--font-display); font-weight: var(--weight-instruction); line-height: 1.15; justify-self: start; }
+
+/* ---- the encounter as a card ---- */
+.pl-card { display: grid; grid-template-columns: minmax(0, 1fr); align-content: start; gap: var(--space-2); max-width: 44rem; min-height: 100%; padding: var(--space-2); }
+.pl-card__top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-1); }
+.pl-card__back { width: auto; }
+.pl-card__where { display: flex; align-items: center; gap: var(--space-1); font-family: var(--font-display); font-weight: var(--weight-secondary); line-height: 1.1; }
+.pl-card__question { font-size: clamp(2.5rem, 12vw, 4.5rem); line-height: 1; }
+.pl-card__meta { display: grid; gap: var(--space-1); justify-items: start; font-family: var(--font-display); font-weight: var(--weight-secondary); line-height: 1.15; }
+.pl-card__points { display: flex; align-items: center; gap: var(--space-1); padding: 2px var(--space-1); border: var(--border); font-weight: var(--weight-instruction); }
+.pl-card__far, .pl-card__note { padding-left: var(--space-2); border-left: var(--space-1) solid var(--fg); font-family: var(--font-display); font-weight: var(--weight-secondary); line-height: 1.15; }
+
+/* The three answers as game buttons. None is the "right" one, so none is yellow. */
+.pl-answers { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-1); min-width: 0; }
+.pl-answer { justify-content: center; min-width: 0; min-height: 6rem; padding: var(--space-1); gap: var(--space-1); font-weight: var(--weight-instruction); font-size: clamp(2rem, 9vw, 2.75rem); }
+.pl-answer--unsure { grid-column: 1 / -1; min-height: 4.5rem; font-size: var(--t-secondary); }
+.pl-answer:not(:disabled):active { background: var(--fg); color: var(--bg); }
+
+/* A place as a card that fills: one square per fact. Empty is a broken outline, known is solid. */
+.pl-venue { display: grid; gap: var(--space-1); padding-bottom: var(--space-2); border-bottom: var(--border); font-family: var(--font-display); line-height: 1.05; }
+.pl-venue__name { font-weight: var(--weight-secondary); }
+.pl-venue__count { font-weight: var(--weight-instruction); font-size: var(--t-secondary); }
+.pl-venue__slots { display: flex; flex-wrap: wrap; gap: var(--space-1); }
+.pl-slot { position: relative; display: grid; place-items: center; width: 2.5rem; height: 2.5rem; border: 4px dashed var(--map-label); }
+.pl-slot svg { width: 1.5rem; height: 1.5rem; }
+.pl-slot--waiting { border: var(--border); }
+.pl-slot__half { position: absolute; inset: 0 50% 0 0; background: var(--fg); }
+.pl-slot--known { background: var(--fg); color: var(--bg); border: var(--border); }
+/* The question being asked now: the yellow frame, the same as focus. */
+.pl-slot--current { outline: 4px solid var(--accent); outline-offset: 2px; }
+
+/* The stamp: a word in a frame, slightly off square, as a hand would leave it. */
+.pl-moment { display: grid; justify-items: start; gap: var(--space-2); padding-top: var(--space-2); }
+.pl-stamp {
+  margin: var(--space-2) 0 var(--space-2) var(--space-1);
+  padding: 0.15em 0.3em;
+  border: var(--space-1) solid var(--fg);
+  outline: 4px solid var(--fg);
+  outline-offset: 4px;
+  font-family: var(--font-display);
+  font-weight: var(--weight-instruction);
+  font-size: clamp(2.25rem, 11vw, 4rem);
+  line-height: 1.1;
+  transform-origin: 30% 60%;
+}
+/* Confirmed: the map changed, so the stamp is the colour of the path. The word and a second sound say it too. */
+.pl-stamp--confirmed { background: var(--accent); color: var(--on-accent); border-color: var(--accent); outline-color: var(--accent); }
+.pl-moment__points { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0 var(--space-2); font-family: var(--font-display); line-height: 1; }
+.pl-moment__earned { font-weight: var(--weight-instruction); font-size: 6rem; font-variant-numeric: tabular-nums; }
+.pl-moment__total { font-weight: var(--weight-secondary); font-size: var(--t-secondary); font-variant-numeric: tabular-nums; }
+.pl-moment__line { font-family: var(--font-display); font-weight: var(--weight-instruction); font-size: var(--t-secondary); line-height: 1.1; }
+.pl-moment__change { padding-left: var(--space-2); border-left: var(--space-1) solid var(--accent); font-family: var(--font-display); font-weight: var(--weight-secondary); font-size: var(--t-secondary); line-height: 1.1; }
+
+/* A new level takes the screen. */
+.pl-levelup { display: grid; align-content: center; gap: var(--space-3); max-width: 44rem; min-height: 100%; padding: var(--space-3) var(--space-2); font-family: var(--font-display); }
+.pl-levelup__lead { font-weight: var(--weight-secondary); font-size: var(--t-secondary); }
+.pl-levelup__name { font-size: clamp(3rem, 16vw, 5rem); line-height: 1; transform-origin: 0 50%; }
+.pl-levelup__next { font-weight: var(--weight-secondary); line-height: 1.15; }
+.pl-levelup .pl-strip { height: var(--space-3); }
+
+/* The ticket: white stock, black type, a perforation and a stub. */
+.pl-ticketview { display: grid; align-content: start; gap: var(--space-2); max-width: 44rem; padding: var(--space-3) var(--space-2); }
+.pl-ticketview__lead { font-family: var(--font-display); font-weight: var(--weight-instruction); font-size: 3rem; line-height: 1; }
+.pl-ticketview__others { font-family: var(--font-display); font-weight: var(--weight-secondary); line-height: 1.15; }
+.pl-ticket { display: grid; grid-template-columns: minmax(0, 1fr) 7rem; color: var(--bg); font-family: var(--font-display); }
+.pl-ticket__main { display: grid; align-content: space-between; gap: var(--space-3); min-height: 13rem; padding: var(--space-2); background: var(--fg); }
+.pl-ticket__partner { font-weight: var(--weight-instruction); line-height: 1.1; }
+.pl-ticket__title { font-size: 2.5rem; line-height: 1; overflow-wrap: anywhere; }
+.pl-ticket__stub { position: relative; display: grid; place-content: center; justify-items: center; padding: var(--space-1); background: var(--fg); border-left: 4px dashed var(--bg); transform-origin: 0 100%; }
+/* Square notches where the perforation meets the edge. */
+.pl-ticket__stub::before, .pl-ticket__stub::after { content: ""; position: absolute; left: -0.6rem; width: 1rem; height: 0.75rem; background: var(--bg); }
+.pl-ticket__stub::before { top: 0; }
+.pl-ticket__stub::after { bottom: 0; }
+.pl-ticket__cost { font-weight: var(--weight-instruction); font-size: 3.5rem; line-height: 1; }
+.pl-ticket__unit { font-weight: var(--weight-instruction); line-height: 1; }
+
+/* ---- the catch: the live camera, the object in the picture, the three answers ---- */
+.pl-cam { display: grid; grid-template-rows: minmax(9rem, 1fr) auto; height: 100%; }
+.pl-cam__view { position: relative; overflow: hidden; background: var(--bg); }
+.pl-cam__video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.pl-cam__wait { position: absolute; left: var(--space-2); bottom: var(--space-2); }
+.pl-cam__bar { position: absolute; top: var(--space-1); left: var(--space-1); right: var(--space-1); display: flex; justify-content: space-between; gap: var(--space-1); }
+.pl-cam__key { display: flex; align-items: center; gap: 0.4rem; min-height: var(--hud-target); margin: 0; padding: 0 0.6rem; background: var(--bg); color: var(--fg); border: var(--hud-border) solid var(--fg); border-radius: var(--radius); font-family: var(--font-display); font-weight: var(--weight-secondary); font-size: var(--hud-text); line-height: 1.1; text-align: left; cursor: pointer; }
+.pl-cam__key svg { flex: none; width: 1.4rem; height: 1.4rem; }
+.pl-cam__tag { position: absolute; top: calc(var(--hud-target) + var(--space-2)); left: var(--space-1); }
+/* The object standing in the picture: the same head on a stem as on the map, larger. */
+.pl-cam__object { position: absolute; top: 50%; display: grid; justify-items: center; transform: translate(-50%, -50%); color: var(--on-accent); font-family: var(--font-display); font-weight: var(--weight-instruction); line-height: 1; white-space: nowrap; transition: left var(--dur-snap) linear; }
+.pl-cam__head { display: flex; align-items: center; gap: var(--space-1); padding: var(--space-1) var(--space-2); background: var(--accent); border: 4px solid var(--bg); font-size: 3.5rem; }
+.pl-cam__glyph { width: 3rem; height: 3rem; }
+.pl-cam__far { margin-top: 2px; padding: 0 0.4rem; background: var(--bg); color: var(--fg); font-size: var(--hud-text-strong); line-height: 1.2; }
+.pl-cam__stem { width: 6px; height: 4rem; background: var(--accent); outline: 2px solid var(--bg); }
+/* Locked: two hard brackets close on the object. */
+.pl-cam__lock { position: absolute; top: -1rem; bottom: 3rem; width: 1.5rem; border: 6px solid var(--fg); }
+.pl-cam__lock--a { left: -1.75rem; border-right: 0; }
+.pl-cam__lock--b { right: -1.75rem; border-left: 0; }
+.pl-cam__turn { position: absolute; top: 50%; display: flex; align-items: center; gap: var(--space-1); padding: var(--space-1) var(--space-2); transform: translateY(-50%); background: var(--accent); color: var(--on-accent); border: 4px solid var(--bg); font-family: var(--font-display); font-weight: var(--weight-instruction); font-size: var(--t-secondary); line-height: 1; }
+.pl-cam__turn--left { left: 0; border-left: 0; }
+.pl-cam__turn--right { right: 0; border-right: 0; flex-direction: row-reverse; }
+.pl-cam__arrow { width: 2.5rem; height: 2.5rem; }
+/* The stamp slams over the picture, on its own black ground so that no background can wash it out. */
+.pl-cam__stamp { position: absolute; left: var(--space-3); top: 16%; margin: 0; max-width: calc(100% - var(--space-4)); background: var(--bg); font-size: clamp(2rem, 10vw, 3.5rem); }
+.pl-cam__stamp.pl-stamp--confirmed { background: var(--accent); }
+.pl-cam__panel { display: grid; gap: var(--space-1); padding: var(--space-1); border-top: var(--border); background: var(--bg); }
+.pl-cam__question { font-size: var(--t-body); line-height: 1.05; }
+.pl-cam__panel .pl-answer { min-height: 4.5rem; font-size: 2.25rem; }
+.pl-cam__panel .pl-answer--unsure { min-height: var(--hud-target); font-size: var(--hud-text-strong); }
+.pl-cam__foot { display: flex; align-items: center; justify-content: space-between; gap: var(--space-1); }
+.pl-cam__privacy { font-family: var(--font-display); font-weight: var(--weight-secondary); font-size: var(--hud-text); line-height: 1.1; color: var(--map-label); }
+.pl-cam__earned { font-family: var(--font-display); font-weight: var(--weight-instruction); font-size: 4rem; line-height: 0.95; font-variant-numeric: tabular-nums; }
+.pl-cam__line { font-family: var(--font-display); font-weight: var(--weight-instruction); font-size: var(--t-body); line-height: 1.1; }
+.pl-cam__change { padding-left: var(--space-1); border-left: var(--space-1) solid var(--accent); font-family: var(--font-display); font-weight: var(--weight-secondary); line-height: 1.1; }
+.pl-cam__panel .pl-pad { grid-template-columns: repeat(4, var(--hud-target)); }
+.pl-cam__panel .pl-pad__key { width: var(--hud-target); height: var(--hud-target); border-width: var(--hud-border); }
+
+/* The second action: the scan mode, when a model is there to scan with. */
+.play__bottom:has(.pl-scan) { grid-template-columns: minmax(0, 1fr) auto; }
+.play__bottom:has(.pl-scan) .pl-callout { grid-column: 1 / -1; }
+.pl-scan { width: auto; min-height: calc(var(--hud-target) + var(--space-2)); flex-direction: column; justify-content: center; gap: 2px; padding: 4px 0.6rem; border-width: var(--hud-border); font-size: var(--hud-text); font-weight: var(--weight-instruction); pointer-events: auto; }
+.pl-scan svg { width: 1.75rem; height: 1.75rem; }
+.ob--found .ob__head { width: var(--hud-marker); height: var(--hud-marker); background: var(--fg); color: var(--bg); border-color: var(--bg); }
+.ob--found .ob__glyph { width: 1.5rem; height: 1.5rem; }
+
+@media (prefers-reduced-motion: reduce) {
+  /* The ring stays as a second, still frame: the state is shown, nothing moves. */
+  .ob--reach .ob__head::after { animation: none; }
+}
+/* A short screen (a phone with the browser bar): the encounter a little tighter. */
+@media (max-height: 700px) {
+  .pl-answer { min-height: 5rem; }
+  .pl-cam__panel .pl-answer { min-height: 4rem; font-size: 2rem; }
+  .pl-card__question { font-size: clamp(2.25rem, 11vw, 3.5rem); }
+}

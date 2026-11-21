@@ -49,6 +49,17 @@
   --ease-hard: steps(6, end);               /* stepped, mechanical */
   --ease-settle: cubic-bezier(0.2, 0, 0, 1);
 
+  /* ---------- Compact scale: the game map HUD only (suggestion) ----------
+     On /play the map is the content, so what floats over it is small. Sheets, cards and every other screen keep the phone scale. */
+  --hud-target: 48px;          /* smallest touch target allowed on the game map */
+  --hud-text: 1.125rem;        /* 18px. Condensed face, weight 750 or more */
+  --hud-text-strong: 1.5rem;   /* the one verb of the bottom action, the points */
+  --hud-border: 3px;           /* frame of HUD plates and map objects */
+  --hud-marker: 2.75rem;       /* 44px: head of an object standing near */
+  --hud-marker-reach: 3.5rem;  /* 56px: head of an object in reach */
+  --hud-marker-far: 1.75rem;   /* 28px mark; its touch area is still --hud-target */
+  --hud-landmark-max: 40vw;    /* a place is the biggest object, never wider than this */
+
   /* ---------- Active scale: phone is the default ---------- */
   --t-instruction: 4rem;       /* range 3-5rem. Weight 950 */
   --t-secondary: 2rem;         /* weight 750 (suggestion) */
