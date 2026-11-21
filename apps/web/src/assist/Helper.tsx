@@ -84,6 +84,7 @@ export function Helper() {
         const r = request.reward;
         say(r.rewarded
           ? `${message} Κερδίσατε ${r.pointsEarned} πόντους. Σύνολο ${r.profile.points} πόντοι, επίπεδο ${r.profile.level}.`
+          : r.reason === "not_connected" ? `${message} Η κλήση δεν συνδέθηκε, γι' αυτό δεν δίνει πόντους.`
           : r.reason === "too_short" ? `${message} Η κλήση κράτησε λιγότερο από 30 δευτερόλεπτα, γι' αυτό δεν δίνει πόντους.` : `${message} Φτάσατε το όριο πόντων κλήσεων για σήμερα.`);
       }
     } catch { /* the call is over either way */ }

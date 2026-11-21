@@ -446,7 +446,8 @@ small signalling messages in a room and stores nothing of the call. Devices are 
 | `GET /requests?lng&lat&radius` | Open requests near a citizen: `id`, `area` (nearest named street), `distanceM` (to 50 m), `text`, waiting time. Never a position. |
 | `GET /requests/:id?device=` | Status for either side (`open`, `accepted`, `ended`, `expired`). The helper's view carries the `reward` after the call. |
 | `POST /requests/:id/accept` `{device}` | One citizen takes it (409 for the next one). Returns the room name. |
-| `POST /requests/:id/end` `{device}` | Either side ends. A call over 30 s gives the helper 30 points through the missions board (at most 5 rewarded calls per helper per day). |
+| `POST /requests/:id/connected` `{device}` | The person who asked reports that sound or picture arrived. Only their device may call it. |
+| `POST /requests/:id/end` `{device}` | Either side ends. A call that connected and lasted over 30 s from that moment gives the helper 30 points through the missions board (at most 5 rewarded calls per helper per day). A call that never connected gives nothing (`reason: "not_connected"`). |
 | `POST /requests/:id/marks` `{device, kind, lng, lat}` | The helper marks `ramp`, `steps`, `sidewalk_obstacle`, `audible_signal`, `narrow_sidewalk` or `clear_path`. Stored in memory, rounded to about 10 m, with the time and source `help_call`. 3 points (30 a day). `sidewalk_obstacle` also files a report like `POST /api/reports`. |
 | `GET /observations` | The stored marks, newest first. |
 | `GET /rooms/:room/events?member=` | Server-Sent Events: `hello`, `message`, `member_joined`, `member_left`, `closed`, `ping` every 15 s. Silent members are removed after 45 s. |

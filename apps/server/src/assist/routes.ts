@@ -95,6 +95,13 @@ export function createAssist(cfg: AssistConfig) {
     return r.ok ? c.json({ request: r.request }) : failure(c, r);
   });
 
+  router.post("/requests/:id/connected", async (c) => {
+    const b = await parse(c, deviceSchema);
+    if (!b.ok) return b.res;
+    const r = service.connected(c.req.param("id"), b.data.device);
+    return r.ok ? c.json({ request: r.request }) : failure(c, r);
+  });
+
   router.post("/requests/:id/end", async (c) => {
     const b = await parse(c, deviceSchema);
     if (!b.ok) return b.res;

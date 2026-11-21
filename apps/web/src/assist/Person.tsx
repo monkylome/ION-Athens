@@ -83,6 +83,9 @@ export function Person() {
       setPhase("connecting");
       say(m === "audio" ? "Δοκιμάζω σύνδεση μόνο με ήχο." : "Συνδέομαι με τον δημότη.");
     } else if (state === "connected") {
+      // Tell the server that sound or picture really arrived: only then does the helper earn points for the call.
+      const id = held.current.requestId;
+      if (id) void assist.connected(id, device.current).catch(() => undefined);
       setPhase("live");
       say(m === "audio" ? "Συνδέθηκε με ήχο μόνο. Σας ακούει, αλλά δεν βλέπει εικόνα." : "Συνδέθηκε. Σας βλέπει και σας ακούει.");
     } else if (state === "lost") {

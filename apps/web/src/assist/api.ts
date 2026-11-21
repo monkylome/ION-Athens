@@ -5,7 +5,7 @@ export interface Reward {
   rewarded: boolean;
   pointsEarned: number;
   durationS: number;
-  reason?: "too_short" | "daily_limit";
+  reason?: "not_connected" | "too_short" | "daily_limit";
   profile: Profile;
 }
 export interface Profile { points: number; level: string; nextLevel: { name: string; pointsNeeded: number } | null }
@@ -43,6 +43,7 @@ export const assist = {
   status: (id: string, device: string) => get<{ request: RequestView }>(`/requests/${id}?device=${device}`),
   nearby: (lng: number, lat: number) => get<{ requests: OpenRequest[] }>(`/requests?lng=${lng}&lat=${lat}&radius=3000`),
   accept: (id: string, device: string) => post<{ request: RequestView }>(`/requests/${id}/accept`, { device }),
+  connected: (id: string, device: string) => post<{ request: RequestView }>(`/requests/${id}/connected`, { device }),
   end: (id: string, device: string) => post<{ request: RequestView }>(`/requests/${id}/end`, { device }),
   mark: (id: string, device: string, kind: MarkKind, lng: number, lat: number) =>
     post<MarkResult>(`/requests/${id}/marks`, { device, kind, lng, lat }),

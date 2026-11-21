@@ -154,11 +154,22 @@ describe("help requests", () => {
     expect((await post(`/requests/${id}/accept`, { device: HELPER })).status).toBe(410);
   });
 
+  it("a call that never connected earns nothing, however long it stayed open", async () => {
+    const { post, get, p, advance } = setup();
+    const id = (await post("/requests", { device: PERSON, ...p(50, 3) })).body.request.id;
+    await post(`/requests/${id}/accept`, { device: HELPER });
+    advance(90_000);
+    await post(`/requests/${id}/end`, { device: HELPER });
+    expect((await get(`/requests/${id}?device=${HELPER}`)).body.request.reward).toMatchObject({ rewarded: false, reason: "not_connected", pointsEarned: 0 });
+  });
+
   it("a call over 30 s earns points; a short one does not; at most 5 rewarded calls a day", async () => {
     const { post, get, p, advance } = setup();
     const call = async (seconds: number) => {
       const id = (await post("/requests", { device: PERSON, ...p(50, 3) })).body.request.id;
       await post(`/requests/${id}/accept`, { device: HELPER });
+      expect((await post(`/requests/${id}/connected`, { device: HELPER })).status).toBe(403);
+      expect((await post(`/requests/${id}/connected`, { device: PERSON })).status).toBe(200);
       advance(seconds * 1000);
       expect((await post(`/requests/${id}/end`, { device: PERSON })).status).toBe(200);
       return (await get(`/requests/${id}?device=${HELPER}`)).body.request;

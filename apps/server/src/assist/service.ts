@@ -59,7 +59,7 @@ export interface Reward {
   rewarded: boolean;
   pointsEarned: number;
   durationS: number;
-  reason?: "too_short" | "daily_limit";
+  reason?: "not_connected" | "too_short" | "daily_limit";
   profile: Profile;
 }
 
@@ -75,6 +75,8 @@ interface HelpRequest {
   expiresAt: number;
   helper?: string;
   acceptedAt?: number;
+  /** Set when the person who asked reports that sound or picture arrived. A call that never connected earns nothing. */
+  connectedAt?: number;
   endedAt?: number;
   endReason?: EndReason;
   reward?: Reward;
@@ -226,6 +228,16 @@ export class AssistService {
     return { ok: true as const, request: { ...this.view(r, helper), room: r.room } };
   }
 
+  /** Only the person who asked can say the call connected: a helper cannot confirm their own points. */
+  connected(id: string, device: string) {
+    const r = this.get(id);
+    if (!r) return fail(404, "not_found", "Δεν βρέθηκε το αίτημα.");
+    if (device !== r.device) return fail(403, "not_yours", "Αυτό το αίτημα δεν είναι δικό σας.");
+    if (r.status !== "accepted") return fail(409, "not_in_call", "Η κλήση δεν είναι ενεργή.");
+    r.connectedAt ??= this.t();
+    return { ok: true as const, request: this.view(r, device) };
+  }
+
   end(id: string, device: string) {
     const r = this.get(id);
     if (!r) return fail(404, "not_found", "Δεν βρέθηκε το αίτημα.");
@@ -244,12 +256,13 @@ export class AssistService {
     let rewarded = false;
     let durationS = 0;
     if (wasAccepted && r.helper && r.acceptedAt) {
-      const ms = t - r.acceptedAt;
+      const ms = r.connectedAt ? t - r.connectedAt : 0;
       durationS = Math.round(ms / 1000);
       const key = `${r.helper}:${this.day()}`;
       const given = this.rewardedToday.get(key) ?? 0;
       let reasonNo: Reward["reason"];
-      if (ms <= this.opts.minCallMs) reasonNo = "too_short";
+      if (!r.connectedAt) reasonNo = "not_connected";
+      else if (ms <= this.opts.minCallMs) reasonNo = "too_short";
       else if (given >= this.opts.rewardedCallsPerDay) reasonNo = "daily_limit";
       if (!reasonNo) {
         this.rewardedToday.set(key, given + 1);
