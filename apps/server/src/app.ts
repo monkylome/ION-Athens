@@ -1,3 +1,5 @@
+import { area, centres, entrance, matchVenue, venues, venueMissions } from "./venues/catalogue.ts";
+import { venueApi } from "./venues/trails.ts";
 import { cachedAddress } from "./sources/decision-addresses.ts";
 import { activeUntil, upcomingStart } from "./sources/decision-parser.ts";
 /**
@@ -21,6 +23,7 @@ import type { RoutingPort } from "./routing/port.ts";
 import { SandboxError, type SandboxClient } from "./sandbox/client.ts";
 import { REPORT_CATEGORIES, type SandboxPoi, type SandboxReport } from "./sandbox/schemas.ts";
 import { streetIndex, placeDecision, decisionObstacles, decisionHint, reasons, type Placed } from "./sources/diavgeia.ts";
+import { areaName, createAssist, type AssistConfig } from "./assist/routes.ts";
 import { type CitySources, gisPlaces, offlineCitySources, registerCityRoutes } from "./sources/index.ts";
 
 export interface AppDeps {
@@ -39,6 +42,8 @@ export interface AppDeps {
   useLlm?: boolean;
   /** Rules for citizen missions; defaults in missions/missions.ts. */
   missions?: Partial<MissionOptions>;
+  /** Limits for the help-by-camera feature; defaults in assist/. */
+  assist?: AssistConfig["options"];
   /** City sources behind `/api/sources`, `/api/context` and the extra places. Without it none is reached. */
   citySources?: CitySources;
   now?: () => Date;
@@ -57,7 +62,7 @@ const destinationBodySchema = z.object({
   text: z.string().trim().min(1).max(300),
   location: pointSchema.optional(),
 });
-const routeBodySchema = z.object({ from: pointSchema, to: pointSchema, profile:z.enum(["voice","wheels","quiet"]).default("voice") });
+const routeBodySchema = z.object({ from: pointSchema, to: pointSchema, venueId:z.string().max(150).optional(), profile:z.enum(["voice","wheels","quiet"]).default("voice") });
 const ID = /^[A-Za-z0-9_-]{1,64}$/;
 
 /** What a person is told when ION files the report for them. No personal data. */
@@ -82,7 +87,10 @@ export function createApp(deps: AppDeps) {
   const { client, routing } = deps;
   const city = deps.citySources ?? offlineCitySources();
   const mapping = { ...DEFAULT_MAPPING_OPTIONS, ...deps.mapping };
-  const board = new MissionBoard(routing.graph, deps.missions, now, deps.metroStations);
+  const nodesById = new Map(routing.graph.nodes.map(n => [n.id,n]));
+  const localVenueIds = new Set(venues.filter(v => nodesById.has(v.nearestNodeId)).map(v => v.id));
+  const board = new MissionBoard(routing.graph, deps.missions, now, deps.metroStations, venueMissions().filter(m => localVenueIds.has(m.venueId!)));
+  const venueRoutes = venueApi(() => board.confirmedObservations(), now);
   const index = streetIndex(routing.graph);
   let decisions: Placed[] = [];
   let cacheKey = "";
@@ -306,9 +314,13 @@ export function createApp(deps: AppDeps) {
 
   // --- destination and route -------------------------------------------------------
 
+  app.route("/api/venues", venueRoutes.app);
   app.post("/api/destination", async (c) => {
     const b = await body(c, destinationBodySchema);
     if (!b.ok) return b.res;
+    const venue = matchVenue(b.data.text);
+    if (venue) return c.json({sandbox:false, understood:true, how:"osm_venue", confidence:1, speech:"Προορισμός: " + venue.name,
+      place:{id:venue.id, name:venue.name, lng:venue.lng, lat:venue.lat, address:venue.address ?? null, category:venue.kind},alternatives:[]});
     return c.json({ sandbox: true, ...(await destinations.resolve(b.data.text, b.data.location)) });
   });
 
@@ -327,7 +339,15 @@ export function createApp(deps: AppDeps) {
     const snap = clock.simulated ? obstacles.project(at) : live;
     const active = snap.obstacles.filter((o) => isActive(o, at));
     const from: LngLat = [b.data.from.lng, b.data.from.lat];
-    const to: LngLat = [b.data.to.lng, b.data.to.lat];
+    const dest = b.data.to;
+    const venue = b.data.venueId ? venues.find(v => v.id === b.data.venueId) :
+      venues.find(v => Math.abs(v.lng-dest.lng) < 0.000001 && Math.abs(v.lat-dest.lat) < 0.000001);
+    if (b.data.venueId && !venue) return c.json({error:{code:"venue_not_found"}},404);
+    const target = (profile: ProfileId): LngLat => {
+      const place = venue && (entrance(venue,profile,board.confirmedObservations()) ?? venue);
+      const node = place && nodesById.get(place.nearestNodeId);
+      return node ? [node.lng,node.lat] : [dest.lng,dest.lat];
+    };
     const meta = { ...(clock.simulated ? {simulatedTime:true,at:at.toISOString()} : {}), sandbox: true, engine: routing.engine, graphLoaded: deps.graphLoaded, obstaclesStale: snap.stale };
     if (!deps.graphLoaded) {
       return c.json({ ...meta, error: { code: "graph_not_loaded", message: "The walking graph is not available yet" } }, 503);
@@ -338,6 +358,7 @@ export function createApp(deps: AppDeps) {
     const crowdSources = activeEvents.map(d=>({level:"busy",observedAt:new Date(d.issueDate).toISOString(),
       expiresAt:activeUntil(d.parse,new Date(d.issueDate),at),source:d.ada,edgeIds:d.edges.map(e=>e.id)}));
     function compute(profile: ProfileId, obs: readonly Obstacle[]) {
+      const to = target(profile);
       if (profile==="voice" && routing.engine==="fallback") return routing.route(from,to,obs,at);
       return coreRouting.route(from,to,obs,at,profile,events);
     }
@@ -367,6 +388,7 @@ export function createApp(deps: AppDeps) {
     return c.json({
       ...meta,
       route,
+      ...(venue && {arrival:venueRoutes.arrival(venue,entrance(venue,profile,board.confirmedObservations()))}),
       crowdSources, profile, facts:routeFacts(route,indexedEdges,at,events,voice),
       rerouted: affecting.some((o) => o.effect === "avoided"),
       /** The route if there were no obstacles, for comparison. */
@@ -417,7 +439,7 @@ export function createApp(deps: AppDeps) {
     if (result.confirmed?.type === "pavement_check") obstacles.remap();
     announce({ type: "mission_answered", missionId: id, missionType: result.mission.type, position: result.mission.position, answers: result.mission.answers } as StreamEvent);
     if (result.confirmed) announce({ type: "map_updated", observation: result.confirmed } as StreamEvent);
-    return c.json({ mission: result.mission, pointsEarned: result.pointsEarned, confirmed: result.confirmed, profile: result.profile, ...(report ? { report: report.report, obstacle: report.obstacle, sandbox: true } : {}) });
+    return c.json({ ...(at === null && {demo:true}), mission: {...result.mission,area:area(result.mission.position)}, pointsEarned: result.pointsEarned, confirmed: result.confirmed, profile: result.profile, ...(report ? { report: report.report, obstacle: report.obstacle, sandbox: true } : {}) });
   };
 
   app.get("/api/missions", async (c) => {
@@ -428,8 +450,23 @@ export function createApp(deps: AppDeps) {
     const limit = Math.min(100, Math.max(1, Number(c.req.query("limit")) || 20));
     const candidates = [...snap.obstacles,...decisions.flatMap(d=>decisionHint(d,now()))];
     const summary = board.summary(candidates);
-    if (!Number.isFinite(lng) || !Number.isFinite(lat) || !c.req.query("lng")) return c.json({ summary, missions: board.all(candidates).slice(0, limit) });
-    return c.json({ summary, missions: board.near([lng, lat], candidates, radius, limit) });
+    const missions = Number.isFinite(lng) && Number.isFinite(lat) && c.req.query("lng") ?
+      board.near([lng, lat], candidates, radius, limit) : board.all(candidates).slice(0,limit);
+    return c.json({summary,missions:missions.map(m => ({...m,area:area(m.position)}))});
+  });
+
+  app.get("/api/neighbourhoods",async c => {
+    const {obstacles: current} = await obstacles.snapshot();
+    const counts = new Map(centres.map(p => [p.name,{name:p.name,total:0,confirmed:0}]));
+    for (const m of board.all([...current,...decisions.flatMap(d=>decisionHint(d,now()))])) {
+      const row = counts.get(area(m.position));
+      if (row) row.total++;
+    }
+    for (const o of board.confirmedObservations()) {
+      const row = counts.get(area(o.position));
+      if (row) { row.total++; row.confirmed++; }
+    }
+    return c.json({neighbourhoods:[...counts.values()].map(row => ({...row,percent:row.total ? Math.round(1000*row.confirmed/row.total)/10 : 0}))});
   });
 
   app.get("/api/decisions", async c => {
@@ -464,13 +501,19 @@ export function createApp(deps: AppDeps) {
   app.get("/api/rewards", async (c) => {
     const participant = c.req.query("participant") ?? "";
     const points = /^[A-Za-z0-9_-]{8,64}$/.test(participant) ? board.profile(participant).points : 0;
+    const demoRewards = deps.demoEnabled !== false && c.req.query("demo") === "true";
     if (!benefits || now().getTime() - benefits.at > 10 * 60_000) benefits = { at: now().getTime(), items: await client.listBenefits() };
     return c.json({
       sandbox: true,
       fictional: true,
       note: "Τα προνόμια προέρχονται από τη δοκιμαστική Κάρτα Αθηναίου του sandbox. Δεν αντιστοιχούν σε υπαρκτό πρόγραμμα του Δήμου.",
       points,
-      rewards: toRewards(benefits.items, points),
+      ...(demoRewards && {demo:true}),
+      rewards: toRewards(benefits.items, points).map(r => {
+        if (!demoRewards || !/θέατρ|θεατρ/i.test(r.partner)) return r;
+        const pointsRequired = Math.min(60,r.pointsRequired);
+        return {...r,standardPointsRequired:r.pointsRequired,pointsRequired,unlocked:points >= pointsRequired};
+      }),
     });
   });
 
@@ -563,6 +606,7 @@ export function createApp(deps: AppDeps) {
   });
 
   app.route("/api/demo", demo);
+  app.route("/api/assist", createAssist({ now, announce: announce as AssistConfig["announce"], award: (p, n) => board.award(p, n), profile: (p) => board.profile(p), areaOf: (p) => areaName(routing, p), fileReport: async (r) => createReport({ ...r, category: "sidewalk" }, 0), options: deps.assist }).router);
 
   registerCityRoutes(app, {
     city,

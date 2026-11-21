@@ -15,7 +15,7 @@ import { localDay } from "../sources/decision-parser.ts";
 import type { GraphEdge, LngLat, Obstacle, PedestrianGraph, Tri } from "@ion/core";
 import { distanceM } from "../geo.ts";
 
-export type MissionType = "crossing_sound" | "crossing_tactile" | "obstacle_check" | "pavement_check" | "crowd_check";
+export type MissionType = "crossing_sound" | "crossing_tactile" | "obstacle_check" | "pavement_check" | "crowd_check" | "venue_check";
 export type Answer = "yes" | "no" | "unsure";
 
 export interface Mission {
@@ -33,9 +33,13 @@ export interface Mission {
   answers: { yes: number; no: number };
   /** For obstacle_check: the report this mission confirms. */
   reportRef?: string;
+  venueId?: string;
+  key?: string;
+  entranceId?: string | null;
 }
 
 export interface Observation {
+  position: LngLat;
   missionId: string;
   type: MissionType;
   edgeIds: string[];
@@ -63,9 +67,10 @@ export const DEFAULT_MISSION_OPTIONS: MissionOptions = {
   unsurePoints: 2,
 };
 
-const POINTS: Record<MissionType, number> = { crowd_check: 10, crossing_sound: 15, crossing_tactile: 10, pavement_check: 15, obstacle_check: 20 };
+const POINTS: Record<MissionType, number> = { venue_check: 15, crowd_check: 10, crossing_sound: 15, crossing_tactile: 10, pavement_check: 15, obstacle_check: 20 };
 
 const QUESTIONS: Record<MissionType, string> = {
+  venue_check: "Τι γνωρίζετε για αυτόν τον χώρο;",
   crowd_check: "Έχει πολύ κόσμο εδώ τώρα;",
   pavement_check: "Είναι ελεύθερο το πεζοδρόμιο εδώ;",
   crossing_sound: "Έχει ηχητικό σήμα το φανάρι σε αυτή τη διάβαση;",
@@ -125,7 +130,7 @@ export class MissionBoard {
   private crowdPlaces: {edge:GraphEdge; position:LngLat; token:string}[] = [];
   private mapMissions: Mission[] = [];
 
-  constructor(private readonly graph: PedestrianGraph, opts: Partial<MissionOptions> = {}, private readonly now = () => new Date(), metro: readonly LngLat[] = []) {
+  constructor(private readonly graph: PedestrianGraph, opts: Partial<MissionOptions> = {}, private readonly now = () => new Date(), metro: readonly LngLat[] = [], private readonly venueQuestions: readonly Mission[] = []) {
     this.opts = { ...DEFAULT_MISSION_OPTIONS, ...opts };
     for (const edge of graph.edges) {
       if (!edge.name || !edge.geometry.length) continue;
@@ -164,7 +169,7 @@ export class MissionBoard {
       if (first.crossing!.signals === "yes" && first.crossing!.sound === "unknown") add("crossing_sound");
       if ((first.tactilePaving ?? "unknown") === "unknown") add("crossing_tactile");
     }
-    this.mapMissions = out;
+    this.mapMissions = [...out, ...this.venueQuestions.filter(m => !this.closed.has(m.id))];
   }
 
   private counts(id: string): { yes: number; no: number } {
@@ -250,6 +255,12 @@ export class MissionBoard {
     return [...this.observations];
   }
 
+  /** Points earned outside missions, for example by helping through a camera. */
+  award(participant: string, points: number): Profile {
+    this.points.set(participant, (this.points.get(participant) ?? 0) + points);
+    return this.profile(participant);
+  }
+
   profile(participant: string): Profile {
     const points = this.points.get(participant) ?? 0;
     let level: string = LEVELS[0].name;
@@ -297,7 +308,7 @@ export class MissionBoard {
     const value: "yes" | "no" | null = counts.yes >= this.opts.confirmations ? "yes" : counts.no >= this.opts.confirmations ? "no" : null;
     if (value) {
       confirmed = {
-        missionId, type: mission.type, edgeIds: mission.edgeIds, value, confirmedAt: now.toISOString(),
+        missionId, position: mission.position, type: mission.type, edgeIds: mission.edgeIds, value, confirmedAt: now.toISOString(),
         confirmedBy: value === "yes" ? counts.yes : counts.no, ...(mission.where ? { where: mission.where } : {}),
       };
       this.observations.push(confirmed);

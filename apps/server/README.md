@@ -419,3 +419,39 @@ When demo control is enabled, pass an ISO timestamp with a timezone in the `at` 
 GET /api/profiles returns the IDs and Greek labels/descriptions. POST /api/route accepts an optional profile (voice by default) and returns facts beside the route. POST /api/routes takes the same endpoints and returns a routes array in voice, wheels, quiet order. Each entry includes profile, route, lengthM, facts, differsFromVoice and lengthDeltaM. An unavailable route has null geometry and metrics. Both endpoints use a common obstacle snapshot and support the presentation clock.
 
 Crowd questions are available on named pedestrian streets, squares and mapped streets within 100 m of an OSM metro station. A nearby result includes up to three crowd questions. Two matching independent answers set busy or calm for one hour and emit map_updated. These observations live in memory and do not retain positions. Placed event decisions contribute a separate busy signal only during a supported validity window; crowdSources identifies the ADA, affected edge IDs and validity. Only the quiet preset adds a crowd penalty.
+
+### Venue cards and indoor trails
+
+`GET /api/venues` returns `{venues: VenueCard[]}`. `GET /api/venues/:id` returns one card directly, including `id, name, kind, lng, lat, address?, entrances, facts, trails`. Facts carry `key, question, value, source, confirmedAt`. A missing value is null. OSM dates can be null. Citizen directions are held in server memory and expire when the process restarts.
+
+`POST /api/venues/:id/trails` accepts the following JSON and returns the trail directly (201). Distances are in metres. A measurement may be zero. Use a random device-local participant id of 8–64 letters, digits, hyphens or underscores. Start and target are 1–100 characters, notes up to 180. Supply 1–24 segments, each with 0–500 steps, 0–500 metres and one of left, right, straight or back.
+
+```json
+{"participant":"walker_001","start":"κύρια είσοδος","target":"ταμείο","segments":[{"metres":10,"steps":14,"turn":"straight"},{"metres":2,"steps":3,"turn":"left","note":"δίπλα στο γκισέ"}]}
+```
+
+The response includes `id, start, target, segments, createdAt, confirmedAt, confirmed, speech`. `POST /api/venues/:id/trails/:trailId/confirm` accepts `{"participant":"walker_002"}` and returns the confirmed trail (200). Self-confirmation returns 409, invalid input 400, missing venue or trail 404. Public cards omit participant ids. Only confirmed trails are used in arrival speech.
+
+`POST /api/route` accepts the usual coordinates and an optional `venueId`, and adds `arrival: {venueId, entranceId, speech}` for a venue. A null entranceId means the mapped place is the destination reference. `GET /api/neighbourhoods` returns `{neighbourhoods:[{name,total,confirmed,percent}]}`; each mission carries `area`. `GET /api/rewards?demo=true` enables the labelled rehearsal threshold when demo control is enabled.
+
+## Help by camera (`/api/assist`, in `src/assist/`)
+
+A person who cannot see the way ahead asks; a citizen accepts, looks through the person's phone camera, describes
+what is there and marks what they see. The media goes directly between the two phones (WebRTC). The server relays
+small signalling messages in a room and stores nothing of the call. Devices are random ids, no names or accounts.
+
+| Endpoint | Purpose |
+| --- | --- |
+| `POST /requests` `{device, lng, lat, text?}` | Open a request. The position is rounded to about 100 m before anything is kept; the exact position is not. Waits 5 minutes; one open request per device. |
+| `GET /requests?lng&lat&radius` | Open requests near a citizen: `id`, `area` (nearest named street), `distanceM` (to 50 m), `text`, waiting time. Never a position. |
+| `GET /requests/:id?device=` | Status for either side (`open`, `accepted`, `ended`, `expired`). The helper's view carries the `reward` after the call. |
+| `POST /requests/:id/accept` `{device}` | One citizen takes it (409 for the next one). Returns the room name. |
+| `POST /requests/:id/end` `{device}` | Either side ends. A call over 30 s gives the helper 30 points through the missions board (at most 5 rewarded calls per helper per day). |
+| `POST /requests/:id/marks` `{device, kind, lng, lat}` | The helper marks `ramp`, `steps`, `sidewalk_obstacle`, `audible_signal`, `narrow_sidewalk` or `clear_path`. Stored in memory, rounded to about 10 m, with the time and source `help_call`. 3 points (30 a day). `sidewalk_obstacle` also files a report like `POST /api/reports`. |
+| `GET /observations` | The stored marks, newest first. |
+| `GET /rooms/:room/events?member=` | Server-Sent Events: `hello`, `message`, `member_joined`, `member_left`, `closed`, `ping` every 15 s. Silent members are removed after 45 s. |
+| `POST /rooms/:room/messages` `{from, to?, data}` | Relay to the room or to one member. Bounds: 200 rooms, 8 members (2 in a help room), 128 KB per message, 200 messages per 10 s per member. |
+| `POST /rooms/:room/leave` `{member}` | Leave. |
+
+`/api/events` announces `assist_requested`, `assist_accepted` and `assist_ended`, carrying only the rounded position.
+Rooms named `assist-...` exist only while a request holds them; other names are free for relays such as `?room=` on the web app.

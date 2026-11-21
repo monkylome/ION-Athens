@@ -563,5 +563,9 @@ export function buildReport(input: ReportInput): string {
   );
 
   if (input.findings) p(input.findings.trim(), "");
+  p("### Theatres in the mapped box", "", table(["Name", "Address", "Venue tags", "Entrance distance to graph node (m)", "Place distance (m)"], places.filter(v => v.kind === "theatre").map(v => [
+    v.name, v.address ?? "—", Object.entries(v.venueTags ?? {}).map(([k,value]) => k + "=" + value).join("; ") || "—",
+    places.filter(e => e.parentId === v.id).map(e => e.nearestNodeDistanceM).join(", ") || "unmapped", v.nearestNodeDistanceM
+  ])), "");
   return out.join("\n");
 }

@@ -4,6 +4,7 @@ import { nodeIdOf, type GraphExtras } from "./graph.ts";
 import type { Bbox, OsmElement, OsmIndex, OsmNode, Tags } from "./overpass.ts";
 
 export type PlaceKind =
+  | "theatre" | "cinema" | "library" | "arts_centre" | "concert_hall" | "neighbourhood" | "suburb"
   | "metro_station"
   | "metro_entrance"
   | "townhall"
@@ -44,6 +45,7 @@ export interface Place {
   station?: string;
   stationDistanceM?: number;
   /** OSM tags kept as written. */
+  venueTags?: Tags;
   entrance?: string;
   wheelchair?: string;
   level?: string;
@@ -52,6 +54,13 @@ export interface Place {
 
 const KEP_RE = /(^|[^Α-Ωα-ωA-Za-z])(ΚΕΠ|Κ\.Ε\.Π\.|KEP)([^Α-Ωα-ωA-Za-z]|$)|Κέντρο Εξυπηρέτησης Πολιτών|Citizens?'? Service Cent/i;
 const HEROD_RE = /Ηρώδ|Ηρωδ|Herod/i;
+
+function venueTags(tags: Tags): Tags {
+  const keys = ["wheelchair", "wheelchair:description", "toilets:wheelchair", "website", "wikidata", "elevator", "wheelchair:places", "guide_dog", "tactile_paving", "step_count", "operator", "access", "check_date"];
+  const result = Object.fromEntries(keys.filter(k => tags[k]).map(k => [k, tags[k]!]));
+  if (!result.website && tags["contact:website"]) result.website = tags["contact:website"];
+  return result;
+}
 
 function slug(text: string): string {
   return text
@@ -73,6 +82,10 @@ function kindOf(tags: Tags): PlaceKind | undefined {
   const names = [tags.name, tags["name:el"], tags["name:en"], tags.official_name, tags.short_name].filter(Boolean).join(" | ");
   if (tags.highway !== undefined) return tags.place === "square" ? "square" : undefined; // streets are not places
   if (tags.type === "route" || tags.type === "route_master" || tags.type === "restriction") return undefined;
+  for (const kind of ["theatre", "cinema", "library", "arts_centre", "concert_hall"] as const) {
+    if (tags.amenity === kind || (kind === "concert_hall" && tags.building === kind)) return kind;
+  }
+  if (tags.place === "neighbourhood" || tags.place === "suburb") return tags.place;
   if (tags.amenity === "townhall") return "townhall";
   if (tags.amenity === "hospital") return "hospital";
   if (tags.amenity === "police") return "police";
@@ -153,7 +166,12 @@ export function buildPlaces(osm: OsmIndex, graph: PedestrianGraph, extras: Graph
   // Stations first: entrances are named after the nearest one.
   const stations: { name: string; nameEn: string | null; p: LngLat }[] = [];
 
+  const namedDoors = [...osm.nodes.values()].filter(n => n.tags?.entrance && n.tags.entrance !== "no" && n.tags["addr:housename"]);
   const entranceNodesOf = (el: OsmElement): OsmNode[] => {
+    if (el.type === "node") {
+      const labels = [el.tags?.name, el.tags?.["name:el"], el.tags?.operator];
+      return namedDoors.filter(n => labels.includes(n.tags!["addr:housename"]) && haversineM([el.lon,el.lat],[n.lon,n.lat]) < 65);
+    }
     const wayIds: number[] = [];
     if (el.type === "way") wayIds.push(el.id);
     if (el.type === "relation") for (const m of el.members ?? []) if (m.type === "way") wayIds.push(m.ref);
@@ -176,8 +194,10 @@ export function buildPlaces(osm: OsmIndex, graph: PedestrianGraph, extras: Graph
     if (!p || !inside(p)) continue;
     const name = tags["name:el"] ?? tags.name ?? tags.official_name;
     const nameEn = tags["name:en"] ?? null;
-    if (!name && !nameEn) continue; // an unnamed place cannot be spoken or chosen
-    const label = name ?? nameEn!;
+    const venueNames: Partial<Record<PlaceKind,string>> = {theatre:"Θέατρο",cinema:"Κινηματογράφος",library:"Βιβλιοθήκη",arts_centre:"Χώρος τέχνης",concert_hall:"Αίθουσα συναυλιών"};
+    const unnamed = venueNames[kind];
+    if (!name && !nameEn && !unnamed) continue;
+    const label = name ?? nameEn ?? (unnamed + " χωρίς καταγεγραμμένη ονομασία");
     const hasEntrance = el.type !== "node" && entranceNodesOf(el).length > 0;
     const byAddress = el.type !== "node" && !hasEntrance ? snapToStreet(tags["addr:street"], p) : undefined;
     const snapped = byAddress ?? snap(el.type === "node" ? el.id : undefined, p);
@@ -195,19 +215,24 @@ export function buildPlaces(osm: OsmIndex, graph: PedestrianGraph, extras: Graph
       osmId: el.id,
       position: el.type === "node" ? "osm_node" : "centroid",
     };
+    if (["theatre","cinema","library","arts_centre","concert_hall"].includes(kind)) {
+      place.venueTags = venueTags(tags);
+    }
+    // Keep links to the previously catalogued landmark stable.
+    if (kind === "theatre" && HEROD_RE.test(nameEn ?? label)) place.id = place.id.replace(/^theatre-/, "landmark-");
     if (byAddress) place.snappedBy = "addr:street";
     if (tags["addr:street"]) place.address = `${tags["addr:street"]}${tags["addr:housenumber"] ? " " + tags["addr:housenumber"] : ""}`;
     if (tags.wheelchair) place.wheelchair = tags.wheelchair;
     if (kind === "metro_station") stations.push({ name: label, nameEn, p });
-    if (el.type !== "node") {
-      const entrances = entranceNodesOf(el);
+    const entrances = entranceNodesOf(el);
+    if (el.type !== "node" || entrances.length) {
       place.entranceVerified = entrances.length > 0;
       places.push(place);
       for (const node of entrances) {
         const ep: LngLat = [node.lon, node.lat];
         const es = snap(node.id, ep);
         const sub: Place = {
-          id: `entrance-${slug(nameEn ?? label) || "x"}-n${node.id}`,
+          id: place.venueTags ? `entrance-${el.type[0]}${el.id}-n${node.id}` : `entrance-${slug(nameEn ?? label) || "x"}-n${node.id}`,
           name: `${label} (είσοδος${node.tags?.name ? " " + node.tags.name : ""})`,
           nameEn: nameEn ? `${nameEn} (entrance${node.tags?.["name:en"] ? " " + node.tags["name:en"] : ""})` : null,
           kind: "building_entrance",
@@ -221,6 +246,7 @@ export function buildPlaces(osm: OsmIndex, graph: PedestrianGraph, extras: Graph
           position: "osm_node",
           parentId: place.id,
         };
+        if (place.venueTags && node.tags) sub.venueTags = venueTags(node.tags);
         if (node.tags?.entrance) sub.entrance = node.tags.entrance;
         if (node.tags?.wheelchair) sub.wheelchair = node.tags.wheelchair;
         if (node.tags?.level) sub.level = node.tags.level;
