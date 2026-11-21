@@ -1,3 +1,4 @@
+import { distanceM } from "./geo.ts";
 import { theatreLoop } from "./demo/loop.ts";
 import { area, centres, entrance, matchVenue, venues, venueMissions } from "./venues/catalogue.ts";
 import { venueApi } from "./venues/trails.ts";
@@ -279,6 +280,13 @@ export function createApp(deps: AppDeps) {
     const lat = Number(c.req.query("lat"));
     const lng = Number(c.req.query("lng"));
     const near = c.req.query("lat") && c.req.query("lng") && Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : undefined;
+    const venue = q ? matchVenue(q) : undefined;
+    const local = venue && (!category || category === venue.kind) ? [{
+      id:venue.id, name:venue.name, category:venue.kind, categoryName:null, lng:venue.lng, lat:venue.lat,
+      address:venue.address ?? null, source:venue.source, openNow:null,
+      wheelchairAccessible:venue.venueTags?.wheelchair === "yes" ? true : venue.venueTags?.wheelchair === "no" ? false : null,
+      distanceM:near ? Math.round(distanceM([near.lng,near.lat],[venue.lng,venue.lat])) : null
+    }] : [];
     const key = JSON.stringify([q.toLowerCase(), category, near && [lat.toFixed(3), lng.toFixed(3)]]);
     const t = now().getTime();
     let hit = places.get(key);
@@ -290,7 +298,10 @@ export function createApp(deps: AppDeps) {
         hit = { at: t, items };
         places.set(key, hit);
       } catch (err) {
-        if (!hit) throw err;
+        if (!hit) {
+          if (!local.length) throw err;
+          hit = {at:t,items:[]};
+        }
         stale = true;
       }
     }
@@ -298,7 +309,7 @@ export function createApp(deps: AppDeps) {
     return c.json({
       sandbox: true,
       stale,
-      places: [...hit.items.map((p) => ({
+      places: [...local, ...hit.items.map((p) => ({
         id: p.id,
         name: p.name,
         category: p.category,

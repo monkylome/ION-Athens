@@ -28,7 +28,7 @@ async function populate(input: string) {
     if (await cachedAddress(d.streetName,number)!==undefined) continue;
     await new Promise(resolve=>setTimeout(resolve,Math.max(0,1100-(Date.now()-last))));
     const params = new URLSearchParams({format:"jsonv2",street:number+" "+d.streetName,city:"Αθήνα",countrycodes:"gr",
-      addressdetails:"1",limit:"3",bounded:"1",viewbox:"23.715,37.990,23.740,37.965"});
+      addressdetails:"1",limit:"3",bounded:"1",viewbox:"23.700,37.990,23.740,37.965"});
     last = Date.now();
     const res = await fetch((process.env.ION_NOMINATIM_URL ?? "https://nominatim.openstreetmap.org/search")+"?"+params,{
       headers:{"User-Agent":"ion-athens-hackathon/1.0 (github.com/monkylome/ION-Athens)","Accept-Language":"el"},

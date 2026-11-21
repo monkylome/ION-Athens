@@ -291,6 +291,10 @@ export function buildGraph(osm: OsmIndex, bbox: Bbox, builtAt: string, source: s
     refs: number[];
   }
   const pieces: Piece[] = [];
+  // The original centre used part numbers in OSM way order, clipped at 23.715.
+  // Emit those runs first so extending a way west cannot renumber its existing edges.
+  const westExtension: Piece[] = [];
+  const extendsOriginal = bbox[0] < 23.715 && bbox[1] === 37.965 && bbox[2] === 23.74 && bbox[3] === 37.99;
   const waysExcluded: Record<string, number> = {};
   let waysUsed = 0;
   let waysClippedAtBbox = 0;
@@ -308,7 +312,16 @@ export function buildGraph(osm: OsmIndex, bbox: Bbox, builtAt: string, source: s
     let used = false;
     const flush = () => {
       if (run.length >= 2) {
-        pieces.push({ wayId, tags, kind: cls.kind, refs: run });
+        if (extendsOriginal) {
+          let start = 0;
+          const inOriginal = (i: number) => osm.nodes.get(run[i]!)!.lon >= 23.715;
+          for (let i = 1; i < run.length; i++) {
+            const original = inOriginal(i - 1) && inOriginal(i);
+            if (i + 1 < run.length && original === (inOriginal(i) && inOriginal(i + 1))) continue;
+            (original ? pieces : westExtension).push({wayId,tags,kind:cls.kind,refs:run.slice(start,i+1)});
+            start = i;
+          }
+        } else pieces.push({ wayId, tags, kind: cls.kind, refs: run });
         used = true;
       }
       run = [];
@@ -327,13 +340,19 @@ export function buildGraph(osm: OsmIndex, bbox: Bbox, builtAt: string, source: s
     else waysExcluded["no nodes inside bbox"] = (waysExcluded["no nodes inside bbox"] ?? 0) + 1;
   }
 
+  const originalPieceCount = pieces.length;
+  pieces.push(...westExtension);
+
   // 2. Find split points: nodes used more than once across all ways, way ends,
   //    and nodes that carry facts a router must be able to address.
   const uses = new Map<number, number>();
-  for (const piece of pieces) {
+  const originalUses = new Map<number,number>();
+  for (const [pieceIndex,piece] of pieces.entries()) {
     piece.refs.forEach((ref, i) => {
       const isEnd = i === 0 || i === piece.refs.length - 1;
-      uses.set(ref, (uses.get(ref) ?? 0) + (isEnd ? 2 : 1));
+      const weight = isEnd ? 2 : 1;
+      uses.set(ref, (uses.get(ref) ?? 0) + weight);
+      if (pieceIndex < originalPieceCount) originalUses.set(ref,(originalUses.get(ref) ?? 0) + weight);
     });
   }
   const forcesSplit = (node: OsmNode): boolean => {
@@ -422,15 +441,24 @@ export function buildGraph(osm: OsmIndex, bbox: Bbox, builtAt: string, source: s
     edges.push(edge);
   };
 
-  for (const piece of pieces) {
+  // Where the western streets meet the middle of an old edge, the first
+  // section retains its number. Allocate the new sections after all old parts.
+  const additional: {piece: Piece; refs: number[]}[] = [];
+  for (const [pieceIndex,piece] of pieces.entries()) {
     let start = 0;
+    let continuation = false;
     for (let i = 1; i < piece.refs.length; i++) {
-      if (i === piece.refs.length - 1 || isSplit(piece.refs[i]!)) {
-        emit(piece, piece.refs.slice(start, i + 1));
-        start = i;
-      }
+      const ref = piece.refs[i]!;
+      const end = i === piece.refs.length - 1;
+      if (!end && !isSplit(ref)) continue;
+      const refs = piece.refs.slice(start,i+1);
+      if (continuation) additional.push({piece,refs});
+      else emit(piece,refs);
+      continuation = pieceIndex < originalPieceCount && !end && (originalUses.get(ref) ?? 0) < 2 && !forcesSplit(osm.nodes.get(ref)!);
+      start = i;
     }
   }
+  for (const {piece,refs} of additional) emit(piece,refs);
 
   // 4. Keep the largest connected component (union-find).
   const parent = new Map<NodeId, NodeId>();

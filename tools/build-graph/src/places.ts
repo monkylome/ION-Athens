@@ -4,7 +4,7 @@ import { nodeIdOf, type GraphExtras } from "./graph.ts";
 import type { Bbox, OsmElement, OsmIndex, OsmNode, Tags } from "./overpass.ts";
 
 export type PlaceKind =
-  | "theatre" | "cinema" | "library" | "arts_centre" | "concert_hall" | "neighbourhood" | "suburb"
+  | "community_centre" | "theatre" | "cinema" | "library" | "arts_centre" | "concert_hall" | "neighbourhood" | "suburb"
   | "metro_station"
   | "metro_entrance"
   | "townhall"
@@ -82,7 +82,7 @@ function kindOf(tags: Tags): PlaceKind | undefined {
   const names = [tags.name, tags["name:el"], tags["name:en"], tags.official_name, tags.short_name].filter(Boolean).join(" | ");
   if (tags.highway !== undefined) return tags.place === "square" ? "square" : undefined; // streets are not places
   if (tags.type === "route" || tags.type === "route_master" || tags.type === "restriction") return undefined;
-  for (const kind of ["theatre", "cinema", "library", "arts_centre", "concert_hall"] as const) {
+  for (const kind of ["community_centre", "theatre", "cinema", "library", "arts_centre", "concert_hall"] as const) {
     if (tags.amenity === kind || (kind === "concert_hall" && tags.building === kind)) return kind;
   }
   if (tags.place === "neighbourhood" || tags.place === "suburb") return tags.place;
@@ -215,7 +215,7 @@ export function buildPlaces(osm: OsmIndex, graph: PedestrianGraph, extras: Graph
       osmId: el.id,
       position: el.type === "node" ? "osm_node" : "centroid",
     };
-    if (["theatre","cinema","library","arts_centre","concert_hall"].includes(kind)) {
+    if (["community_centre","theatre","cinema","library","arts_centre","concert_hall"].includes(kind)) {
       place.venueTags = venueTags(tags);
     }
     // Keep links to the previously catalogued landmark stable.

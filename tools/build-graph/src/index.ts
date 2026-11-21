@@ -21,7 +21,7 @@ import { buildPlaces } from "./places.ts";
 import { buildReport } from "./report.ts";
 import { validateGraph } from "./validate.ts";
 
-const DEFAULT_BBOX: Bbox = [23.715, 37.965, 23.74, 37.99];
+const DEFAULT_BBOX: Bbox = [23.700, 37.965, 23.74, 37.99];
 
 interface Args {
   bbox?: Bbox;

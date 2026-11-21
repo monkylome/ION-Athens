@@ -59,7 +59,7 @@ out body qt;
   node["railway"="subway_entrance"];
   nwr["railway"~"^(station|halt)$"];
   nwr["public_transport"="station"];
-  nwr["amenity"~"^(townhall|hospital|police|theatre|cinema|library|arts_centre|concert_hall)$"];
+  nwr["amenity"~"^(townhall|hospital|police|theatre|cinema|library|arts_centre|concert_hall|community_centre)$"];
   nwr["office"="government"];
   nwr["tourism"="museum"];
   nwr["name"~"Ηρώδ|Ηρωδ"];

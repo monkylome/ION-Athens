@@ -57,6 +57,23 @@
   }
  },
  {
+  "id": "arts_centre-baumstrasse-n4904218373",
+  "name": "Baumstrasse",
+  "nameEn": null,
+  "kind": "arts_centre",
+  "lng": 23.711325,
+  "lat": 37.985406,
+  "nearestNodeId": "n10061724233",
+  "nearestNodeDistanceM": 32.2,
+  "source": "osm:node/4904218373",
+  "osmType": "node",
+  "osmId": 4904218373,
+  "position": "osm_node",
+  "venueTags": {
+   "website": "https://www.dentra.gr/"
+  }
+ },
+ {
   "id": "arts_centre-blackbox-studio-n6593866491",
   "name": "BlackBox Studio",
   "nameEn": null,
@@ -193,6 +210,41 @@
   "entranceVerified": false
  },
  {
+  "id": "arts_centre-plataion56art-space-n9192619229",
+  "name": "plataion56art space",
+  "nameEn": null,
+  "kind": "arts_centre",
+  "lng": 23.71498,
+  "lat": 37.983272,
+  "nearestNodeId": "n251136599",
+  "nearestNodeDistanceM": 18.2,
+  "source": "osm:node/9192619229",
+  "osmType": "node",
+  "osmId": 9192619229,
+  "position": "osm_node",
+  "venueTags": {
+   "website": "https://plataion56.business.site/"
+  },
+  "address": "Πλαταιών 56"
+ },
+ {
+  "id": "arts_centre-quilombo-centro-cultural-n4904218372",
+  "name": "Quilombo Centro Cultural",
+  "nameEn": null,
+  "kind": "arts_centre",
+  "lng": 23.7113,
+  "lat": 37.985374,
+  "nearestNodeId": "n10061724233",
+  "nearestNodeDistanceM": 29.4,
+  "source": "osm:node/4904218372",
+  "osmType": "node",
+  "osmId": 4904218372,
+  "position": "osm_node",
+  "venueTags": {
+   "website": "https://www.quilombo.gr/"
+  }
+ },
+ {
   "id": "arts_centre-trii-art-hub-n5991704501",
   "name": "Trii art hub",
   "nameEn": null,
@@ -260,6 +312,39 @@
    "website": "http://www.vryssaki.gr"
   },
   "address": "Βρυσακίου 17"
+ },
+ {
+  "id": "arts_centre-x-n6743192451",
+  "name": "-ισμός",
+  "nameEn": null,
+  "kind": "arts_centre",
+  "lng": 23.712189,
+  "lat": 37.979995,
+  "nearestNodeId": "n844173297",
+  "nearestNodeDistanceM": 12.1,
+  "source": "osm:node/6743192451",
+  "osmType": "node",
+  "osmId": 6743192451,
+  "position": "osm_node",
+  "venueTags": {
+   "wheelchair": "yes"
+  },
+  "wheelchair": "yes"
+ },
+ {
+  "id": "arts_centre-x-n6944479055",
+  "name": "Συμορία του ήλιου",
+  "nameEn": null,
+  "kind": "arts_centre",
+  "lng": 23.711008,
+  "lat": 37.967609,
+  "nearestNodeId": "n353751066",
+  "nearestNodeDistanceM": 23.7,
+  "source": "osm:node/6944479055",
+  "osmType": "node",
+  "osmId": 6944479055,
+  "position": "osm_node",
+  "venueTags": {}
  },
  {
   "id": "arts_centre-x-w228904505",
@@ -394,6 +479,22 @@
   }
  },
  {
+  "id": "cinema-stellar-gastro-cinema-n11077415273",
+  "name": "Stellar Gastro Cinema",
+  "nameEn": null,
+  "kind": "cinema",
+  "lng": 23.707757,
+  "lat": 37.974593,
+  "nearestNodeId": "n353769087",
+  "nearestNodeDistanceM": 24.1,
+  "source": "osm:node/11077415273",
+  "osmType": "node",
+  "osmId": 11077415273,
+  "position": "osm_node",
+  "venueTags": {},
+  "address": "Τζαφέρη 16"
+ },
+ {
   "id": "cinema-x-n3381036310",
   "name": "Σινέ Παρί",
   "nameEn": null,
@@ -412,6 +513,24 @@
    "wikidata": "Q33805368"
   },
   "address": "Κυδαθηναίων 22",
+  "wheelchair": "yes"
+ },
+ {
+  "id": "cinema-x-n4890886214",
+  "name": "Λαΐς",
+  "nameEn": null,
+  "kind": "cinema",
+  "lng": 23.712709,
+  "lat": 37.981026,
+  "nearestNodeId": "n251136507",
+  "nearestNodeDistanceM": 43.7,
+  "source": "osm:node/4890886214",
+  "osmType": "node",
+  "osmId": 4890886214,
+  "position": "osm_node",
+  "venueTags": {
+   "wheelchair": "yes"
+  },
   "wheelchair": "yes"
  },
  {
@@ -491,6 +610,29 @@
   "entranceVerified": false
  },
  {
+  "id": "cinema-x-w383407579",
+  "name": "Ταινιοθήκη Της Ελλάδος",
+  "nameEn": null,
+  "kind": "cinema",
+  "lng": 23.712668,
+  "lat": 37.98099,
+  "nearestNodeId": "n6415203294",
+  "nearestNodeDistanceM": 51.1,
+  "source": "osm:way/383407579",
+  "osmType": "way",
+  "osmId": 383407579,
+  "position": "centroid",
+  "venueTags": {
+   "wheelchair": "yes",
+   "website": "http://www.tainiothiki.gr",
+   "wikidata": "Q2973241"
+  },
+  "snappedBy": "addr:street",
+  "address": "Ιερά Οδός 48",
+  "wheelchair": "yes",
+  "entranceVerified": false
+ },
+ {
   "id": "cinema-x-w449493656",
   "name": "Ριβιέρα",
   "nameEn": null,
@@ -506,6 +648,297 @@
   "venueTags": {},
   "snappedBy": "addr:street",
   "address": "Βαλτετσίου 46",
+  "entranceVerified": false
+ },
+ {
+  "id": "cinema-zefiros-w229640597",
+  "name": "Ζέφυρος",
+  "nameEn": "Zefiros",
+  "kind": "cinema",
+  "lng": 23.712871,
+  "lat": 37.969677,
+  "nearestNodeId": "n353750764",
+  "nearestNodeDistanceM": 25.4,
+  "source": "osm:way/229640597",
+  "osmType": "way",
+  "osmId": 229640597,
+  "position": "centroid",
+  "venueTags": {},
+  "snappedBy": "addr:street",
+  "address": "Τρώων 36",
+  "entranceVerified": false
+ },
+ {
+  "id": "community_centre-2510-n6593913007",
+  "name": "Χώρος 2510",
+  "nameEn": null,
+  "kind": "community_centre",
+  "lng": 23.733271,
+  "lat": 37.985468,
+  "nearestNodeId": "n250712701",
+  "nearestNodeDistanceM": 14.3,
+  "source": "osm:node/6593913007",
+  "osmType": "node",
+  "osmId": 6593913007,
+  "position": "osm_node",
+  "venueTags": {}
+ },
+ {
+  "id": "community_centre-anarchy-space-ipokentro-n2561100777",
+  "name": "Αναρχικό Στέκι Υπόκεντρο",
+  "nameEn": "Anarchy Space Ipokentro",
+  "kind": "community_centre",
+  "lng": 23.73629,
+  "lat": 37.985829,
+  "nearestNodeId": "n359093543",
+  "nearestNodeDistanceM": 47.2,
+  "source": "osm:node/2561100777",
+  "osmType": "node",
+  "osmId": 2561100777,
+  "position": "osm_node",
+  "venueTags": {
+   "wheelchair": "no",
+   "check_date": "2025-06-18"
+  },
+  "address": "Αραχώβης 42",
+  "wheelchair": "no"
+ },
+ {
+  "id": "community_centre-colour-youth-n11816203285",
+  "name": "Colour Youth",
+  "nameEn": null,
+  "kind": "community_centre",
+  "lng": 23.722971,
+  "lat": 37.979603,
+  "nearestNodeId": "n2359258008",
+  "nearestNodeDistanceM": 28.5,
+  "source": "osm:node/11816203285",
+  "osmType": "node",
+  "osmId": 11816203285,
+  "position": "osm_node",
+  "venueTags": {
+   "website": "https://www.colouryouth.gr/"
+  },
+  "address": "Σαχτούρη 3"
+ },
+ {
+  "id": "community_centre-korean-united-church-n4679081092",
+  "name": "Korean united church",
+  "nameEn": "Korean united church",
+  "kind": "community_centre",
+  "lng": 23.736077,
+  "lat": 37.965409,
+  "nearestNodeId": "n251108067",
+  "nearestNodeDistanceM": 24.2,
+  "source": "osm:node/4679081092",
+  "osmType": "node",
+  "osmId": 4679081092,
+  "position": "osm_node",
+  "venueTags": {}
+ },
+ {
+  "id": "community_centre-mensa-greece-n8757852929",
+  "name": "Ελληνική MENSA",
+  "nameEn": "MENSA Greece",
+  "kind": "community_centre",
+  "lng": 23.728892,
+  "lat": 37.965754,
+  "nearestNodeId": "n6123755593",
+  "nearestNodeDistanceM": 32.6,
+  "source": "osm:node/8757852929",
+  "osmType": "node",
+  "osmId": 8757852929,
+  "position": "osm_node",
+  "venueTags": {
+   "website": "https://www.mensa.org.gr",
+   "wikidata": "Q184194"
+  },
+  "address": "Πετμεζά 14"
+ },
+ {
+  "id": "community_centre-mwasi-hayat-houria-n10983467619",
+  "name": "Στέκι Αφρικανών Γυναικών Mwasi-Hayat-Houria",
+  "nameEn": null,
+  "kind": "community_centre",
+  "lng": 23.735608,
+  "lat": 37.989889,
+  "nearestNodeId": "n635442926",
+  "nearestNodeDistanceM": 22.5,
+  "source": "osm:node/10983467619",
+  "osmType": "node",
+  "osmId": 10983467619,
+  "position": "osm_node",
+  "venueTags": {
+   "check_date": "2026-10-21"
+  },
+  "address": "Καλλιδρομίου 96"
+ },
+ {
+  "id": "community_centre-plex-n4891715138",
+  "name": "Plex",
+  "nameEn": null,
+  "kind": "community_centre",
+  "lng": 23.72165,
+  "lat": 37.983033,
+  "nearestNodeId": "n250921008",
+  "nearestNodeDistanceM": 26.8,
+  "source": "osm:node/4891715138",
+  "osmType": "node",
+  "osmId": 4891715138,
+  "position": "osm_node",
+  "venueTags": {
+   "website": "https://communitism4art.wordpress.com/",
+   "check_date": "2025-10-03"
+  },
+  "address": "Κεραμεικού 28"
+ },
+ {
+  "id": "community_centre-x-n10992115217",
+  "name": "Πολιτιστικόν Κέντρον Δήμου Αθηναίων",
+  "nameEn": null,
+  "kind": "community_centre",
+  "lng": 23.735176,
+  "lat": 37.981529,
+  "nearestNodeId": "n7152733419",
+  "nearestNodeDistanceM": 25.8,
+  "source": "osm:node/10992115217",
+  "osmType": "node",
+  "osmId": 10992115217,
+  "position": "osm_node",
+  "venueTags": {}
+ },
+ {
+  "id": "community_centre-x-n11580474364",
+  "name": "Αναρχικό - αντιεξουσιαστικό στέκι Αντίπνοια",
+  "nameEn": null,
+  "kind": "community_centre",
+  "lng": 23.704168,
+  "lat": 37.969155,
+  "nearestNodeId": "n353770945",
+  "nearestNodeDistanceM": 12.1,
+  "source": "osm:node/11580474364",
+  "osmType": "node",
+  "osmId": 11580474364,
+  "position": "osm_node",
+  "venueTags": {
+   "website": "https://stekiantipnoia.squathost.com/"
+  },
+  "address": "Πυλάδου 17-19"
+ },
+ {
+  "id": "community_centre-x-n12804706501",
+  "name": "Διάκενο",
+  "nameEn": null,
+  "kind": "community_centre",
+  "lng": 23.716692,
+  "lat": 37.981807,
+  "nearestNodeId": "n251136939",
+  "nearestNodeDistanceM": 20.1,
+  "source": "osm:node/12804706501",
+  "osmType": "node",
+  "osmId": 12804706501,
+  "position": "osm_node",
+  "venueTags": {
+   "check_date": "2026-04-05"
+  },
+  "address": "Σαλαμίνος 37-39"
+ },
+ {
+  "id": "community_centre-x-n14205709467",
+  "name": "Κέντρο Κοινότητας Δήμου Αθηναίων",
+  "nameEn": null,
+  "kind": "community_centre",
+  "lng": 23.725456,
+  "lat": 37.988608,
+  "nearestNodeId": "n97834829",
+  "nearestNodeDistanceM": 31.3,
+  "source": "osm:node/14205709467",
+  "osmType": "node",
+  "osmId": 14205709467,
+  "position": "osm_node",
+  "venueTags": {}
+ },
+ {
+  "id": "community_centre-x-n2356069901",
+  "name": "Στέκι Μεταναστών",
+  "nameEn": null,
+  "kind": "community_centre",
+  "lng": 23.735091,
+  "lat": 37.987489,
+  "nearestNodeId": "n97793124",
+  "nearestNodeDistanceM": 47.4,
+  "source": "osm:node/2356069901",
+  "osmType": "node",
+  "osmId": 2356069901,
+  "position": "osm_node",
+  "venueTags": {
+   "website": "https://tsamadou13-15.espivblogs.net/",
+   "check_date": "2025-05-13"
+  },
+  "address": "Τσαμαδού 13-15"
+ },
+ {
+  "id": "community_centre-x-n4018225132",
+  "name": "Κωστής Παλαμάς",
+  "nameEn": null,
+  "kind": "community_centre",
+  "lng": 23.735319,
+  "lat": 37.980686,
+  "nearestNodeId": "n2327652817",
+  "nearestNodeDistanceM": 15.4,
+  "source": "osm:node/4018225132",
+  "osmType": "node",
+  "osmId": 4018225132,
+  "position": "osm_node",
+  "venueTags": {
+   "wheelchair": "no",
+   "check_date": "2025-04-11"
+  },
+  "address": "Ακαδημίας 48",
+  "wheelchair": "no"
+ },
+ {
+  "id": "community_centre-x-n5984988436",
+  "name": "Πολιτιστικό Κέντρο Μορφωτικού Ιδρύματος Εθνικής Τραπέζης",
+  "nameEn": null,
+  "kind": "community_centre",
+  "lng": 23.725716,
+  "lat": 37.984683,
+  "nearestNodeId": "n9682641173",
+  "nearestNodeDistanceM": 20.3,
+  "source": "osm:node/5984988436",
+  "osmType": "node",
+  "osmId": 5984988436,
+  "position": "osm_node",
+  "venueTags": {
+   "website": "https://www.miet.gr/foundation/cultural-centres/athens/",
+   "operator": "ΜΙΕΤ",
+   "check_date": "2026-03-25"
+  },
+  "address": "Αγίου Κωνσταντίνου 20"
+ },
+ {
+  "id": "community_centre-x-w217627849",
+  "name": "Σεράφειο",
+  "nameEn": null,
+  "kind": "community_centre",
+  "lng": 23.706284,
+  "lat": 37.973388,
+  "nearestNodeId": "n8981498522",
+  "nearestNodeDistanceM": 74.5,
+  "source": "osm:way/217627849",
+  "osmType": "way",
+  "osmId": 217627849,
+  "position": "centroid",
+  "venueTags": {
+   "wheelchair": "yes",
+   "toilets:wheelchair": "yes",
+   "website": "https://www.serafio.gr/",
+   "operator": "Δήμος Αθηναίων"
+  },
+  "snappedBy": "addr:street",
+  "address": "Πειραιώς 144",
+  "wheelchair": "yes",
   "entranceVerified": false
  },
  {
@@ -640,6 +1073,24 @@
   "wheelchair": "yes"
  },
  {
+  "id": "library-national-library-of-greece-n3786451217",
+  "name": "Εθνική Βιβλιοθήκη της Ελλάδος",
+  "nameEn": "National Library of Greece",
+  "kind": "library",
+  "lng": 23.710288,
+  "lat": 37.985255,
+  "nearestNodeId": "n6611585730",
+  "nearestNodeDistanceM": 16.2,
+  "source": "osm:node/3786451217",
+  "osmType": "node",
+  "osmId": 3786451217,
+  "position": "osm_node",
+  "venueTags": {
+   "check_date": "2025-05-11"
+  },
+  "address": "Αθηνών 31-33"
+ },
+ {
   "id": "library-national-library-of-greece-r11628142",
   "name": "Βαλλιάνειος Βιβλιοθήκη",
   "nameEn": "National Library of Greece",
@@ -700,6 +1151,25 @@
   "snappedBy": "addr:street",
   "address": "Καβαλλότι 7",
   "entranceVerified": false
+ },
+ {
+  "id": "library-x-n13036266782",
+  "name": "Δημοτική Βιβλιοθήκη Ταύρου “Κωστης Παλαμάς”",
+  "nameEn": null,
+  "kind": "library",
+  "lng": 23.701354,
+  "lat": 37.965016,
+  "nearestNodeId": "n6131335657",
+  "nearestNodeDistanceM": 30.2,
+  "source": "osm:node/13036266782",
+  "osmType": "node",
+  "osmId": 13036266782,
+  "position": "osm_node",
+  "venueTags": {
+   "website": "https://www.dimosmoschatou-tavrou.gr/community/dimotiki-vivliothiki/",
+   "operator": "Δήμος Μοσχάτου-Ταύρου"
+  },
+  "address": "Αγίας Σοφίας 16"
  },
  {
   "id": "library-x-n3868387683",
@@ -816,6 +1286,20 @@
   "source": "osm:node/3828340298",
   "osmType": "node",
   "osmId": 3828340298,
+  "position": "osm_node"
+ },
+ {
+  "id": "neighbourhood-gkazi-n2096164822",
+  "name": "Γκάζι",
+  "nameEn": "Gkazi",
+  "kind": "neighbourhood",
+  "lng": 23.713883,
+  "lat": 37.977825,
+  "nearestNodeId": "n2251695239",
+  "nearestNodeDistanceM": 36.7,
+  "source": "osm:node/2096164822",
+  "osmType": "node",
+  "osmId": 2096164822,
   "position": "osm_node"
  },
  {
@@ -1003,6 +1487,20 @@
   "position": "osm_node"
  },
  {
+  "id": "neighbourhood-x-n2852812247",
+  "name": "Προφήτης Δανιήλ",
+  "nameEn": null,
+  "kind": "neighbourhood",
+  "lng": 23.712947,
+  "lat": 37.984298,
+  "nearestNodeId": "n251144203",
+  "nearestNodeDistanceM": 23.8,
+  "source": "osm:node/2852812247",
+  "osmType": "node",
+  "osmId": 2852812247,
+  "position": "osm_node"
+ },
+ {
   "id": "neighbourhood-x-n2852835713",
   "name": "Φιλοπάππου",
   "nameEn": null,
@@ -1088,6 +1586,60 @@
   "entranceVerified": false
  },
  {
+  "id": "suburb-x-n11802576887",
+  "name": "Πετράλωνα",
+  "nameEn": null,
+  "kind": "suburb",
+  "lng": 23.709489,
+  "lat": 37.969118,
+  "nearestNodeId": "n824110355",
+  "nearestNodeDistanceM": 18.9,
+  "source": "osm:node/11802576887",
+  "osmType": "node",
+  "osmId": 11802576887,
+  "position": "osm_node"
+ },
+ {
+  "id": "theatre-104-n3775664918",
+  "name": "104 εκατοντέσσερα",
+  "nameEn": null,
+  "kind": "theatre",
+  "lng": 23.711486,
+  "lat": 37.979837,
+  "nearestNodeId": "n2251695496",
+  "nearestNodeDistanceM": 38.9,
+  "source": "osm:node/3775664918",
+  "osmType": "node",
+  "osmId": 3775664918,
+  "position": "osm_node",
+  "venueTags": {
+   "wheelchair": "no"
+  },
+  "wheelchair": "no"
+ },
+ {
+  "id": "theatre-131-w380259291",
+  "name": "ΠΕΙΡΑΙΩΣ 131",
+  "nameEn": null,
+  "kind": "theatre",
+  "lng": 23.710209,
+  "lat": 37.974941,
+  "nearestNodeId": "n8981474677",
+  "nearestNodeDistanceM": 32.9,
+  "source": "osm:way/380259291",
+  "osmType": "way",
+  "osmId": 380259291,
+  "position": "centroid",
+  "venueTags": {
+   "wheelchair": "yes",
+   "operator": "ΑΘΗΝΑΪΚΑ ΘΕΑΤΡΑ Α.Ε."
+  },
+  "snappedBy": "addr:street",
+  "address": "Πειραιώς 131",
+  "wheelchair": "yes",
+  "entranceVerified": false
+ },
+ {
   "id": "theatre-alfa-idea-n4442868089",
   "name": "Άλφα.Ιδέα",
   "nameEn": "Alfa.Idea",
@@ -1102,6 +1654,25 @@
   "position": "osm_node",
   "venueTags": {},
   "address": "Πατησίων 37"
+ },
+ {
+  "id": "theatre-altera-pars-n3775671025",
+  "name": "Altera Pars",
+  "nameEn": null,
+  "kind": "theatre",
+  "lng": 23.71344,
+  "lat": 37.981063,
+  "nearestNodeId": "n251136507",
+  "nearestNodeDistanceM": 20.6,
+  "source": "osm:node/3775671025",
+  "osmType": "node",
+  "osmId": 3775671025,
+  "position": "osm_node",
+  "venueTags": {
+   "wheelchair": "yes",
+   "wikidata": "Q93121470"
+  },
+  "wheelchair": "yes"
  },
  {
   "id": "theatre-art-space-asomaton-w380218479",
@@ -1486,6 +2057,39 @@
   "address": "Κοραή"
  },
  {
+  "id": "theatre-vault-theatre-plus-n4892913326",
+  "name": "Vault Theatre Plus",
+  "nameEn": null,
+  "kind": "theatre",
+  "lng": 23.711726,
+  "lat": 37.983767,
+  "nearestNodeId": "n251144049",
+  "nearestNodeDistanceM": 32.7,
+  "source": "osm:node/4892913326",
+  "osmType": "node",
+  "osmId": 4892913326,
+  "position": "osm_node",
+  "venueTags": {},
+  "address": "Μελενίκου 26"
+ },
+ {
+  "id": "theatre-x-n10941661046",
+  "name": "Αμφιθέατρο «Μιλτιάδης Έβερτ»",
+  "nameEn": null,
+  "kind": "theatre",
+  "lng": 23.714487,
+  "lat": 37.978092,
+  "nearestNodeId": "n2251695369",
+  "nearestNodeDistanceM": 36.9,
+  "source": "osm:node/10941661046",
+  "osmType": "node",
+  "osmId": 10941661046,
+  "position": "osm_node",
+  "venueTags": {
+   "check_date": "2025-10-24"
+  }
+ },
+ {
   "id": "theatre-x-n11575154028",
   "name": "Αλάμπρα",
   "nameEn": null,
@@ -1773,6 +2377,76 @@
   "wheelchair": "no"
  },
  {
+  "id": "theatre-x-n3775635655",
+  "name": "Αθηναΐς",
+  "nameEn": null,
+  "kind": "theatre",
+  "lng": 23.710899,
+  "lat": 37.983464,
+  "nearestNodeId": "n844173360",
+  "nearestNodeDistanceM": 11.7,
+  "source": "osm:node/3775635655",
+  "osmType": "node",
+  "osmId": 3775635655,
+  "position": "osm_node",
+  "venueTags": {
+   "wikidata": "Q64220210"
+  }
+ },
+ {
+  "id": "theatre-x-n3775645516",
+  "name": "Θέατρο Παραμυθιάς",
+  "nameEn": null,
+  "kind": "theatre",
+  "lng": 23.714545,
+  "lat": 37.982426,
+  "nearestNodeId": "n251136501",
+  "nearestNodeDistanceM": 17.1,
+  "source": "osm:node/3775645516",
+  "osmType": "node",
+  "osmId": 3775645516,
+  "position": "osm_node",
+  "venueTags": {}
+ },
+ {
+  "id": "theatre-x-n3775672828",
+  "name": "Θέατρο Χυτήριο",
+  "nameEn": null,
+  "kind": "theatre",
+  "lng": 23.712786,
+  "lat": 37.980586,
+  "nearestNodeId": "n6415203294",
+  "nearestNodeDistanceM": 44.3,
+  "source": "osm:node/3775672828",
+  "osmType": "node",
+  "osmId": 3775672828,
+  "position": "osm_node",
+  "venueTags": {
+   "wikidata": "Q76452280"
+  }
+ },
+ {
+  "id": "theatre-x-n3775683513",
+  "name": "Κιβωτός",
+  "nameEn": null,
+  "kind": "theatre",
+  "lng": 23.711247,
+  "lat": 37.975764,
+  "nearestNodeId": "n2251695166",
+  "nearestNodeDistanceM": 15.3,
+  "source": "osm:node/3775683513",
+  "osmType": "node",
+  "osmId": 3775683513,
+  "position": "osm_node",
+  "venueTags": {
+   "wheelchair": "limited",
+   "wikidata": "Q61598596",
+   "operator": "ΑΘΗΝΑΪΚΑ ΘΕΑΤΡΑ ΑΕ"
+  },
+  "address": "Πειραιώς 115",
+  "wheelchair": "limited"
+ },
+ {
   "id": "theatre-x-n3775701933",
   "name": "Θέατρο Αθηνών",
   "nameEn": null,
@@ -2026,6 +2700,26 @@
   "address": "Παλαμηδίου 41"
  },
  {
+  "id": "theatre-x-n4679293134",
+  "name": "Σύγχρονο Θέατρο",
+  "nameEn": null,
+  "kind": "theatre",
+  "lng": 23.71132,
+  "lat": 37.979885,
+  "nearestNodeId": "n6734986719",
+  "nearestNodeDistanceM": 27.9,
+  "source": "osm:node/4679293134",
+  "osmType": "node",
+  "osmId": 4679293134,
+  "position": "osm_node",
+  "venueTags": {
+   "wheelchair": "no",
+   "website": "https://sychronotheatro.gr/"
+  },
+  "address": "Ευμολπιδών 45",
+  "wheelchair": "no"
+ },
+ {
   "id": "theatre-x-n5980923662",
   "name": "Σταθμός",
   "nameEn": null,
@@ -2040,6 +2734,23 @@
   "position": "osm_node",
   "venueTags": {
    "wikidata": "Q119103031"
+  }
+ },
+ {
+  "id": "theatre-x-n5981306359",
+  "name": "Θέατρο \"Αλκμήνη\"",
+  "nameEn": null,
+  "kind": "theatre",
+  "lng": 23.710356,
+  "lat": 37.974507,
+  "nearestNodeId": "n353770735",
+  "nearestNodeDistanceM": 13.2,
+  "source": "osm:node/5981306359",
+  "osmType": "node",
+  "osmId": 5981306359,
+  "position": "osm_node",
+  "venueTags": {
+   "wikidata": "Q62019627"
   }
  },
  {
@@ -2107,6 +2818,24 @@
   "venueTags": {}
  },
  {
+  "id": "theatre-x-n5981395782",
+  "name": "Τεχνοχώρος Φάμπρικα",
+  "nameEn": null,
+  "kind": "theatre",
+  "lng": 23.713329,
+  "lat": 37.980996,
+  "nearestNodeId": "n251136507",
+  "nearestNodeDistanceM": 12.8,
+  "source": "osm:node/5981395782",
+  "osmType": "node",
+  "osmId": 5981395782,
+  "position": "osm_node",
+  "venueTags": {
+   "wheelchair": "yes"
+  },
+  "wheelchair": "yes"
+ },
+ {
   "id": "theatre-x-n6027904591",
   "name": "θέατρο Περοκέ",
   "nameEn": null,
@@ -2123,6 +2852,22 @@
    "wikidata": "Q64590744",
    "check_date": "2025-11-13"
   }
+ },
+ {
+  "id": "theatre-x-n6281453859",
+  "name": "Κόκκινη κλωστή…",
+  "nameEn": null,
+  "kind": "theatre",
+  "lng": 23.706796,
+  "lat": 37.971772,
+  "nearestNodeId": "n353770367",
+  "nearestNodeDistanceM": 7.8,
+  "source": "osm:node/6281453859",
+  "osmType": "node",
+  "osmId": 6281453859,
+  "position": "osm_node",
+  "venueTags": {},
+  "address": "Πανδώρου 88"
  },
  {
   "id": "theatre-x-n6434664210",
@@ -2143,6 +2888,24 @@
   }
  },
  {
+  "id": "theatre-x-n6593904113",
+  "name": "Από Κοινού Θέατρο",
+  "nameEn": null,
+  "kind": "theatre",
+  "lng": 23.71315,
+  "lat": 37.979885,
+  "nearestNodeId": "n844173340",
+  "nearestNodeDistanceM": 25.7,
+  "source": "osm:node/6593904113",
+  "osmType": "node",
+  "osmId": 6593904113,
+  "position": "osm_node",
+  "venueTags": {
+   "operator": "Ε. Γερασιμίδου; Α. Ξένος; Α. Ξένου"
+  },
+  "address": "Ευπατριδών 4"
+ },
+ {
   "id": "theatre-x-n778588862",
   "name": "Θέατρο χωρίς καταγεγραμμένη ονομασία",
   "nameEn": null,
@@ -2156,6 +2919,24 @@
   "osmId": 778588862,
   "position": "osm_node",
   "venueTags": {}
+ },
+ {
+  "id": "theatre-x-n9192619228",
+  "name": "Θέατρο Κατερίνα Βασιλάκου",
+  "nameEn": null,
+  "kind": "theatre",
+  "lng": 23.714573,
+  "lat": 37.982992,
+  "nearestNodeId": "n251136599",
+  "nearestNodeDistanceM": 40.5,
+  "source": "osm:node/9192619228",
+  "osmType": "node",
+  "osmId": 9192619228,
+  "position": "osm_node",
+  "venueTags": {
+   "wikidata": "Q61693928"
+  },
+  "address": "Προφήτου Δανιήλ 3"
  },
  {
   "id": "theatre-x-w1373006084",
@@ -2220,6 +3001,24 @@
   "entranceVerified": false
  },
  {
+  "id": "theatre-x-w317927721",
+  "name": "Το τρένο στο ρούφ",
+  "nameEn": null,
+  "kind": "theatre",
+  "lng": 23.703228,
+  "lat": 37.973634,
+  "nearestNodeId": "n250723153",
+  "nearestNodeDistanceM": 33.7,
+  "source": "osm:way/317927721",
+  "osmType": "way",
+  "osmId": 317927721,
+  "position": "centroid",
+  "venueTags": {
+   "check_date": "2026-08-20"
+  },
+  "entranceVerified": false
+ },
+ {
   "id": "theatre-x-w401986903",
   "name": "Θέατρο χωρίς καταγεγραμμένη ονομασία",
   "nameEn": null,
@@ -2251,6 +3050,83 @@
   "venueTags": {},
   "snappedBy": "addr:street",
   "address": "Καπνοκοπτηρίου 8",
+  "entranceVerified": false
+ },
+ {
+  "id": "theatre-x-w456411095",
+  "name": "Θέατρο Άβατον",
+  "nameEn": null,
+  "kind": "theatre",
+  "lng": 23.71314,
+  "lat": 37.979708,
+  "nearestNodeId": "n844173340",
+  "nearestNodeDistanceM": 21.3,
+  "source": "osm:way/456411095",
+  "osmType": "way",
+  "osmId": 456411095,
+  "position": "centroid",
+  "venueTags": {
+   "wheelchair": "yes",
+   "website": "https://theatroavaton.com/",
+   "wikidata": "Q73380924",
+   "operator": "Δημήτρης Μακαλιάς;Λάμπρος Φισφής;Σάρα Τοσκάνο;Αντιγόνη Ψυχράμη"
+  },
+  "address": "Ευπατριδών 3",
+  "wheelchair": "yes",
+  "entranceVerified": false
+ },
+ {
+  "id": "theatre-x-w456415690",
+  "name": "Ροές",
+  "nameEn": null,
+  "kind": "theatre",
+  "lng": 23.712654,
+  "lat": 37.978976,
+  "nearestNodeId": "n251137720",
+  "nearestNodeDistanceM": 27.8,
+  "source": "osm:way/456415690",
+  "osmType": "way",
+  "osmId": 456415690,
+  "position": "centroid",
+  "venueTags": {
+   "wikidata": "Q124804333"
+  },
+  "entranceVerified": false
+ },
+ {
+  "id": "theatre-x-w456415698",
+  "name": "Εν Αθήναις",
+  "nameEn": null,
+  "kind": "theatre",
+  "lng": 23.712993,
+  "lat": 37.978938,
+  "nearestNodeId": "n251137720",
+  "nearestNodeDistanceM": 37.2,
+  "source": "osm:way/456415698",
+  "osmType": "way",
+  "osmId": 456415698,
+  "position": "centroid",
+  "venueTags": {},
+  "snappedBy": "addr:street",
+  "address": "Ιάκχου 19",
+  "entranceVerified": false
+ },
+ {
+  "id": "theatre-x-w458565838",
+  "name": "Αλέα",
+  "nameEn": null,
+  "kind": "theatre",
+  "lng": 23.712413,
+  "lat": 37.976418,
+  "nearestNodeId": "n250664456",
+  "nearestNodeDistanceM": 28.8,
+  "source": "osm:way/458565838",
+  "osmType": "way",
+  "osmId": 458565838,
+  "position": "centroid",
+  "venueTags": {},
+  "snappedBy": "addr:street",
+  "address": "Πειραιώς 107",
   "entranceVerified": false
  },
  {
@@ -2325,6 +3201,21 @@
   "source": "osm:node/1957144319",
   "osmType": "node",
   "osmId": 1957144319,
+  "position": "osm_node",
+  "wheelchair": "yes"
+ },
+ {
+  "id": "metro_station-kerameikos-n850935197",
+  "name": "Κεραμεικός",
+  "nameEn": "Kerameikos",
+  "kind": "metro_station",
+  "lng": 23.710957,
+  "lat": 37.978743,
+  "nearestNodeId": "n1795517658",
+  "nearestNodeDistanceM": 32.6,
+  "source": "osm:node/850935197",
+  "osmType": "node",
+  "osmId": 850935197,
   "position": "osm_node",
   "wheelchair": "yes"
  },
@@ -2404,6 +3295,21 @@
   "wheelchair": "yes"
  },
  {
+  "id": "metro_station-petralona-n2278849833",
+  "name": "Πετράλωνα",
+  "nameEn": "Petralona",
+  "kind": "metro_station",
+  "lng": 23.709044,
+  "lat": 37.968347,
+  "nearestNodeId": "n824076704",
+  "nearestNodeDistanceM": 16,
+  "source": "osm:node/2278849833",
+  "osmType": "node",
+  "osmId": 2278849833,
+  "position": "osm_node",
+  "wheelchair": "yes"
+ },
+ {
   "id": "metro_station-syntagma-n5374534510",
   "name": "Σύνταγμα",
   "nameEn": "Syntagma",
@@ -2432,6 +3338,20 @@
   "osmId": 2284727248,
   "position": "osm_node",
   "wheelchair": "yes"
+ },
+ {
+  "id": "metro_station-x-n987485685",
+  "name": "Ρουφ",
+  "nameEn": null,
+  "kind": "metro_station",
+  "lng": 23.703965,
+  "lat": 37.973633,
+  "nearestNodeId": "n13288844578",
+  "nearestNodeDistanceM": 16.9,
+  "source": "osm:node/987485685",
+  "osmType": "node",
+  "osmId": 987485685,
+  "position": "osm_node"
  },
  {
   "id": "metro_entrance-akropoli-n1449578612",
@@ -2484,6 +3404,40 @@
   "stationDistanceM": 30,
   "wheelchair": "yes",
   "level": "0;-1;-2"
+ },
+ {
+  "id": "metro_entrance-kerameikos-n2265030179",
+  "name": "Τεχνόπολις/Γκάζι",
+  "nameEn": "Technopolis/Gazi",
+  "kind": "metro_entrance",
+  "lng": 23.711477,
+  "lat": 37.978565,
+  "nearestNodeId": "n2265030179",
+  "nearestNodeDistanceM": 0,
+  "source": "osm:node/2265030179",
+  "osmType": "node",
+  "osmId": 2265030179,
+  "position": "osm_node",
+  "station": "Kerameikos",
+  "stationDistanceM": 50,
+  "wheelchair": "yes"
+ },
+ {
+  "id": "metro_entrance-kerameikos-n2265030232",
+  "name": "Οδός Κωνσταντινουπόλεως",
+  "nameEn": "Konstantinoupoleos str.",
+  "kind": "metro_entrance",
+  "lng": 23.710425,
+  "lat": 37.978923,
+  "nearestNodeId": "n2265030232",
+  "nearestNodeDistanceM": 0,
+  "source": "osm:node/2265030232",
+  "osmType": "node",
+  "osmId": 2265030232,
+  "position": "osm_node",
+  "station": "Kerameikos",
+  "stationDistanceM": 51,
+  "wheelchair": "no"
  },
  {
   "id": "metro_entrance-metaxourgeio-n1456071767",
@@ -2864,6 +3818,40 @@
   "wheelchair": "yes"
  },
  {
+  "id": "metro_entrance-petralona-n2278850004",
+  "name": "Πετράλωνα (είσοδος μετρό)",
+  "nameEn": "Petralona (metro entrance)",
+  "kind": "metro_entrance",
+  "lng": 23.708942,
+  "lat": 37.967929,
+  "nearestNodeId": "n2278850004",
+  "nearestNodeDistanceM": 0,
+  "source": "osm:node/2278850004",
+  "osmType": "node",
+  "osmId": 2278850004,
+  "position": "osm_node",
+  "station": "Petralona",
+  "stationDistanceM": 47,
+  "wheelchair": "yes"
+ },
+ {
+  "id": "metro_entrance-petralona-n2278850011",
+  "name": "Πετράλωνα (είσοδος μετρό)",
+  "nameEn": "Petralona (metro entrance)",
+  "kind": "metro_entrance",
+  "lng": 23.70873,
+  "lat": 37.968001,
+  "nearestNodeId": "n2278850011",
+  "nearestNodeDistanceM": 0,
+  "source": "osm:node/2278850011",
+  "osmType": "node",
+  "osmId": 2278850011,
+  "position": "osm_node",
+  "station": "Petralona",
+  "stationDistanceM": 47,
+  "wheelchair": "yes"
+ },
+ {
   "id": "metro_entrance-syntagma-n1872639338",
   "name": "Μεγάλη Βρεταννία",
   "nameEn": "Syntagma (metro entrance)",
@@ -3047,6 +4035,21 @@
   "address": "ΑΚΑΔΗΜΙΑΣ 88"
  },
  {
+  "id": "kep-x-n11614902055",
+  "name": "ΚΕΠ ΠΕΤΡΑΛΩΝΩΝ",
+  "nameEn": null,
+  "kind": "kep",
+  "lng": 23.709034,
+  "lat": 37.970631,
+  "nearestNodeId": "n353770366",
+  "nearestNodeDistanceM": 30.3,
+  "source": "osm:node/11614902055",
+  "osmType": "node",
+  "osmId": 11614902055,
+  "position": "osm_node",
+  "address": "ΚΕΙΡΙΑΔΩΝ 70"
+ },
+ {
   "id": "kep-x-n4040706213",
   "name": "ΚΕΠ Απόδημου Ελληνισμού",
   "nameEn": null,
@@ -3144,6 +4147,22 @@
   "address": "Βασιλίσσης Σοφίας 9",
   "wheelchair": "yes",
   "entranceVerified": false
+ },
+ {
+  "id": "museum-benaki-museum-pireos-st-annexe-r2429041",
+  "name": "Μουσείο Μπενάκη (Κτήριο Οδού Πειραιώς)",
+  "nameEn": "Benaki Museum (Pireos St. Annexe)",
+  "kind": "museum",
+  "lng": 23.708276,
+  "lat": 37.974472,
+  "nearestNodeId": "n1170536719",
+  "nearestNodeDistanceM": 34.8,
+  "source": "osm:relation/2429041",
+  "osmType": "relation",
+  "osmId": 2429041,
+  "position": "centroid",
+  "address": "Πειραιώς 138",
+  "entranceVerified": true
  },
  {
   "id": "museum-benaki-s-museum-of-islamic-art-w321114256",
@@ -3293,6 +4312,22 @@
   "snappedBy": "addr:street",
   "address": "Καλλισπέρη 12",
   "entranceVerified": false
+ },
+ {
+  "id": "museum-industrial-gas-museum-n3912027436",
+  "name": "Βιομηχανικό Μουσείο Φωταερίου",
+  "nameEn": "Industrial Gas Museum",
+  "kind": "museum",
+  "lng": 23.713629,
+  "lat": 37.978244,
+  "nearestNodeId": "n2252676634",
+  "nearestNodeDistanceM": 52,
+  "source": "osm:node/3912027436",
+  "osmType": "node",
+  "osmId": 3912027436,
+  "position": "osm_node",
+  "address": "Πειραιώς 100",
+  "wheelchair": "yes"
  },
  {
   "id": "museum-kerameikos-archaeological-museum-w217268333",
@@ -3940,6 +4975,21 @@
   "entranceVerified": false
  },
  {
+  "id": "museum-x-w217342425",
+  "name": "Γεωργικό Μουσείο",
+  "nameEn": null,
+  "kind": "museum",
+  "lng": 23.702037,
+  "lat": 37.983214,
+  "nearestNodeId": "n2266148972",
+  "nearestNodeDistanceM": 27.3,
+  "source": "osm:way/217342425",
+  "osmType": "way",
+  "osmId": 217342425,
+  "position": "centroid",
+  "entranceVerified": false
+ },
+ {
   "id": "museum-x-w223018298",
   "name": "Λουτρό των Αέρηδων",
   "nameEn": null,
@@ -4482,6 +5532,36 @@
   "entranceVerified": true
  },
  {
+  "id": "square-x-w101376635",
+  "name": "Πλατεία Γεωργιάδη",
+  "nameEn": null,
+  "kind": "square",
+  "lng": 23.703749,
+  "lat": 37.97888,
+  "nearestNodeId": "n6368660350",
+  "nearestNodeDistanceM": 26.2,
+  "source": "osm:way/101376635",
+  "osmType": "way",
+  "osmId": 101376635,
+  "position": "centroid",
+  "entranceVerified": false
+ },
+ {
+  "id": "square-x-w101404642",
+  "name": "Πλατεία Ακαδημίας Πλάτωνος",
+  "nameEn": null,
+  "kind": "square",
+  "lng": 23.712161,
+  "lat": 37.987237,
+  "nearestNodeId": "n2426943786",
+  "nearestNodeDistanceM": 44.5,
+  "source": "osm:way/101404642",
+  "osmType": "way",
+  "osmId": 101404642,
+  "position": "centroid",
+  "entranceVerified": false
+ },
+ {
   "id": "square-x-w101515240",
   "name": "Πλατεία Ράμνες",
   "nameEn": null,
@@ -4538,6 +5618,21 @@
   "source": "osm:way/193384060",
   "osmType": "way",
   "osmId": 193384060,
+  "position": "centroid",
+  "entranceVerified": false
+ },
+ {
+  "id": "square-x-w281346566",
+  "name": "Πλατεία Φλέμινγκ",
+  "nameEn": null,
+  "kind": "square",
+  "lng": 23.706418,
+  "lat": 37.977602,
+  "nearestNodeId": "n251145945",
+  "nearestNodeDistanceM": 28.9,
+  "source": "osm:way/281346566",
+  "osmType": "way",
+  "osmId": 281346566,
   "position": "centroid",
   "entranceVerified": false
  },
@@ -4707,6 +5802,23 @@
   "position": "osm_node",
   "parentId": "museum-acropolis-museum-w983921252",
   "entrance": "yes"
+ },
+ {
+  "id": "entrance-benaki-museum-pireos-st-annexe-n1927169539",
+  "name": "Μουσείο Μπενάκη (Κτήριο Οδού Πειραιώς) (είσοδος)",
+  "nameEn": "Benaki Museum (Pireos St. Annexe) (entrance)",
+  "kind": "building_entrance",
+  "lng": 23.707975,
+  "lat": 37.97426,
+  "nearestNodeId": "n1927169539",
+  "nearestNodeDistanceM": 0,
+  "source": "osm:node/1927169539",
+  "osmType": "node",
+  "osmId": 1927169539,
+  "position": "osm_node",
+  "parentId": "museum-benaki-museum-pireos-st-annexe-r2429041",
+  "entrance": "yes",
+  "wheelchair": "yes"
  },
  {
   "id": "entrance-botanical-museum-n7813640276",
