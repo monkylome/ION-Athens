@@ -81,8 +81,7 @@ export function nearby(missions: readonly Mission[], from: LngLat, accuracyM?: n
   return missions
     .map((mission) => {
       const distance = distanceM(from, mission.position);
-      // A place is a building and its point is the middle of it: someone inside can be 50 m from that point.
-      // So a place is answerable out to the server's own limit; everything else from inside the 30 m ring.
+      // Venue missions use the server's reach around the building centroid.
       const reachable = mission.venueId ? distance <= (mission.venueReachM ?? SERVER_REACH_M) : inReach(distance, accuracyM);
       return { mission, distance, bearing: bearingDeg(from, mission.position), reachable };
     })

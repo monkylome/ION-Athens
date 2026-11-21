@@ -14,7 +14,7 @@ export interface Decision { ada: string; subject: string; detailExcerpt?: string
 export function decisionAdapter(police: boolean): SourceAdapter<Decision> {
   const authority = police ? "Ελληνική Αστυνομία, Διεύθυνση Τροχαίας Αττικής" : "Δήμος Αθηναίων";
   return {
-    meta: { id: police ? "diavgeia-police" : "diavgeia-city", name: "Διαύγεια", owner: authority,
+    meta: { id: police ? "diavgeia-police" : "diavgeia-city", name: police ? "Διαύγεια · Τροχαία Αττικής" : "Διαύγεια · Δήμος Αθηναίων", owner: authority,
       gives: "Δημοσιευμένες προσωρινές κυκλοφοριακές ρυθμίσεις", kind: "live", data: "real",
       terms: "licence not stated on the site, to be confirmed", termsQuoted: false, termsUrl: null, permission: "pending", request: endpoint },
     ttlMs: 900000, retryAfterFailureMs: 900000, timeoutMs: 10000,

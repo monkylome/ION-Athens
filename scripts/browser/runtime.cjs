@@ -92,7 +92,7 @@ async function stageFlow(p, inspect, recording=false, presenter=null, inspectPho
     await inspectPhone(player,"obstacle"); await answer(player); mark("citizen confirmed obstacle");
     await button(player,"Χάρτης").click(); await button(player,"Μενού").click();
     await button(player,"Πίσω στη θέση μου").click(); await player.waitForURL(u=>!u.searchParams.has("demo"));
-    if (presenter && recording) await presenter.close();
+    if (presenter && recording) return;
     await p.waitForFunction(edge=>window.__ionScenario.getState().obstacles.some(o=>o.closes && o.obstacle.edgeId===edge),loop.obstacle.edgeId);
     await key("Enter"); await p.waitForFunction(()=>window.__ionScenario.getState().phase==="destination");
     await key("Enter"); await p.waitForFunction(()=>!!window.__ionScenario.getState().walker);

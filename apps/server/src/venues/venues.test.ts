@@ -31,3 +31,9 @@ it("reads a trail on arrival only after independent confirmation", async () => {
   const publicCard = await (await api.app.request("/" + v.id)).text();
   expect(publicCard).not.toContain("test-person");
 });
+
+it("speaks the documented Odeon access and the unmapped entrance", () => {
+  const api = venueApi(() => [], () => new Date("2026-11-21T15:00:00Z"));
+  const odeon = venues.find(v => v.id === "landmark-odeon-of-herodes-atticus-r13249184")!;
+  expect(api.arrival(odeon).speech).toBe("Φτάσατε στο Ωδείο Ηρώδου Αττικού. Ο χώρος είναι προσβάσιμος με αμαξίδιο. Η ακριβής είσοδος δεν έχει χαρτογραφηθεί ακόμα.");
+});

@@ -25,7 +25,10 @@ export function diffObstacles(before: readonly Obstacle[], after: readonly Obsta
       events.push({ type: "obstacle_added", obstacle: o, at });
       continue;
     }
-    const changed = WATCHED.filter((k) => prev[k] !== o[k]);
+    const changed: string[] = WATCHED.filter((k) => prev[k] !== o[k]);
+    const witnesses = "witnesses" in o ? o.witnesses : null;
+    const previousWitnesses = "witnesses" in prev ? prev.witnesses : null;
+    if (witnesses !== previousWitnesses) changed.push("witnesses");
     if (changed.length > 0) events.push({ type: "obstacle_changed", obstacle: o, changed: [...changed], at });
   }
   for (const gone of old.values()) events.push({ type: "obstacle_removed", obstacle: gone, at });

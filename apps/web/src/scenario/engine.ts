@@ -898,9 +898,9 @@ export class ScenarioEngine {
     if (live.type === "obstacle" && live.outcome === "reroute" && live.direction
         && !live.lateWarning && "witnesses" in obstacle && typeof obstacle.witnesses === "number" && obstacle.witnesses >= 2) {
       const age = this.deps.wallNow() - Date.parse(obstacle.observedAt);
-      const recent = age >= 0 && age < 600000 ? " πριν από λίγα λεπτά" : "";
+      const when = age >= 0 && age < 600000 ? "πριν από λίγα λεπτά" : new Date(obstacle.observedAt).toLocaleDateString("el-GR", {timeZone:"Europe/Athens"});
       const count = obstacle.witnesses === 2 ? "δύο" : String(obstacle.witnesses);
-      return `Υπάρχει εμπόδιο στο επόμενο τμήμα. Έγινε αναφορά${recent}. Το επιβεβαίωσαν ${count} δημότες. Η διαδρομή αλλάζει. Στην επόμενη γωνία, ${TURN[live.direction]}.`;
+      return `Υπάρχει εμπόδιο στο επόμενο τμήμα. Το επιβεβαίωσαν ${count} δημότες. Η αναφορά έγινε ${when}. Η διαδρομή αλλάζει. Στην επόμενη γωνία, ${TURN[live.direction]}.`;
     }
     return phraseFor(live, this.phraseContext());
   }
