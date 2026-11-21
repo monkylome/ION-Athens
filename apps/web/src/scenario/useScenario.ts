@@ -8,7 +8,8 @@ import { browserApi, browserVoice, loadGraph, places } from "./browser";
 import { configFromSearch } from "./config";
 import { initialState, ScenarioEngine } from "./engine";
 import { hostLink } from "./link";
-import { broadcastTransport, type Transport } from "./transport";
+import { selectTransport } from "./relay";
+import type { Transport } from "./transport";
 import type { Command, ScenarioState, ServerEvent } from "./types";
 
 const STREAM_EVENTS = ["snapshot", "obstacle_added", "obstacle_changed", "obstacle_removed", "mission_answered", "map_updated"] as const;
@@ -43,7 +44,7 @@ export function useScenario(surface: "stage" | "phone", options: ScenarioOptions
 
   // One channel for the life of the page.
   useEffect(() => {
-    const channel = broadcastTransport();
+    const channel = selectTransport();
     transport.current = channel;
     if (!channel) {
       setMode("host");

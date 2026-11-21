@@ -1,0 +1,63 @@
+/* Help by camera. Values from tokens only: black, white, one yellow, hard edges. */
+.assist { gap: var(--space-2); }
+.assist .assist__ask {
+  min-height: 62dvh;
+  justify-content: center;
+  text-align: center;
+  font-family: var(--font-display);
+  font-weight: var(--weight-instruction);
+  font-size: 3.25rem;
+  line-height: 1.05;
+  text-wrap: balance;
+}
+.assist .assist__status:empty { display: block; min-height: 0; }
+.assist .t-instruction.assist__status { font-size: 3rem; }
+.assist .assist__end { min-height: calc(var(--target-min) * 1.75); font-size: var(--t-secondary); font-weight: var(--weight-instruction); }
+.assist .assist__note { font-size: var(--t-body); border-top: var(--border); padding-top: var(--space-2); }
+.assist .assist__lead { font-family: var(--font-display); font-weight: var(--weight-secondary); font-size: var(--t-secondary); line-height: 1.15; }
+
+/* The helper keeps this sentence in view the whole call. */
+.assist .assist__banner {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  margin: 0 calc(var(--space-2) * -1);
+  padding: var(--space-2);
+  background: var(--accent);
+  color: var(--on-accent);
+  font-family: var(--font-display);
+  font-weight: var(--weight-instruction);
+  font-size: var(--t-secondary);
+  line-height: 1.1;
+}
+.assist .assist__state strong { font-family: var(--font-display); font-weight: var(--weight-instruction); font-size: var(--t-secondary); }
+.assist .assist__state[data-state="lost"] strong, .assist .assist__state[data-state="failed"] strong { color: var(--alert); }
+.assist .assist__video {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  min-height: 28dvh;
+  background: var(--bg);
+  border: var(--border);
+  position: relative;
+}
+.assist .assist__video video { width: 100%; max-height: 36dvh; object-fit: contain; background: var(--bg); }
+.assist .assist__video[data-has-video="false"] video { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.assist .assist__video p { padding: var(--space-2); text-align: center; }
+.assist .assist__controls { display: grid; gap: var(--space-2); }
+.assist .assist__grid { grid-template-columns: 1fr 1fr; }
+.assist .assist__grid .btn, .assist .assist__grid button { min-height: calc(var(--target-min) * 1.5); }
+.assist ol { margin: 0; padding-left: 1.4em; display: grid; gap: var(--space-1); }
+@media (min-width: 60rem) {
+  .assist--helper { max-width: 64rem; }
+  .assist .assist__video video { max-height: 70dvh; }
+}
+
+/* The marks are buttons already: no second frame around them. */
+.assist .assist__marks { border: 0; padding: 0; }
+/* The problem heading says it on screen; the live region still announces it. */
+.assist[data-phase="problem"] .assist__status { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); }
+.assist .btn--primary { background: var(--accent); color: var(--on-accent); border: var(--border-accent); font-weight: var(--weight-instruction); }
+.assist--helper h1 { font-size: 3rem; }
+/* A request is a block with a rule above it; its button carries the frame, so no frame inside a frame. */
+.assist--helper section[aria-label] { border: 0; border-top: var(--border); padding: var(--space-2) 0 0; }

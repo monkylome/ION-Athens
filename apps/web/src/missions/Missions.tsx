@@ -90,6 +90,7 @@ export function Missions() {
   }
   return <main className="page missions" data-surface="phone">
     <Link className="btn page__back" to="/">Αρχική</Link><h1>Αποστολές πολιτών</h1>
+    <Link className="btn" to="/missions/help">Βοηθήστε ζωντανά με την κάμερα</Link>
     <label><input type="checkbox" checked={demo} disabled={busy} onChange={e => { setDemo(e.target.checked); setBoard(undefined); }} /> Θέση επίδειξης στην κοντινότερη αποστολή</label>
     <p role="status">{demo ? "Ενεργή θέση επίδειξης" : locationState}</p>
     <AthensMap missions={board?.missions} walker={position} center={position ?? origin} />

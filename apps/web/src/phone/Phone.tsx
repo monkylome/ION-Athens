@@ -260,6 +260,7 @@ export function Phone() {
       <footer className="phone__foot">
         <p className="phone__message" role="status" aria-live={ownVoice && !local ? "off" : view === "alert" || view === "new_route" ? "assertive" : "polite"} aria-atomic="true">{message}</p>
         {vibration && <p className="phone__signal">Σήμα συσκευής: {vibration}</p>}
+        <Link className="btn btn--quiet" to="/phone/help">Ζητήστε βοήθεια από δημότη</Link>
         <Link className="btn btn--quiet" to="/phone/devices">Ρυθμίσεις συσκευής</Link>
       </footer>
     </div>

@@ -7,6 +7,8 @@ import { Missions } from "./missions/Missions";
 import { DeviceSettings } from "./devices/Settings";
 import { Phone } from "./phone/Phone";
 import { Stage } from "./stage/Stage";
+import { Person } from "./assist/Person";
+import { Helper } from "./assist/Helper";
 
 function Home() {
   return (
@@ -34,6 +36,8 @@ createRoot(document.getElementById("root")!).render(
       <Route path="/missions" element={<Missions />} />
       <Route path="/phone" element={<Phone />} />
       <Route path="/phone/devices" element={<DeviceSettings />} />
+      <Route path="/phone/help" element={<Person />} />
+      <Route path="/missions/help" element={<Helper />} />
     </Routes>
   </BrowserRouter>,
 );
