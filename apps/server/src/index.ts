@@ -5,6 +5,7 @@ import { readConfig } from "./config.ts";
 import { EdgeIndex } from "./routing/edge-index.ts";
 import { createRouting, loadGraph } from "./routing/index.ts";
 import { SandboxClient } from "./sandbox/client.ts";
+import { createCitySources } from "./sources/index.ts";
 
 const config = readConfig();
 const log = (line: string) => console.log(`[ion-server] ${line}`);
@@ -21,6 +22,7 @@ const { app, obstacles } = createApp({
   routing,
   edges: { nearestEdge: (p, max) => routing.nearestEdge(p, max), edgesInBBox: (() => { const index = new EdgeIndex(graph); return (box) => index.edgesInBBox(box); })() },
   graphLoaded: loaded,
+  citySources: createCitySources({ log }),
   pollMs: config.pollMs,
   corsOrigins: config.corsOrigins,
   demoEnabled: config.demoEnabled,

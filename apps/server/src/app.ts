@@ -17,6 +17,7 @@ import { type Benefit, toRewards } from "./missions/rewards.ts";
 import type { RoutingPort } from "./routing/port.ts";
 import { SandboxError, type SandboxClient } from "./sandbox/client.ts";
 import { REPORT_CATEGORIES, type SandboxPoi, type SandboxReport } from "./sandbox/schemas.ts";
+import { type CitySources, gisPlaces, offlineCitySources, registerCityRoutes } from "./sources/index.ts";
 
 export interface AppDeps {
   client: SandboxClient;
@@ -31,6 +32,8 @@ export interface AppDeps {
   useLlm?: boolean;
   /** Rules for citizen missions; defaults in missions/missions.ts. */
   missions?: Partial<MissionOptions>;
+  /** City sources behind `/api/sources`, `/api/context` and the extra places. Without it none is reached. */
+  citySources?: CitySources;
   now?: () => Date;
   log?: (line: string) => void;
 }
@@ -70,6 +73,7 @@ export function createApp(deps: AppDeps) {
   const now = deps.now ?? (() => new Date());
   const log = deps.log ?? (() => undefined);
   const { client, routing } = deps;
+  const city = deps.citySources ?? offlineCitySources();
   const mapping = { ...DEFAULT_MAPPING_OPTIONS, ...deps.mapping };
   const obstacles = new ObstacleService({
     client,
@@ -230,10 +234,11 @@ export function createApp(deps: AppDeps) {
         stale = true;
       }
     }
+    const gis = await gisPlaces(city, { q, category, ...(near ? { near } : {}) });
     return c.json({
       sandbox: true,
       stale,
-      places: hit.items.map((p) => ({
+      places: [...hit.items.map((p) => ({
         id: p.id,
         name: p.name,
         category: p.category,
@@ -244,7 +249,7 @@ export function createApp(deps: AppDeps) {
         distanceM: p.distance_km == null ? null : Math.round(p.distance_km * 1000),
         openNow: p.open_now ?? null,
         wheelchairAccessible: p.wheelchair_accessible ?? null,
-      })),
+      })), ...gis.places],
     });
   });
 
@@ -464,6 +469,13 @@ export function createApp(deps: AppDeps) {
   });
 
   app.route("/api/demo", demo);
+
+  registerCityRoutes(app, {
+    city,
+    health: async () => (await app.request("/api/health")).json() as Promise<never>,
+    edges: () => routing.graph.edges,
+    now,
+  });
 
   return { app, obstacles };
 }

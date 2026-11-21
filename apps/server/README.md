@@ -13,7 +13,7 @@ From the workspace root (Node 22):
 ```sh
 npm run server                              # tsx watch, reloads on change
 npm run start --workspace @ion/server       # without watch
-npx vitest run apps/server                  # 89 tests, no network
+npx vitest run apps/server                  # no network
 npm run typecheck --workspace @ion/server
 ```
 
@@ -209,6 +209,61 @@ The sandbox has no test data on the demo streets, so the team creates the obstac
 | `POST /api/demo/resolve/:id` | Sets the report to `resolved`; the obstacle disappears and `obstacle_removed` is sent. Works only for reports this key created (otherwise 403 `sandbox_forbidden`). |
 | `POST /api/demo/reset` | `POST /v1/sandbox/reset`: removes everything this key created (reports, conversations, bookings). Answers `{ "sandbox": true, "demo": true, "reset": true, "obstacles": 2 }`. |
 
+## City sources
+
+Besides the sandbox, ION joins real sources of the City and of public bodies. The team decided to use them in the demo even where the terms restrict reuse, and to ask for permission afterwards. So every source states its owner, its terms and its permission, and `/api/sources` says "pending" plainly. Nothing from these sources is committed to the repository; `data-local/` is gitignored and the tests use hand-written data.
+
+Code: `src/sources/`. Each adapter implements `SourceAdapter` (`types.ts`): metadata, a lifetime, a timeout and `fetch`, which returns typed records. `CachedSource` (`cache.ts`) adds the cache, one shared request for concurrent callers, a retry once on a network error or a 5xx (not after a timeout), no new attempt for 60 seconds after a failure, and a last-known-good copy that is served marked `stale` when the source stops answering. `get` never throws, so one source failing never breaks another or the server. `/api/context` waits at most 4 seconds for any source and then uses the older copy or leaves that section empty.
+
+Without `citySources` in `createApp` (the tests) no source is reached. `src/index.ts` passes the real ones.
+
+### `GET /api/sources`
+
+Every source ION uses, those of other parts of the server included. It first asks each source whose cache is cold or old, so `answering` is true now (`?probe=false` skips that and reports the last attempt). Rows: `id`, `name`, `owner`, `gives`, `kind` (`live`, `daily`, `static`), `data` (`real` or `test`), `terms` and `termsQuoted` (true when `terms` is a verbatim quote), `termsUrl`, `permission` (`open licence`, `pending`, `not needed`), `request`, `lastFetched`, `records`, `answering` (null before the first attempt), `stale`, `problem`. `counts` gives totals, including `permissionPending`.
+
+The sandbox, OpenStreetMap and Walkable Athens come from `/api/health` (called inside the server): Walkable Athens is listed only when `routing.enrichment.loaded` is true there. That field is the contract with the routing work; until routing reports it the source is not listed.
+
+### `GET /api/context?lng=&lat=&radius=`
+
+What is around a point, `radius` in metres (default 200, from 20 to 1000). Every item has `source` (a source id) and `distanceM`. Sections:
+
+| Section | Source | Content |
+| --- | --- | --- |
+| `notes` | accessible-routes | Greek text of the step for the voice, `step`, `routeTitle`, `poi`. The coordinates are those of the step's point of interest (`coordinatesOf`), not of the step. |
+| `busStops` | oasa-telematics | Up to 5 nearest stops (buses and trolleys are not told apart by the service) with `arrivals`: `minutes`, `lineId`, `lineDescr`. |
+| `metroStations` | athens-gis + stasy-lifts | Metro stations (tram and rail excluded) with `lifts`: `known`, `total`, `working`, `outOfService` (names). |
+| `hospitals` | athens-gis + moh-duty-hospitals | `onDutyToday` is always `null` (see below); `dutyList` links today's document. |
+| `disabledParking`, `places` | athens-gis | Disabled parking places; KEP, municipal clinics, drinking fountains. |
+| `announcements` | athens-announcements | Traffic announcements of the last 120 days with a matched street within the radius: title, date, link, `matchedStreets`, `streetsNear`, `hint: true`, `closesStreet: false`. The text is not republished. |
+| `treePlantings` | athens-trees | Up to 30 points. The service gives no dates, so `date` is `null`. |
+| `sources` | | For each source consulted: `ok`, `fetchedAt`, `stale`, `problem`. |
+
+### `GET /api/announcements`
+
+The recent traffic announcements (title, date, link, matched streets as hints). An announcement never closes a street on its own.
+
+### `GET /api/places`
+
+Unchanged for the sandbox. Places from the City's GIS layers are appended, each with `source: "athens-gis"` and `sandbox: false`, the same fields as the others (`openNow` and `wheelchairAccessible` are `null`; no layer has them), at most 10, selected by `q`, `category` or position. GIS categories: `kep`, `hospital`, `municipal_clinic`, `metro_station`, `tram_stop`, `rail_station`, `drinking_fountain`, `disabled_parking`.
+
+### The sources
+
+**stasy-lifts** (live, cache 5 min). `GET https://www.stasy.gr/elevators/`, server-rendered HTML; the parser reads each station and each lift with its `jw_elevatorStatusOk` or `jw_elevatorStatusError` class (a station listed on several lines is counted once). If no station is found the page layout changed and the call fails. Owner: ΣΤΑΣΥ. Terms: none found on the page. Permission: pending. Stations are matched to the GIS metro stations by name, ignoring case and accents.
+
+**oasa-telematics** (live; stops 6 h, arrivals 20 s, lines of a stop 24 h). `GET https://telematics.oasa.gr/api/?act=getClosestStops&p1=<lat>&p2=<lng>` (the first parameter is the latitude, confirmed by experiment; it returns the 20 nearest stops and ION filters by radius), `?act=getStopArrivals&p1=<stop code>` (`route_code`, `veh_code`, `btime2` minutes), `?act=webRoutesForStop&p1=<stop code>` (to name the line of each arrival). https only (http times out). Owner: ΟΑΣΑ. Terms: "διατίθενται στο κοινό μόνο για προσωπική χρήση" (https://telematics.oasa.gr/terms.php). Permission: pending.
+
+**accessible-routes** (static, read from files). Reads `data-local/accessible-routes/visual-impairment-historic-centre.json` and `visual-impairment-acropolis.json` if present (22 steps, 21 placed). No request while the server runs; if the files are absent the source reports `problem` and the section is empty. Owner: Δήμος Αθηναίων and This is Athens. Terms: reuse needs written consent (not a verbatim quote). Permission: pending.
+
+**moh-duty-hospitals** (daily, cache 30 min). `GET https://www.moh.gov.gr/articles/citizen/efhmeries-nosokomeiwn/68-efhmeries-nosokomeiwn-attikhs`, which lists the daily files as `?fdl=<id>` links; today's PDF and .doc are found by the date in their names. The PDF and the .doc are not parsed: a reliable reading needs a PDF reader that is not a dependency of the server, and a hospital listed in the table is on duty only for the clinics listed under it, so a hospital name would not answer "can I go there now". `onDutyToday` stays `null` and `dutyList` links today's document. Owner: Υπουργείο Υγείας. Terms: none found. Permission: pending.
+
+**athens-announcements** (daily, cache 30 min). `GET https://www.cityofathens.gr/wp-json/wp/v2/posts?search=κυκλοφοριακές ρυθμίσεις&per_page=20&orderby=date&order=desc&_fields=id,date,title,link,content`. The search is loose, so only posts whose title contains "κυκλοφοριακ" are kept. Street names of the walking graph (`data/athens-centre.graph.json`, edge `name`) are looked for as whole words in the title and text, after dropping "Οδός", "Λεωφόρος", "Πλατεία" and abbreviations in front of the name and ignoring accents; names under 4 letters are skipped. Prose that abbreviates ("Λ. Βασ. Σοφίας") does not match. These are hints. Terms: "απαγορεύεται ρητά η αναπαραγωγή, αναδημοσίευση, αντιγραφή … χωρίς τη ρητή προηγούμενη έγγραφη συναίνεση του Δικαιούχου" (https://www.cityofathens.gr/oroi-chrisis/). Permission: pending.
+
+**athens-trees** (daily, cache 6 h). `GET https://athenstrees.cityofathens.gr/api/public/map-locations`, about 12,400 points, 2.5 MB. `latitude` is the X and `longitude` the Y coordinate in EPSG:3857; they are converted, and points outside Attica are dropped. The answer has no date, so "recent" cannot be told. Terms: no licence statement found. Permission: pending.
+
+**athens-gis** (static, cache 24 h; one request per layer). `GET http://gis.cityofathens.gr/geoserver/ows?service=WFS&version=2.0.0&request=GetFeature&typeNames=geonode:<layer>&outputFormat=application/json&srsName=EPSG:4326&count=2000` for `kep`, `nosokomeia`, `iatreia`, `stasy2024`, `pidakes` (only `ΕΝΕΡΓΟ`), `parking_amea`. The whole layer is read, not a bounding box; each is a few dozen features. http only. Terms: "Creative Commons Αναφορά Δημιουργού v.3.0 (CC BY 3.0 GR), Απόφαση Δημοτικού Συμβουλίου 302/2013". Permission: open licence. Credit the City of Athens when showing these places.
+
+**ion-sandbox**, **openstreetmap**, **walkable-athens**: described by the registry only. Sandbox: test data, every record synthetic, permission not needed. OpenStreetMap: © OpenStreetMap contributors (ODbL 1.0), open licence. Walkable Athens: "(c) NTUA, 2023. All rights reserved.", pending.
+
 ## Citizen missions
 
 People who can see fill the gaps in the map for people who cannot. A mission is one yes-or-no question about one place, answered on the spot. The rules are in `src/missions/missions.ts` and tested in `missions.test.ts`.
@@ -333,5 +388,6 @@ src/routing/index.ts         THE file to change for the real engine; graph loadi
 src/routing/port.ts          RoutingPort
 src/routing/fallback.ts      stand-in routing
 src/routing/edge-index.ts    grid index: nearest edge, edges in an area
+src/sources/                 city sources: adapters, cache, registry, context (see "City sources")
 src/testing/fixtures.ts      a 6-node street grid for tests
 ```
