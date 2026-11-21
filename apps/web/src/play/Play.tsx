@@ -640,6 +640,14 @@ export function Play() {
                   <Link className="btn" to="/missions/help"><HandHeart weight="bold" className="btn__icon" aria-hidden="true" />Δώστε βοήθεια</Link>
                   <button type="button" className="btn" onClick={toggleFullscreen}>{full ? <ArrowsIn weight="bold" className="btn__icon" aria-hidden="true" /> : <ArrowsOut weight="bold" className="btn__icon" aria-hidden="true" />}{full ? "Έξοδος από πλήρη οθόνη" : "Πλήρης οθόνη"}</button>
                   <Link className="btn" to="/about"><Info weight="bold" className="btn__icon" aria-hidden="true" />Σχετικά</Link>
+                  {demo && <button className="btn" type="button" onClick={() => {
+                    if (!window.confirm("Να ξεκινήσει νέα επίδειξη σε αυτή τη συσκευή με νέο άλμπουμ και μηδέν πόντους;")) return;
+                    try {
+                      localStorage.removeItem("ion-play-album:" + participant);
+                      localStorage.removeItem("ion-demo-participant");
+                      window.location.replace("/play?demo=1");
+                    } catch { say("Ο browser δεν επέτρεψε την αλλαγή αποθηκευμένων στοιχείων."); }
+                  }}>Νέα επίδειξη</button>}
                 </nav>
                 {walk && <>
                   <h2>Επίδειξη</h2>

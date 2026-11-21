@@ -1,4 +1,5 @@
 import { distanceM } from "./geo.ts";
+import { reportReceipts } from "./demo/report-receipts.ts";
 import { theatreLoop } from "./demo/loop.ts";
 import { area, centres, entrance, matchVenue, venues, venueMissions } from "./venues/catalogue.ts";
 import { venueApi } from "./venues/trails.ts";
@@ -203,7 +204,8 @@ export function createApp(deps: AppDeps) {
     };
   };
 
-  const createReport = async (data: z.infer<typeof reportBodySchema>, upvotes: number) => {
+  const receipts = reportReceipts(deps.demoEnabled === false ? undefined : process.env.ION_DEMO_RECEIPTS);
+  const createReport = async (data: z.infer<typeof reportBodySchema>, upvotes: number, rehearsal = false) => {
     let report = await client.createReport({
       category: data.category,
       title: REPORT_TITLES[data.category],
@@ -212,6 +214,7 @@ export function createApp(deps: AppDeps) {
       lat: data.lat,
       lng: data.lng,
     });
+    if (rehearsal) receipts.add(report.id);
     for (let i = 0; i < upvotes; i++) report = await client.upvoteReport(report.id);
     await obstacles.refreshAfterWrite();
     return report;
@@ -417,7 +420,11 @@ export function createApp(deps: AppDeps) {
   app.post("/api/reports", async (c) => {
     const b = await body(c, reportBodySchema);
     if (!b.ok) return b.res;
-    return c.json(reportView(await createReport(b.data, 0)), 201);
+    const stageNote = process.env.ION_DEMO_STAGE_NOTE;
+    const staged = !!stageNote && b.data.text === stageNote && deps.demoEnabled !== false;
+    const rehearsal = staged || (c.req.query("rehearsal") === "1" && deps.demoEnabled !== false);
+    const data = staged ? { ...b.data, text: "Σκαλωσιά (επίδειξη ION)." } : b.data;
+    return c.json(reportView(await createReport(data, 0, rehearsal)), 201);
   });
 
   app.post("/api/reports/:id/confirm", async (c) => {
@@ -602,14 +609,31 @@ export function createApp(deps: AppDeps) {
   demo.post("/obstacle", async (c) => {
     const b = await body(c, reportBodySchema);
     if (!b.ok) return b.res;
-    const report = await createReport(b.data, mapping.fullBlockUpvotes);
+    const report = await createReport(b.data, mapping.fullBlockUpvotes, true);
     return c.json({ ...reportView(report), demo: true }, 201);
+  });
+
+  // The caller cannot supply ids. Receipts cover only creations explicitly made for rehearsal.
+  demo.get("/rewind-reports", async c => {
+    const ids: string[] = [];
+    for (const id of [...receipts.ids]) {
+      try {
+        const report = await client.getReport(id);
+        if (mapping.closedStatuses.includes(report.status)) receipts.forget(id);
+        else ids.push(id);
+      } catch (error) {
+        if (error instanceof SandboxError && error.code === "not_found") receipts.forget(id);
+        else throw error;
+      }
+    }
+    return c.json({demo:true, scope:"local-rehearsal-reports", ids});
   });
 
   demo.post("/resolve/:id", async (c) => {
     const id = c.req.param("id");
     if (!ID.test(id)) return c.json({ sandbox: true, error: { code: "invalid_request", message: "Bad report id" } }, 400);
     const report = await client.setReportStatus(id, "resolved", "Επιλύθηκε (επίδειξη ION).");
+    receipts.forget(id);
     await obstacles.refreshAfterWrite();
     return c.json({ ...reportView(report), demo: true });
   });

@@ -23,4 +23,6 @@ elif [[ -f package.json ]]; then
     echo "scripts/check: node_modules is missing, so types and tests were not checked. Run npm install." >&2
 fi
 
+python3 -m unittest discover -s scripts/tests || failed=1
+
 exit "$failed"

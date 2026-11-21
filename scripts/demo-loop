@@ -40,7 +40,7 @@ async function run(server) {
     const ahead = await api("route",body);
     assert(crosses(ahead.route) && ahead.route.edges.includes(loop.obstacle.edgeId), "Crossing confirmation changed the route away from the planned obstacle.");
     const [lng,lat] = loop.obstacle.position;
-    const first = await api("reports",{lng,lat,category:"sidewalk",text:"Επίδειξη ION — προσωρινό δοκιμαστικό εμπόδιο "+tag});
+    const first = await api("reports?rehearsal=1",{lng,lat,category:"sidewalk",text:"Επίδειξη ION — προσωρινό δοκιμαστικό εμπόδιο "+tag});
     reportId = first.report.id;
     assert.equal(first.obstacle?.edgeId,loop.obstacle.edgeId);
     assert.equal(first.obstacle.blocks,"partial");

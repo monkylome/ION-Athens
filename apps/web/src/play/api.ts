@@ -28,16 +28,17 @@ async function call<T>(path: string, body?: unknown): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-const KEY = "ion-participant"; // the key the missions list already uses
+
 
 /** A random id made on this device. Not a person: no name, no account, no position history. */
 export function participantId(): string {
+  const key = new URLSearchParams(location.search).get("demo") === "1" ? "ion-demo-participant" : "ion-participant";
   try {
-    const previous = localStorage.getItem(KEY);
+    const previous = localStorage.getItem(key);
     if (previous) return previous;
   } catch { /* private mode: an id for this visit only */ }
   const id = Array.from(crypto.getRandomValues(new Uint8Array(16)), (b) => b.toString(16).padStart(2, "0")).join("");
-  try { localStorage.setItem(KEY, id); } catch { /* as above */ }
+  try { localStorage.setItem(key, id); } catch { /* as above */ }
   return id;
 }
 
