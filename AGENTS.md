@@ -35,3 +35,11 @@ The agents on both sides talk through GitHub issues in `monkylome/ION-Athens`, s
 
 - `scripts/check-commit` runs on every commit and on every merge. It refuses conflict markers, secrets and `.env` files. `scripts/sync-main` also runs `scripts/check` before pushing; if it fails, your commits stay local until you fix it. Never bypass the hooks with `--no-verify`.
 - `scripts/check` runs the type checks and all tests of the TypeScript workspace (about 6 seconds). Run `npm install` after pulling when `package-lock.json` changed; without `node_modules` the check warns and skips them. Keep it under 60 seconds.
+
+## Design
+
+- Before writing or changing any interface code, read `design/DESIGN.md` and `design/tokens.css`. The accessibility constraints are the look: black, white, one yellow taken from tactile paving, heavy condensed Greek type, hard edges.
+- Use only the tokens in `design/tokens.css`. Never hard-code a colour, size, radius or duration. A new colour pair needs a measured contrast ratio added to `DESIGN.md` section 2.
+- The fonts are pinned: Sofia Sans Condensed and Sofia Sans, self-hosted through `@fontsource-variable`. Never use a font without a Greek subset.
+- Obey the "Never" list in `DESIGN.md` section 8 and run the checklist in section 9 on your own work before showing it. Say which items you could not verify.
+- The phone target for the demo is Android with Chrome. The product concept is still open, so interface work must not assume one scene, route or character.

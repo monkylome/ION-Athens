@@ -1,0 +1,159 @@
+/* ION Athens design tokens. Plain CSS custom properties: works in any framework.
+   Source of truth for values. DESIGN.md explains the roles.
+   Markers: (unverified) = still not measured or confirmed; (suggestion) = our own value, not a finding.
+   Ratios marked (measured) come from check/scripts/contrast.py (WCAG 2 formula), 2026-11-21. */
+
+:root {
+  /* ---------- Colour ---------- */
+  --bg: #000000;               /* pure black. Never #111 or #0B0B0B */
+  --fg: #FFFFFF;               /* body text on --bg, 21.00:1 (measured) */
+  --accent: #FFD100;           /* tactile yellow. HEX IS A PLACEHOLDER (unverified): sample a real Athenian paving strip. 14.37:1 on --bg (measured; WebAIM shows 14.3, truncated) */
+  --on-accent: #000000;        /* text on yellow blocks, 14.37:1 (measured) */
+  --accent-dim: #B38F00;       /* (suggestion) 6.85:1 on --bg (measured), 3.71:1 on --map-road. Non-text or large text only */
+  --alert: #FF6B35;            /* (suggestion) obstacle. 7.41:1 on --bg (measured). Always with white ring + icon + shape + earcon */
+  --map-road: #3A3A3A;         /* (suggestion) 1.85:1 on --bg (measured). --accent on it = 7.78:1 (measured) */
+  --map-label: #BDBDBD;        /* (suggestion) 11.18:1 on --bg, 6.05:1 on --map-road (measured). Raise if projector washes out */
+  --map-building: #2A2A2A;     /* (suggestion) 1.46:1 on --bg, --fg on it 14.35:1 (measured). #333333 gives 1.66:1 and 12.63:1. Projector legibility (unverified): test on the real projector */
+
+  /* ---------- Type families (Greek subset required) ---------- */
+  --font-display: "Sofia Sans Condensed Variable", "Sofia Sans Condensed", sans-serif;
+  --font-body: "Sofia Sans Variable", "Sofia Sans", sans-serif;
+  --weight-instruction: 950;   /* Greek glyphs checked at wght 100 and 950: 69 characters, no fallback face (measured in Chromium). Axis max is 1000 */
+  --weight-secondary: 750;
+  --weight-body: 700;          /* floor for the condensed face is 700 */
+
+  /* ---------- Spacing (base 8px, all suggestion) ---------- */
+  --space-1: 8px;
+  --space-2: 16px;
+  --space-3: 24px;
+  --space-4: 48px;
+  --space-5: 96px;
+
+  /* ---------- Shape and borders (suggestion) ---------- */
+  --radius: 0;
+  --border: 4px solid var(--fg);
+  --border-accent: 4px solid var(--accent);
+  --target-min: 64px;          /* minimum touch target height on the phone */
+
+  /* ---------- Focus (suggestion) ---------- */
+  --focus-width: 6px;
+  --focus-offset: 4px;
+  --focus-on-dark: var(--accent);   /* focus ring on black elements */
+  --focus-on-accent: #FFFFFF;       /* ring around a yellow element that sits on black: it lands on the black gap, 21:1 */
+  --focus-on-accent-bg: #000000;    /* ring around anything that sits on a yellow BACKDROP: black, 14.37:1 */
+
+  /* ---------- Motion (suggestion, tune by eye) ---------- */
+  --dur-snap: 120ms;
+  --dur-draw: 700ms;
+  --dur-camera: 1200ms;
+  --ease-hard: steps(6, end);               /* stepped, mechanical */
+  --ease-settle: cubic-bezier(0.2, 0, 0, 1);
+
+  /* ---------- Active scale: phone is the default ---------- */
+  --t-instruction: 4rem;       /* range 3-5rem. Weight 950 */
+  --t-secondary: 2rem;         /* weight 750 (suggestion) */
+  --t-body: 1.5rem;            /* never below. Weight 700 (suggestion) */
+  --t-lh-instruction: 1.0;     /* (suggestion) Greek: tonos on capitals needs at least 1.0 */
+  --t-lh-body: 1.3;            /* (suggestion) */
+}
+
+/* ---------- Large screen (projector) scale. Opt in with data-surface="stage" ---------- */
+[data-surface="stage"] {
+  --t-instruction: 8vw;        /* caption. Range 6-10vw. Weight 950 */
+  --t-secondary: 3vw;          /* status line. Weight 750 */
+  --t-body: 2vw;               /* (suggestion) smallest text on stage, e.g. map labels, credits */
+  --t-lh-instruction: 1.05;    /* (suggestion) 0.95 let the tonos touch descenders of the line above in two-line captions */
+  --space-3: 3vw;              /* (suggestion) */
+  --space-4: 5vw;              /* (suggestion) */
+  --border: 0.5vw solid var(--fg);
+  --border-accent: 0.5vw solid var(--accent);
+  --focus-width: 0.6vw;
+}
+
+/* Phone scale made explicit, for pages that show both surfaces */
+[data-surface="phone"] {
+  --t-instruction: 4rem;
+  --t-secondary: 2rem;
+  --t-body: 1.5rem;
+}
+
+/* ---------- Base ---------- */
+/* Set lang="el" on the <html> element (en when toggled). CSS cannot do it. */
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-weight: var(--weight-body);
+  font-size: var(--t-body);
+  line-height: var(--t-lh-body);
+}
+
+.t-instruction {
+  text-wrap: balance;
+  font-family: var(--font-display);
+  font-weight: var(--weight-instruction);
+  font-size: var(--t-instruction);
+  line-height: var(--t-lh-instruction);
+}
+.t-secondary {
+  font-family: var(--font-display);
+  font-weight: var(--weight-secondary);
+  font-size: var(--t-secondary);
+}
+/* Uppercase ONLY for single-word alerts, and only with lang="el" set */
+.t-alert-word { text-transform: uppercase; letter-spacing: .015em; }
+
+/* ---------- High-contrast focus (never removed, never softened) ---------- */
+:focus { outline: none; }
+:focus-visible {
+  outline: var(--focus-width) solid var(--focus-on-dark);
+  outline-offset: var(--focus-offset);
+}
+/* Yellow elements get a white ring */
+.on-accent:focus-visible,
+[data-on="accent"]:focus-visible {
+  outline-color: var(--focus-on-accent);
+}
+/* Black ring inside yellow, white ring outside: two-tone so the ring survives any backdrop */
+.focus-double:focus-visible {
+  outline: var(--focus-width) solid var(--focus-on-dark);
+  box-shadow: 0 0 0 calc(var(--focus-width) + 4px) var(--bg); /* hard, no blur: not a soft shadow */
+}
+
+/* The ring is judged against the backdrop it lands on, not against the element it surrounds. */
+.on-accent-bg :focus-visible,
+[data-backdrop="accent"] :focus-visible {
+  outline-color: var(--focus-on-accent-bg);
+}
+
+/* ---------- User asks for more contrast / forced colours ---------- */
+/* Measured: road 3.88:1 on bg, building 3.14:1 on bg, accent on road 3.70:1, fg on building 6.69:1, accent on building 4.58:1.
+   The old #4A4A4A building gave 2.37:1 and failed the 3:1 non-text level, so it was replaced. */
+@media (prefers-contrast: more) {
+  :root {
+    --map-road: #6A6A6A;
+    --map-building: #5C5C5C;
+    --accent-dim: var(--accent);
+  }
+}
+@media (forced-colors: active) {
+  :focus-visible { outline: var(--focus-width) solid Highlight; }
+}
+
+/* ---------- Reduced motion: state changes stay, movement goes ---------- */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-snap: 0ms;
+    --dur-draw: 0ms;
+    --dur-camera: 0ms;
+    --ease-hard: linear;
+    --ease-settle: linear;
+  }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
