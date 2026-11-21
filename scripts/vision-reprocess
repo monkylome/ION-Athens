@@ -1,0 +1,7 @@
+#!/bin/sh
+# Runs the current local model again over the frames citizens donated (data-local/vision/kept) and prints what changed.
+# Needs scripts/vision-start first. `--write` updates the notes beside the frames. Never leaves this machine.
+set -eu
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT"
+exec node_modules/.bin/tsx apps/server/src/vision/reprocess.ts "$@"

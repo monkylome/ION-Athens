@@ -26,6 +26,7 @@ import { SandboxError, type SandboxClient } from "./sandbox/client.ts";
 import { REPORT_CATEGORIES, type SandboxPoi, type SandboxReport } from "./sandbox/schemas.ts";
 import { streetIndex, placeDecision, decisionObstacles, decisionHint, reasons, type Placed } from "./sources/diavgeia.ts";
 import { areaName, createAssist, type AssistConfig } from "./assist/routes.ts";
+import { createVision, type VisionConfig } from "./vision/routes.ts";
 import { type CitySources, gisPlaces, offlineCitySources, registerCityRoutes } from "./sources/index.ts";
 
 export interface AppDeps {
@@ -46,6 +47,8 @@ export interface AppDeps {
   missions?: Partial<MissionOptions>;
   /** Limits for the help-by-camera feature; defaults in assist/. */
   assist?: AssistConfig["options"];
+  /** The camera: a local vision model (VISION_URL, VISION_MODEL) that proposes, a citizen who confirms. Without a model its endpoints answer 503. */
+  vision?: Pick<VisionConfig, "env" | "model" | "keptDir" | "opts">;
   /** City sources behind `/api/sources`, `/api/context` and the extra places. Without it none is reached. */
   citySources?: CitySources;
   now?: () => Date;
@@ -628,6 +631,9 @@ export function createApp(deps: AppDeps) {
 
   app.route("/api/demo", demo);
   app.route("/api/assist", createAssist({ now, announce: announce as AssistConfig["announce"], award: (p, n) => board.award(p, n), profile: (p) => board.profile(p), areaOf: (p) => areaName(routing, p), fileReport: async (r) => createReport({ ...r, category: "sidewalk" }, 0), options: deps.assist }).router);
+  app.route("/api/vision", createVision({ env: process.env, ...deps.vision, now, announce: announce as AssistConfig["announce"], award: (p, n) => board.award(p, n), profile: (p) => board.profile(p), areaOf: (p) => areaName(routing, p),
+    missionsNear: (p) => board.near(p, [...obstacles.current().obstacles, ...decisions.flatMap(d => decisionHint(d, now()))], 100, 12),
+    answerMission: async (id, participant, answer, at) => { const r = await app.request(`/api/missions/${encodeURIComponent(id)}/answer`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ answer, participant, lng: at[0], lat: at[1] }) }); const j = await r.json() as any; return r.ok ? { ok: true, pointsEarned: j.pointsEarned, profile: j.profile, confirmed: j.confirmed, mission: j.mission } : { ok: false, status: r.status, code: j.error?.code ?? "error", message: j.error?.message ?? "" }; } }).router);
 
   registerCityRoutes(app, {
     city,

@@ -1,0 +1,12 @@
+#!/bin/sh
+# Stops only the vision server that scripts/vision-start started (by its pid file). Safe to run twice.
+set -eu
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+PIDFILE="$ROOT/data-local/vision/run/ollama.pid"
+if [ -f "$PIDFILE" ]; then
+  pid="$(cat "$PIDFILE")"
+  if kill -0 "$pid" 2>/dev/null; then kill "$pid" && echo "vision: stopped pid $pid"; else echo "vision: pid $pid was not running"; fi
+  rm -f "$PIDFILE"
+else
+  echo "vision: not started by this script"
+fi
