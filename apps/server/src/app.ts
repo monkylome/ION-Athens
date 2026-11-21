@@ -1,7 +1,8 @@
 import { distanceM } from "./geo.ts";
 import { reportReceipts } from "./demo/report-receipts.ts";
+import { findStation } from "./sources/stasy.ts";
 import { theatreLoop } from "./demo/loop.ts";
-import { area, centres, entrance, matchVenue, venues, venueMissions } from "./venues/catalogue.ts";
+import { area, centres, doors, entrance, facts as venueFacts, matchVenue, venues, venueMissions } from "./venues/catalogue.ts";
 import { venueApi } from "./venues/trails.ts";
 import { cachedAddress } from "./sources/decision-addresses.ts";
 import { activeUntil, upcomingStart } from "./sources/decision-parser.ts";
@@ -601,9 +602,21 @@ export function createApp(deps: AppDeps) {
     const snap = await obstacles.snapshot();
     const at = now();
     const active = snap.obstacles.filter(o => isActive(o, at));
-    const loop = theatreLoop(routing.graph, board.all(active), board.confirmedObservations(), active, at);
+    const preset = c.req.query("preset") ?? "olympia";
+    if (preset !== "acropolis" && preset !== "olympia") return c.json({error:{code:"unknown_preset"}},400);
+    const [notes, lifts] = preset === "acropolis"
+      ? await Promise.all([city.notes.get(undefined,2000),city.lifts.get(undefined,2000)]) : [];
+    const station = lifts?.fetchedAt && !lifts.stale && !lifts.problem ? findStation(lifts.records,"Ακρόπολη") : null;
+    const lift = station ? {working:station.lifts.filter(l=>l.working).length,total:station.lifts.length,fetchedAt:lifts!.fetchedAt} : null;
+    const loop = theatreLoop(routing.graph, board.all(active), board.confirmedObservations(), active, at, preset, notes?.records);
     if (!loop) return c.json({demo:true,error:{code:"no_matching_loop",message:"No route met the crossing and detour requirements on the loaded graph."}},422);
-    return c.json({demo:true,surveyApplied:deps.enrichment?.applied ?? false,...loop});
+    const museum = preset === "acropolis" ? venues.find(v=>v.id === "museum-acropolis-museum-w983921252") : null;
+    const museumCard = museum && {
+      name:museum.name, positions:[museum,...doors(museum)].map(p=>[p.lng,p.lat]),
+      facts:venueFacts(museum, board.confirmedObservations()).filter(f=>f.value !== null)
+        .map(f=>({key:f.key,value:f.value,source:f.source})),
+    };
+    return c.json({demo:true,...(lift && {lift}),...(museumCard && {museumCard}),surveyApplied:deps.enrichment?.applied ?? false,...loop});
   });
 
   demo.post("/obstacle", async (c) => {

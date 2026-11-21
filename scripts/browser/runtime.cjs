@@ -36,7 +36,7 @@ async function stageFlow(p, inspect, recording=false) {
   const state = phase => p.waitForFunction(v=>window.__ionScenario?.getState().phase===v,phase,{timeout:90000});
   let reportId;
   try {
-    await go(p, "/stage?citizen=scripted&tiles=off&voice=off" + (recording?"&backup=1":""));
+    await go(p, "/stage?citizen=scripted&tiles=off&voice=off&loop="+encodeURIComponent(process.env.ION_DEMO_PRESET || "olympia") + (recording?"&backup=1":""));
     await p.waitForFunction(()=>!!window.__ionScenario?.getState().loop);
     if (!recording) {
       await key("c"); await p.waitForFunction(()=>document.querySelector(".compare footer p")?.textContent.includes("μέτρα"));

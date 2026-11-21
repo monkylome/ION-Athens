@@ -9,9 +9,10 @@ async function gameFlow(p, inspect, recording=false) {
     if (!response.ok()) throw Error(path+" returned HTTP "+response.status());
     return response.json();
   }
-  const loop=await api("demo/loop");
+  const preset=encodeURIComponent(process.env.ION_DEMO_PRESET || "olympia");
+  const loop=await api("demo/loop?preset="+preset);
   const nearby=async ([lng,lat])=>(await api("missions?lng="+lng+"&lat="+lat+"&radius=5000&limit=100")).missions;
-  const crossing=(await nearby(loop.crossing.position)).find(m=>m.type==="crossing_sound" && m.answers.no===0);
+  const crossing=(await nearby(loop.crossing.position)).find(m=>m.id===loop.crossing.id && m.answers.no===0);
   const venues=await nearby([loop.destination.lng,loop.destination.lat]);
   const venue=venues.find(m=>m.id===loop.venueMissionId) ?? venues.find(m=>m.type==="venue_check" && m.venueId===loop.destination.id);
   if (!crossing || !venue) throw Error("Open crossing and venue missions required. Start a fresh rehearsal API.");
@@ -23,7 +24,7 @@ async function gameFlow(p, inspect, recording=false) {
     const obstacle=(await nearby([lng,lat])).find(m=>m.id==="obstacle_check:"+first.report.id);
     if (!obstacle) throw Error("The rehearsal report has no confirmation mission.");
     for(const [i,m] of [crossing,obstacle,venue].entries()) {
-      await go(p,"/play?demo=1&fake="+m.position.join(",")+(recording?"&backup=1":""));
+      await go(p,"/play?demo=1&loop="+preset+"&fake="+m.position.join(",")+(recording?"&backup=1":""));
       await p.waitForFunction(()=>document.querySelector(".pl-progress__figure")?.textContent.includes("/"));
       await button(p,"Μενού").click();
       await button(p,/Κοντά σας/).click();

@@ -9,7 +9,7 @@ export type PlaceKind =
   | "metro_entrance"
   | "townhall"
   | "kep"
-  | "museum"
+  | "events_venue" | "museum"
   | "landmark"
   | "hospital"
   | "police"
@@ -82,7 +82,7 @@ function kindOf(tags: Tags): PlaceKind | undefined {
   const names = [tags.name, tags["name:el"], tags["name:en"], tags.official_name, tags.short_name].filter(Boolean).join(" | ");
   if (tags.highway !== undefined) return tags.place === "square" ? "square" : undefined; // streets are not places
   if (tags.type === "route" || tags.type === "route_master" || tags.type === "restriction") return undefined;
-  for (const kind of ["community_centre", "theatre", "cinema", "library", "arts_centre", "concert_hall"] as const) {
+  for (const kind of ["community_centre", "theatre", "cinema", "library", "arts_centre", "concert_hall","events_venue"] as const) {
     if (tags.amenity === kind || (kind === "concert_hall" && tags.building === kind)) return kind;
   }
   if (tags.place === "neighbourhood" || tags.place === "suburb") return tags.place;
@@ -215,7 +215,7 @@ export function buildPlaces(osm: OsmIndex, graph: PedestrianGraph, extras: Graph
       osmId: el.id,
       position: el.type === "node" ? "osm_node" : "centroid",
     };
-    if (["community_centre","theatre","cinema","library","arts_centre","concert_hall"].includes(kind)) {
+    if (["community_centre","theatre","cinema","library","arts_centre","concert_hall","events_venue","museum"].includes(kind)) {
       place.venueTags = venueTags(tags);
     }
     // Keep links to the previously catalogued landmark stable.
@@ -232,7 +232,7 @@ export function buildPlaces(osm: OsmIndex, graph: PedestrianGraph, extras: Graph
         const ep: LngLat = [node.lon, node.lat];
         const es = snap(node.id, ep);
         const sub: Place = {
-          id: place.venueTags ? `entrance-${el.type[0]}${el.id}-n${node.id}` : `entrance-${slug(nameEn ?? label) || "x"}-n${node.id}`,
+          id: place.venueTags && kind !== "museum" ? `entrance-${el.type[0]}${el.id}-n${node.id}` : `entrance-${slug(nameEn ?? label) || "x"}-n${node.id}`,
           name: `${label} (είσοδος${node.tags?.name ? " " + node.tags.name : ""})`,
           nameEn: nameEn ? `${nameEn} (entrance${node.tags?.["name:en"] ? " " + node.tags["name:en"] : ""})` : null,
           kind: "building_entrance",

@@ -12,7 +12,7 @@ export interface Place {
 }
 
 export const places: Place[] = JSON.parse(readFileSync(new URL("../../../../data/places.json",import.meta.url),"utf8"));
-const publicKinds = ["community_centre","theatre","cinema","library","arts_centre","concert_hall"];
+const publicKinds = ["community_centre","theatre","cinema","library","arts_centre","concert_hall","events_venue","museum"];
 export const venues = places.filter(p => publicKinds.includes(p.kind));
 export const centres = places.filter(p => ["suburb","neighbourhood"].includes(p.kind));
 const entrances = places.filter(p => p.kind === "building_entrance" && !["emergency","service","exit"].includes(p.entrance ?? "") &&

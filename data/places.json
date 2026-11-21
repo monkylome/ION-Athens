@@ -979,6 +979,158 @@
   }
  },
  {
+  "id": "events_venue-bright-space-n5642537869",
+  "name": "Bright.Space",
+  "nameEn": null,
+  "kind": "events_venue",
+  "lng": 23.713431,
+  "lat": 37.980638,
+  "nearestNodeId": "n251136507",
+  "nearestNodeDistanceM": 50.7,
+  "source": "osm:node/5642537869",
+  "osmType": "node",
+  "osmId": 5642537869,
+  "position": "osm_node",
+  "venueTags": {
+   "website": "https://wearebright.gr",
+   "operator": "Bright"
+  },
+  "address": "Evrimedontos 3"
+ },
+ {
+  "id": "events_venue-gazarte-w456415687",
+  "name": "Gazarte",
+  "nameEn": null,
+  "kind": "events_venue",
+  "lng": 23.712377,
+  "lat": 37.978981,
+  "nearestNodeId": "n2253053659",
+  "nearestNodeDistanceM": 35.4,
+  "source": "osm:way/456415687",
+  "osmType": "way",
+  "osmId": 456415687,
+  "position": "centroid",
+  "venueTags": {
+   "website": "https://gazarte.gr/"
+  },
+  "snappedBy": "addr:street",
+  "address": "Βουτάδων 34",
+  "entranceVerified": false
+ },
+ {
+  "id": "events_venue-oep-athens-n14336258907",
+  "name": "Ο Ελληνικός Πολυχώρος",
+  "nameEn": "OEP Athens",
+  "kind": "events_venue",
+  "lng": 23.723521,
+  "lat": 37.979679,
+  "nearestNodeId": "n807999572",
+  "nearestNodeDistanceM": 9.6,
+  "source": "osm:node/14336258907",
+  "osmType": "node",
+  "osmId": 14336258907,
+  "position": "osm_node",
+  "venueTags": {
+   "wheelchair": "yes",
+   "website": "oepathens.com"
+  },
+  "address": "Σαρρή 12",
+  "wheelchair": "yes"
+ },
+ {
+  "id": "events_venue-technopolis-w215710614",
+  "name": "Τεχνόπολις Δήμου Αθηναίων",
+  "nameEn": "Technopolis",
+  "kind": "events_venue",
+  "lng": 23.713906,
+  "lat": 37.977951,
+  "nearestNodeId": "n2252676634",
+  "nearestNodeDistanceM": 44.2,
+  "source": "osm:way/215710614",
+  "osmType": "way",
+  "osmId": 215710614,
+  "position": "centroid",
+  "venueTags": {
+   "wheelchair": "yes",
+   "toilets:wheelchair": "yes",
+   "wikidata": "Q174552",
+   "operator": "Δήμος Αθηναίων",
+   "check_date": "2025-10-24",
+   "website": "http://www.technopolis-athens.com/"
+  },
+  "address": "Πειραιώς 100",
+  "wheelchair": "yes",
+  "entranceVerified": true
+ },
+ {
+  "id": "events_venue-x-n11687267077",
+  "name": "ΠΛΥΦΑ",
+  "nameEn": null,
+  "kind": "events_venue",
+  "lng": 23.708747,
+  "lat": 37.984542,
+  "nearestNodeId": "n632342865",
+  "nearestNodeDistanceM": 71.3,
+  "source": "osm:node/11687267077",
+  "osmType": "node",
+  "osmId": 11687267077,
+  "position": "osm_node",
+  "venueTags": {
+   "wheelchair": "yes",
+   "check_date": "2024-03-03"
+  },
+  "address": "Κορυτσάς 39",
+  "wheelchair": "yes"
+ },
+ {
+  "id": "events_venue-x-n13930497160",
+  "name": "Αίθουσα \"Δρακόπουλος\"",
+  "nameEn": null,
+  "kind": "events_venue",
+  "lng": 23.734369,
+  "lat": 37.980884,
+  "nearestNodeId": "n7900885189",
+  "nearestNodeDistanceM": 16.2,
+  "source": "osm:node/13930497160",
+  "osmType": "node",
+  "osmId": 13930497160,
+  "position": "osm_node",
+  "venueTags": {}
+ },
+ {
+  "id": "events_venue-x-n13945237108",
+  "name": "Αίθουσα Ολυμπία",
+  "nameEn": null,
+  "kind": "events_venue",
+  "lng": 23.73208,
+  "lat": 37.967441,
+  "nearestNodeId": "n2415358758",
+  "nearestNodeDistanceM": 34.9,
+  "source": "osm:node/13945237108",
+  "osmType": "node",
+  "osmId": 13945237108,
+  "position": "osm_node",
+  "venueTags": {}
+ },
+ {
+  "id": "events_venue-x-n6734897890",
+  "name": "Ράδιο",
+  "nameEn": null,
+  "kind": "events_venue",
+  "lng": 23.710047,
+  "lat": 37.977878,
+  "nearestNodeId": "n353768893",
+  "nearestNodeDistanceM": 8.4,
+  "source": "osm:node/6734897890",
+  "osmType": "node",
+  "osmId": 6734897890,
+  "position": "osm_node",
+  "venueTags": {
+   "check_date": "2025-12-17"
+  },
+  "address": "Δεκελέων 24"
+ },
+ {
   "id": "landmark-odeon-of-herodes-atticus-r13249184",
   "name": "Ωδείο Ηρώδου Αττικού",
   "nameEn": "Odeon of Herodes Atticus",
@@ -4092,6 +4244,13 @@
   "osmType": "way",
   "osmId": 983921252,
   "position": "centroid",
+  "venueTags": {
+   "wheelchair": "yes",
+   "toilets:wheelchair": "yes",
+   "website": "https://www.theacropolismuseum.gr/",
+   "wikidata": "Q421084",
+   "check_date": "2024-09-30"
+  },
   "address": "Διονυσίου Αρεοπαγίτου 15",
   "wheelchair": "yes",
   "entranceVerified": true
@@ -4109,6 +4268,9 @@
   "osmType": "node",
   "osmId": 3279145579,
   "position": "osm_node",
+  "venueTags": {
+   "wheelchair": "no"
+  },
   "address": "Aiolou 86",
   "wheelchair": "no"
  },
@@ -4125,6 +4287,11 @@
   "osmType": "way",
   "osmId": 851609464,
   "position": "centroid",
+  "venueTags": {
+   "wheelchair": "limited",
+   "wikidata": "Q3555557",
+   "website": "http://history-museum.uoa.gr/"
+  },
   "snappedBy": "addr:street",
   "address": "Θόλου 5",
   "wheelchair": "limited",
@@ -4143,6 +4310,11 @@
   "osmType": "way",
   "osmId": 220926060,
   "position": "centroid",
+  "venueTags": {
+   "wheelchair": "yes",
+   "wikidata": "Q104527429",
+   "website": "http://thf.gr/"
+  },
   "snappedBy": "addr:street",
   "address": "Βασιλίσσης Σοφίας 9",
   "wheelchair": "yes",
@@ -4161,6 +4333,11 @@
   "osmType": "relation",
   "osmId": 2429041,
   "position": "centroid",
+  "venueTags": {
+   "website": "https://www.benaki.gr/",
+   "wikidata": "Q816669",
+   "check_date": "2023-12-12"
+  },
   "address": "Πειραιώς 138",
   "entranceVerified": true
  },
@@ -4177,6 +4354,12 @@
   "osmType": "way",
   "osmId": 321114256,
   "position": "centroid",
+  "venueTags": {
+   "wheelchair": "yes",
+   "website": "https://www.benaki.gr/",
+   "wikidata": "Q59165188",
+   "operator": "Μουσείο Μπενάκη"
+  },
   "snappedBy": "addr:street",
   "address": "Αγίων Ασωμάτων 22",
   "wheelchair": "yes",
@@ -4195,6 +4378,10 @@
   "osmType": "way",
   "osmId": 914492222,
   "position": "centroid",
+  "venueTags": {
+   "website": "https://archontiko-mpenizelon.gr/",
+   "wikidata": "Q12874094"
+  },
   "snappedBy": "addr:street",
   "address": "Αδριανού 96",
   "entranceVerified": false
@@ -4212,6 +4399,7 @@
   "osmType": "relation",
   "osmId": 11505131,
   "position": "centroid",
+  "venueTags": {},
   "entranceVerified": true
  },
  {
@@ -4227,6 +4415,11 @@
   "osmType": "node",
   "osmId": 3005463590,
   "position": "osm_node",
+  "venueTags": {
+   "wheelchair": "yes",
+   "wikidata": "Q2732854",
+   "website": "http://odysseus.culture.gr/h/1/eh151.jsp?obj_id=3348"
+  },
   "address": "Τοσίτσα 1",
   "wheelchair": "yes"
  },
@@ -4243,6 +4436,9 @@
   "osmType": "node",
   "osmId": 5980812064,
   "position": "osm_node",
+  "venueTags": {
+   "website": "http://www.exilemuseum.gr"
+  },
   "address": "Αγίων Ασωμάτων 31"
  },
  {
@@ -4258,6 +4454,11 @@
   "osmType": "way",
   "osmId": 177282540,
   "position": "centroid",
+  "venueTags": {
+   "wheelchair": "no",
+   "website": "https://frissirasmuseum.gr",
+   "wikidata": "Q5504730"
+  },
   "snappedBy": "addr:street",
   "address": "Μονής Αστερίου 7",
   "wheelchair": "no",
@@ -4276,6 +4477,11 @@
   "osmType": "node",
   "osmId": 4262198430,
   "position": "osm_node",
+  "venueTags": {
+   "wheelchair": "no",
+   "website": "https://herakleidon-art.gr/",
+   "check_date": "2024-04-23"
+  },
   "address": "Αποστόλου Παύλου 37",
   "wheelchair": "no"
  },
@@ -4292,6 +4498,10 @@
   "osmType": "way",
   "osmId": 175877498,
   "position": "centroid",
+  "venueTags": {
+   "wikidata": "Q16252571",
+   "website": "https://herakleidon.org"
+  },
   "snappedBy": "addr:street",
   "address": "Ηρακλειδών 16",
   "entranceVerified": false
@@ -4309,6 +4519,10 @@
   "osmType": "way",
   "osmId": 267551016,
   "position": "centroid",
+  "venueTags": {
+   "website": "https://www.lalaounis-jewelrymuseum.gr/",
+   "wikidata": "Q15051919"
+  },
   "snappedBy": "addr:street",
   "address": "Καλλισπέρη 12",
   "entranceVerified": false
@@ -4326,6 +4540,11 @@
   "osmType": "node",
   "osmId": 3912027436,
   "position": "osm_node",
+  "venueTags": {
+   "wheelchair": "yes",
+   "wikidata": "Q116246225",
+   "website": "http://www.technopolis-athens.com/"
+  },
   "address": "Πειραιώς 100",
   "wheelchair": "yes"
  },
@@ -4342,6 +4561,10 @@
   "osmType": "way",
   "osmId": 217268333,
   "position": "centroid",
+  "venueTags": {
+   "wheelchair": "yes",
+   "wikidata": "Q2574469"
+  },
   "address": "Ερμού 148",
   "wheelchair": "yes",
   "entranceVerified": true
@@ -4359,6 +4582,7 @@
   "osmType": "way",
   "osmId": 223325133,
   "position": "centroid",
+  "venueTags": {},
   "snappedBy": "addr:street",
   "address": "Χρήστου Λαδά 2",
   "entranceVerified": false
@@ -4376,6 +4600,10 @@
   "osmType": "node",
   "osmId": 5980812063,
   "position": "osm_node",
+  "venueTags": {
+   "website": "http://www.pekam.org.gr/mouseio-makronhsou.html",
+   "operator": "Π.Ε.Κ.Α.Μ"
+  },
   "address": "Αγίων Ασωμάτων 31"
  },
  {
@@ -4391,6 +4619,10 @@
   "osmType": "node",
   "osmId": 3960520131,
   "position": "osm_node",
+  "venueTags": {
+   "website": "https://www.mnep.gr/gr/episkepsi/to-mouseio-tis-odou-panos-22/",
+   "operator": "Μουσείο Νεότερου Ελληνικού Πολιτισμού"
+  },
   "address": "Πανός 22"
  },
  {
@@ -4406,6 +4638,10 @@
   "osmType": "node",
   "osmId": 11486548887,
   "position": "osm_node",
+  "venueTags": {
+   "website": "https://mariacallasmuseum.gr/en/",
+   "wikidata": "Q123193468"
+  },
   "address": "Μητροπόλεως 44"
  },
  {
@@ -4420,7 +4656,8 @@
   "source": "osm:node/13716229558",
   "osmType": "node",
   "osmId": 13716229558,
-  "position": "osm_node"
+  "position": "osm_node",
+  "venueTags": {}
  },
  {
   "id": "museum-municipal-gallery-of-athens-w219472242",
@@ -4435,6 +4672,10 @@
   "osmType": "way",
   "osmId": 219472242,
   "position": "centroid",
+  "venueTags": {
+   "wheelchair": "yes",
+   "wikidata": "Q1576793"
+  },
   "address": "Παναγή Τσαλδάρη (Πειραιώς) 51",
   "wheelchair": "yes",
   "entranceVerified": false
@@ -4452,6 +4693,9 @@
   "osmType": "way",
   "osmId": 321376940,
   "position": "centroid",
+  "venueTags": {
+   "wikidata": "Q1576793"
+  },
   "snappedBy": "addr:street",
   "address": "Λεωνίδου",
   "entranceVerified": false
@@ -4469,6 +4713,9 @@
   "osmType": "way",
   "osmId": 456123292,
   "position": "centroid",
+  "venueTags": {
+   "wikidata": "Q1576793"
+  },
   "snappedBy": "addr:street",
   "address": "Μυλλέρου",
   "entranceVerified": false
@@ -4485,7 +4732,10 @@
   "source": "osm:node/10992115218",
   "osmType": "node",
   "osmId": 10992115218,
-  "position": "osm_node"
+  "position": "osm_node",
+  "venueTags": {
+   "wikidata": "Q1584857"
+  }
  },
  {
   "id": "museum-museum-of-ancient-greek-technology-kotsa-n11377308267",
@@ -4500,6 +4750,11 @@
   "osmType": "node",
   "osmId": 11377308267,
   "position": "osm_node",
+  "venueTags": {
+   "wheelchair": "no",
+   "website": "https://kotsanas.com/",
+   "operator": "Konstantinos Kotsanas"
+  },
   "address": "Πινδάρου 6",
   "wheelchair": "no"
  },
@@ -4516,6 +4771,9 @@
   "osmType": "way",
   "osmId": 193395906,
   "position": "centroid",
+  "venueTags": {
+   "operator": "Ionian Bank"
+  },
   "snappedBy": "addr:street",
   "address": "Αγίας Φιλοθέης 10",
   "entranceVerified": false
@@ -4533,6 +4791,9 @@
   "osmType": "way",
   "osmId": 834539464,
   "position": "centroid",
+  "venueTags": {
+   "wikidata": "Q12882149"
+  },
   "snappedBy": "addr:street",
   "address": "Αγγελικής Χατζημιχάλη 6",
   "entranceVerified": false
@@ -4550,6 +4811,9 @@
   "osmType": "way",
   "osmId": 849794330,
   "position": "centroid",
+  "venueTags": {
+   "wikidata": "Q108651215"
+  },
   "snappedBy": "addr:street",
   "address": "Κόδρου 9",
   "entranceVerified": false
@@ -4567,6 +4831,10 @@
   "osmType": "way",
   "osmId": 223175510,
   "position": "centroid",
+  "venueTags": {
+   "wheelchair": "no",
+   "wikidata": "Q4306254"
+  },
   "snappedBy": "addr:street",
   "address": "Διογένους 1-3",
   "wheelchair": "no",
@@ -4585,6 +4853,10 @@
   "osmType": "node",
   "osmId": 6534260972,
   "position": "osm_node",
+  "venueTags": {
+   "wikidata": "Q108674606",
+   "website": "https://museumofillusions.gr"
+  },
   "address": "Άστιγγος 12"
  },
  {
@@ -4600,6 +4872,9 @@
   "osmType": "way",
   "osmId": 1553268578,
   "position": "centroid",
+  "venueTags": {
+   "website": "https://www.mnep.gr"
+  },
   "snappedBy": "addr:street",
   "address": "Άρεως 10",
   "entranceVerified": false
@@ -4617,6 +4892,10 @@
   "osmType": "way",
   "osmId": 321104684,
   "position": "centroid",
+  "venueTags": {
+   "wheelchair": "yes",
+   "website": "http://www.pacanellopoulosfoundation.org"
+  },
   "snappedBy": "addr:street",
   "address": "Θεωρίας 12",
   "wheelchair": "yes",
@@ -4635,6 +4914,10 @@
   "osmType": "node",
   "osmId": 10655452393,
   "position": "osm_node",
+  "venueTags": {
+   "wheelchair": "yes",
+   "wikidata": "Q2383284"
+  },
   "address": "Αδριανού 24",
   "wheelchair": "yes"
  },
@@ -4651,6 +4934,10 @@
   "osmType": "way",
   "osmId": 195310549,
   "position": "centroid",
+  "venueTags": {
+   "wikidata": "Q111245509",
+   "check_date": "2026-03-26"
+  },
   "entranceVerified": false
  },
  {
@@ -4666,6 +4953,10 @@
   "osmType": "way",
   "osmId": 285129067,
   "position": "centroid",
+  "venueTags": {
+   "wikidata": "Q6941076",
+   "operator": "Ίδρυμα Βούρου - Ευταξία"
+  },
   "address": "Παπαρηγοπούλου 7",
   "entranceVerified": false
  },
@@ -4682,6 +4973,10 @@
   "osmType": "way",
   "osmId": 223874917,
   "position": "centroid",
+  "venueTags": {
+   "wheelchair": "no",
+   "wikidata": "Q6941089"
+  },
   "snappedBy": "addr:street",
   "address": "Δημοκρίτου 7",
   "wheelchair": "no",
@@ -4700,6 +4995,10 @@
   "osmType": "way",
   "osmId": 219467101,
   "position": "centroid",
+  "venueTags": {
+   "wikidata": "Q5062634",
+   "website": "http://www.potterymuseum.gr"
+  },
   "snappedBy": "addr:street",
   "address": "Μελιδώνη 4-6",
   "entranceVerified": false
@@ -4717,6 +5016,9 @@
   "osmType": "node",
   "osmId": 4568351771,
   "position": "osm_node",
+  "venueTags": {
+   "wikidata": "Q98609805"
+  },
   "address": "Τιμολέοντος 2"
  },
  {
@@ -4732,6 +5034,11 @@
   "osmType": "relation",
   "osmId": 2828,
   "position": "centroid",
+  "venueTags": {
+   "wheelchair": "yes",
+   "wikidata": "Q637187",
+   "website": "https://namuseum.gr/"
+  },
   "address": "Πατησίων 44",
   "wheelchair": "yes",
   "entranceVerified": true
@@ -4749,6 +5056,12 @@
   "osmType": "relation",
   "osmId": 19040143,
   "position": "centroid",
+  "venueTags": {
+   "wheelchair": "no",
+   "wikidata": "Q19363322",
+   "check_date": "2025-05-11",
+   "website": "http://www.nhmuseum.gr/"
+  },
   "address": "Κολοκοτρώνη 13",
   "wheelchair": "no",
   "entranceVerified": true
@@ -4766,6 +5079,9 @@
   "osmType": "relation",
   "osmId": 18178715,
   "position": "centroid",
+  "venueTags": {
+   "wheelchair": "yes"
+  },
   "wheelchair": "yes",
   "entranceVerified": false
  },
@@ -4782,6 +5098,10 @@
   "osmType": "way",
   "osmId": 220948825,
   "position": "centroid",
+  "venueTags": {
+   "operator": "Μουσείο Μπενάκη",
+   "website": "http://www.benaki.gr/"
+  },
   "snappedBy": "addr:street",
   "address": "Κριεζώτου 3",
   "entranceVerified": false
@@ -4799,6 +5119,11 @@
   "osmType": "node",
   "osmId": 3844131091,
   "position": "osm_node",
+  "venueTags": {
+   "wheelchair": "yes",
+   "wikidata": "Q658339",
+   "operator": "Stavros Niarchos Foundation"
+  },
   "address": "Πανεπιστημίου 12",
   "wheelchair": "yes"
  },
@@ -4815,6 +5140,10 @@
   "osmType": "node",
   "osmId": 13942313739,
   "position": "osm_node",
+  "venueTags": {
+   "operator": "Mandy JK",
+   "check_date": "2026-08-18"
+  },
   "address": "Ηφαίστου 4"
  },
  {
@@ -4830,6 +5159,10 @@
   "osmType": "node",
   "osmId": 11210896979,
   "position": "osm_node",
+  "venueTags": {
+   "wheelchair": "no",
+   "check_date": "2025-07-15"
+  },
   "address": "Παλαιολόγου Κωνσταντίνου 8",
   "wheelchair": "no"
  },
@@ -4846,6 +5179,11 @@
   "osmType": "way",
   "osmId": 195162372,
   "position": "centroid",
+  "venueTags": {
+   "wheelchair": "yes",
+   "website": "https://www.jewishmuseum.gr/",
+   "wikidata": "Q930891"
+  },
   "snappedBy": "addr:street",
   "address": "Νίκης 39",
   "wheelchair": "yes",
@@ -4863,7 +5201,8 @@
   "source": "osm:node/11107619905",
   "osmType": "node",
   "osmId": 11107619905,
-  "position": "osm_node"
+  "position": "osm_node",
+  "venueTags": {}
  },
  {
   "id": "museum-x-n13254217871",
@@ -4878,6 +5217,11 @@
   "osmType": "node",
   "osmId": 13254217871,
   "position": "osm_node",
+  "venueTags": {
+   "wheelchair": "no",
+   "website": "https://www.onassis.org/initiatives/cavafy-archive/",
+   "operator": "Ίδρυμα Ωνάση"
+  },
   "address": "Φρυνίχου 16Β",
   "wheelchair": "no"
  },
@@ -4893,7 +5237,10 @@
   "source": "osm:node/13556107171",
   "osmType": "node",
   "osmId": 13556107171,
-  "position": "osm_node"
+  "position": "osm_node",
+  "venueTags": {
+   "wikidata": "Q15260388"
+  }
  },
  {
   "id": "museum-x-n5984988434",
@@ -4908,6 +5255,10 @@
   "osmType": "node",
   "osmId": 5984988434,
   "position": "osm_node",
+  "venueTags": {
+   "operator": "ΜΙΕΤ",
+   "check_date": "2026-03-25"
+  },
   "address": "Αγίου Κωνσταντίνου 20"
  },
  {
@@ -4923,6 +5274,7 @@
   "osmType": "way",
   "osmId": 193403370,
   "position": "centroid",
+  "venueTags": {},
   "address": "Λεωφόρος Βασιλίσσης Αμαλίας 38",
   "entranceVerified": false
  },
@@ -4939,6 +5291,7 @@
   "osmType": "way",
   "osmId": 193403372,
   "position": "centroid",
+  "venueTags": {},
   "address": "Λεωφόρος Βασιλίσσης Αμαλίας 38",
   "entranceVerified": false
  },
@@ -4955,6 +5308,7 @@
   "osmType": "way",
   "osmId": 193403374,
   "position": "centroid",
+  "venueTags": {},
   "address": "Λεωφόρος Βασιλίσσης Αμαλίας 38",
   "entranceVerified": false
  },
@@ -4971,6 +5325,7 @@
   "osmType": "way",
   "osmId": 193403375,
   "position": "centroid",
+  "venueTags": {},
   "address": "Λεωφόρος Βασιλίσσης Αμαλίας 38",
   "entranceVerified": false
  },
@@ -4987,6 +5342,9 @@
   "osmType": "way",
   "osmId": 217342425,
   "position": "centroid",
+  "venueTags": {
+   "operator": "Γεωπονικό Πανεπιστήμιο Αθηνών"
+  },
   "entranceVerified": false
  },
  {
@@ -5002,6 +5360,10 @@
   "osmType": "way",
   "osmId": 223018298,
   "position": "centroid",
+  "venueTags": {
+   "wikidata": "Q38284122",
+   "operator": "Μουσείο Νεότερου Ελληνικού Πολιτισμού"
+  },
   "address": "Κυρρήστου 8",
   "entranceVerified": true
  },
@@ -5018,6 +5380,7 @@
   "osmType": "way",
   "osmId": 265859156,
   "position": "centroid",
+  "venueTags": {},
   "address": "Λεωφόρος Βασιλίσσης Αμαλίας 38",
   "entranceVerified": false
  },
@@ -5034,6 +5397,10 @@
   "osmType": "way",
   "osmId": 449650393,
   "position": "centroid",
+  "venueTags": {
+   "wheelchair": "limited",
+   "wikidata": "Q78033066"
+  },
   "snappedBy": "addr:street",
   "address": "Πλατεία Αγίων Ασωμάτων 5",
   "wheelchair": "limited",
@@ -5052,6 +5419,9 @@
   "osmType": "way",
   "osmId": 450305803,
   "position": "centroid",
+  "venueTags": {
+   "website": "https://mce.gr/"
+  },
   "snappedBy": "addr:street",
   "address": "Τσάμη Καρατάσου 56",
   "entranceVerified": false
@@ -5069,6 +5439,7 @@
   "osmType": "way",
   "osmId": 455686511,
   "position": "centroid",
+  "venueTags": {},
   "snappedBy": "addr:street",
   "address": "Λεωνίδου 9",
   "entranceVerified": false
@@ -5086,6 +5457,9 @@
   "osmType": "way",
   "osmId": 929917397,
   "position": "centroid",
+  "venueTags": {
+   "website": "https://www.elytishousemuseum.gr/"
+  },
   "snappedBy": "addr:street",
   "address": "Διοσκούρων 4",
   "entranceVerified": false
@@ -5785,6 +6159,7 @@
   "osmId": 13563706446,
   "position": "osm_node",
   "parentId": "museum-acropolis-museum-w983921252",
+  "venueTags": {},
   "entrance": "yes"
  },
  {
@@ -5801,6 +6176,7 @@
   "osmId": 13563727605,
   "position": "osm_node",
   "parentId": "museum-acropolis-museum-w983921252",
+  "venueTags": {},
   "entrance": "yes"
  },
  {
@@ -5817,6 +6193,10 @@
   "osmId": 1927169539,
   "position": "osm_node",
   "parentId": "museum-benaki-museum-pireos-st-annexe-r2429041",
+  "venueTags": {
+   "wheelchair": "yes",
+   "access": "no"
+  },
   "entrance": "yes",
   "wheelchair": "yes"
  },
@@ -5834,6 +6214,7 @@
   "osmId": 7813640276,
   "position": "osm_node",
   "parentId": "museum-botanical-museum-r11505131",
+  "venueTags": {},
   "entrance": "main"
  },
  {
@@ -5850,6 +6231,7 @@
   "osmId": 2265493078,
   "position": "osm_node",
   "parentId": "museum-kerameikos-archaeological-museum-w217268333",
+  "venueTags": {},
   "entrance": "main"
  },
  {
@@ -5951,6 +6333,7 @@
   "osmId": 3005463591,
   "position": "osm_node",
   "parentId": "museum-national-archaeological-museum-r2828",
+  "venueTags": {},
   "entrance": "main"
  },
  {
@@ -5967,6 +6350,7 @@
   "osmId": 3229545643,
   "position": "osm_node",
   "parentId": "museum-national-archaeological-museum-r2828",
+  "venueTags": {},
   "entrance": "main"
  },
  {
@@ -5983,6 +6367,7 @@
   "osmId": 12787606651,
   "position": "osm_node",
   "parentId": "museum-national-historic-museum-r19040143",
+  "venueTags": {},
   "entrance": "main"
  },
  {
@@ -5999,6 +6384,7 @@
   "osmId": 12787606653,
   "position": "osm_node",
   "parentId": "museum-national-historic-museum-r19040143",
+  "venueTags": {},
   "entrance": "yes"
  },
  {
@@ -6129,6 +6515,74 @@
   "position": "osm_node",
   "parentId": "square-rallou-manou-square-r10671286",
   "entrance": "yes"
+ },
+ {
+  "id": "entrance-w215710614-n2251695533",
+  "name": "Τεχνόπολις Δήμου Αθηναίων (είσοδος Είσοδος Α)",
+  "nameEn": "Technopolis (entrance)",
+  "kind": "building_entrance",
+  "lng": 23.713231,
+  "lat": 37.977379,
+  "nearestNodeId": "n2251695533",
+  "nearestNodeDistanceM": 0,
+  "source": "osm:node/2251695533",
+  "osmType": "node",
+  "osmId": 2251695533,
+  "position": "osm_node",
+  "parentId": "events_venue-technopolis-w215710614",
+  "venueTags": {},
+  "entrance": "yes"
+ },
+ {
+  "id": "entrance-w215710614-n2251695534",
+  "name": "Τεχνόπολις Δήμου Αθηναίων (είσοδος Είσοδος Β)",
+  "nameEn": "Technopolis (entrance)",
+  "kind": "building_entrance",
+  "lng": 23.712611,
+  "lat": 37.978302,
+  "nearestNodeId": "n2251695534",
+  "nearestNodeDistanceM": 0,
+  "source": "osm:node/2251695534",
+  "osmType": "node",
+  "osmId": 2251695534,
+  "position": "osm_node",
+  "parentId": "events_venue-technopolis-w215710614",
+  "venueTags": {},
+  "entrance": "yes"
+ },
+ {
+  "id": "entrance-w215710614-n2251695535",
+  "name": "Τεχνόπολις Δήμου Αθηναίων (είσοδος Είσοδος Γ)",
+  "nameEn": "Technopolis (entrance)",
+  "kind": "building_entrance",
+  "lng": 23.715351,
+  "lat": 37.978229,
+  "nearestNodeId": "n2251695535",
+  "nearestNodeDistanceM": 0,
+  "source": "osm:node/2251695535",
+  "osmType": "node",
+  "osmId": 2251695535,
+  "position": "osm_node",
+  "parentId": "events_venue-technopolis-w215710614",
+  "venueTags": {},
+  "entrance": "main"
+ },
+ {
+  "id": "entrance-w215710614-n2252676635",
+  "name": "Τεχνόπολις Δήμου Αθηναίων (είσοδος)",
+  "nameEn": "Technopolis (entrance)",
+  "kind": "building_entrance",
+  "lng": 23.712467,
+  "lat": 37.977849,
+  "nearestNodeId": "n353768247",
+  "nearestNodeDistanceM": 16.1,
+  "source": "osm:node/2252676635",
+  "osmType": "node",
+  "osmId": 2252676635,
+  "position": "osm_node",
+  "parentId": "events_venue-technopolis-w215710614",
+  "venueTags": {},
+  "entrance": "service"
  },
  {
   "id": "entrance-w228904505-n2834295977",
@@ -6354,6 +6808,7 @@
   "osmId": 8829647754,
   "position": "osm_node",
   "parentId": "museum-x-w223018298",
+  "venueTags": {},
   "entrance": "main"
  }
 ]

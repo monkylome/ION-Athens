@@ -257,10 +257,10 @@ class Demo:
         )
         self.usb()
         query = urllib.parse.urlencode(
-            {"room": "olympia", "citizen": "live", "text": self.note}
+            {"room": self.o.preset, "loop": self.o.preset, "citizen": "live", "text": self.note}
         )
         print(
-            f"1. Laptop  {self.web}/stage?{query}\n2. USB Android  http://localhost:{self.o.device_port}/play?demo=1"
+            f"1. Laptop  {self.web}/stage?{query}\n2. USB Android  http://localhost:{self.o.device_port}/play?demo=1&loop={self.o.preset}"
         )
 
     def usb(self):
@@ -377,10 +377,10 @@ def verdicts(health, loop, missions, facts, rewards):
             f"crossing / venue votes {votes}",
         ),
         (
-            "Olympia",
+            loop.get("destination",{}).get("name","Olympia"),
             bool(facts)
             and all(
-                f.get("source") == "unknown" and f.get("value") is None for f in facts
+                (f.get("source") == "unknown" and f.get("value") is None) or (loop.get("preset") == "acropolis" and f.get("source") == "openstreetmap") for f in facts
             ),
             f"{sum(f.get('value') is not None for f in facts)}/{len(facts)} known",
         ),
@@ -419,7 +419,7 @@ def preflight(demo):
 
     h = get("/health")
     line("API", h.get("ok"), demo.api)
-    loop = get("/demo/loop")
+    loop = get("/demo/loop?preset="+demo.o.preset)
     dest = loop.get("destination", {})
     missions = {}
     for pos in [
@@ -450,7 +450,7 @@ def preflight(demo):
         expected in route_edges,
         f"{len(route_edges)} segments; expected obstacle edge {expected}",
     )
-    facts = get("/venues/theatre-x-w780950690").get("facts", [])
+    facts = get("/venues/"+dest.get("id","theatre-x-w780950690")).get("facts", [])
     rewards = get("/rewards?demo=true&participant=ion-preflight")
     for row in verdicts(h, loop, missions, facts, rewards):
         line(*row)
@@ -485,7 +485,7 @@ def preflight(demo):
     except (OSError, ValueError, KeyError) as error:
         line("IPv4 web/API proxy", False, str(error))
     pages = subprocess.run(
-        ["node", ROOT / "scripts/browser/preflight.cjs", demo.web],
+        ["node", ROOT / "scripts/browser/preflight.cjs", demo.web, demo.o.preset],
         cwd=ROOT,
         check=False,
     )
@@ -591,6 +591,7 @@ def main():
         ("vision", 11435),
     ]:
         parser.add_argument("--" + key + "-port", type=port, default=default)
+    parser.add_argument("--preset",choices=["olympia","acropolis"],default="olympia")
     if name == "demo-check":
         parser.add_argument("--resolve", action="store_true")
     o = parser.parse_args()

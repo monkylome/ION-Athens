@@ -69,6 +69,7 @@ export function Play() {
   const receipt = useLocation().state?.scanReceipt;
   const [params] = useSearchParams();
   const fakeParam = useMemo(() => parseFake(params.get("fake")), [params]);
+  const preset = params.get("loop") ?? "olympia";
   const demo = params.get("demo") === "1";
   const fov = Number(params.get("fov")) > 10 ? Math.min(120, Number(params.get("fov"))) : CAMERA_FOV_DEG;
   const participant = useMemo(participantId, []);
@@ -80,7 +81,7 @@ export function Play() {
   useEffect(() => {
     if (!demo || fakeParam) return;
     let current = true;
-    playApi.demoLoop().then((loop) => {
+    playApi.demoLoop(preset).then((loop) => {
       if (!current) return;
       if (!loop.start) { setStageFailed(true); return; }
       const at: LngLat = [loop.start.lng, loop.start.lat];
@@ -88,7 +89,7 @@ export function Play() {
       setStage({ at, heading: loop.destination ? bearingDeg(at, [loop.destination.lng, loop.destination.lat]) : 0 });
     }, () => { if (current) setStageFailed(true); });
     return () => { current = false; };
-  }, [demo, fakeParam]);
+  }, [demo, fakeParam, preset]);
   const staged = !!fakeParam || (demo && !stageFailed);
 
   const [voice, setVoice] = useState(() => stored("ion-play-voice") !== "off");
@@ -589,12 +590,12 @@ export function Play() {
         )}
         {aim ? (
           aim.reachable ? (
-            <button type="button" className="btn btn--primary pl-action" data-on="accent" onClick={() => approach(aim, true)} aria-label={`Απαντήστε. ${aim.mission.question} ${pointsWords(aim.mission.points)}.`}>
+            <button type="button" className="btn btn--primary pl-action" data-on="accent" onClick={() => approach(aim, true)} aria-description={`${aim.mission.question} ${pointsWords(aim.mission.points)}.`}>
               <Glyph mission={aim.mission} className="pl-action__glyph" />
               <span className="pl-action__text"><span className="pl-action__verb">Απαντήστε</span><span className="pl-action__sub">+{aim.mission.points} {aim.mission.where?.split(",")[0] ?? ""}</span></span>
             </button>
           ) : (
-            <button type="button" className="btn pl-action" onClick={() => approach(aim, true)} aria-label={`Πλησιάστε: ${distanceWords(aim.distance, accuracy)} ${directionWords(aim.bearing, heading.value)}.`}>
+            <button type="button" className="btn pl-action" onClick={() => approach(aim, true)} aria-description={`${distanceWords(aim.distance, accuracy)} ${directionWords(aim.bearing, heading.value)}.`}>
               <ArrowUp weight="bold" className="pl-action__glyph" aria-hidden="true" style={{ transform: `rotate(${aim.bearing - (heading.value ?? 0)}deg)` }} />
               <span className="pl-action__text"><span className="pl-action__verb">Πλησιάστε</span><span className="pl-action__sub">{shortDistance(aim.distance)} {directionWords(aim.bearing, heading.value)}</span></span>
             </button>
@@ -645,7 +646,7 @@ export function Play() {
                     try {
                       localStorage.removeItem("ion-play-album:" + participant);
                       localStorage.removeItem("ion-demo-participant");
-                      window.location.replace("/play?demo=1");
+                      window.location.replace("/play?demo=1&loop="+encodeURIComponent(preset));
                     } catch { say("Ο browser δεν επέτρεψε την αλλαγή αποθηκευμένων στοιχείων."); }
                   }}>Νέα επίδειξη</button>}
                 </nav>

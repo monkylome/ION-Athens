@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 // Run on a fresh rehearsal API. Only resolve the sandbox report returned to this run.
+import {parseArgs} from "node:util";
 import assert from "node:assert/strict";
 import {randomUUID} from "node:crypto";
 import {performance} from "node:perf_hooks";
 
-async function run(server) {
+async function run(server,preset) {
   const base = new URL("/api/", server);
   const tag = randomUUID();
   const mapper = "demo-mapper-" + tag, witness = "demo-witness-" + tag;
@@ -23,9 +24,9 @@ async function run(server) {
   const leftovers = new Set();
   say("All answers, participants and indoor directions in this run are DEMO fixtures.");
   try {
-    const loop = await api("demo/loop");
+    const loop = await api("demo/loop?preset="+preset);
     assert(loop.demo && loop.crossing.open && loop.venueMissionOpen, "Use a fresh rehearsal process with open missions.");
-    const dest = await api("destination",{text:"Θέλω να πάω στο θέατρο"});
+    const dest = await api("destination",{text:preset==="acropolis" ? loop.destination.name : "Θέλω να πάω στο θέατρο"});
     assert(dest.understood && dest.place.id===loop.destination.id);
     say("Destination understood: "+dest.place.name);
     const body = {from:loop.start,to:dest.place,venueId:dest.place.id,profile:"voice"};
@@ -81,5 +82,8 @@ async function run(server) {
   }
 }
 
-if (process.argv.length !== 3) {console.error("Usage: scripts/demo-loop http://localhost:8790");process.exitCode=2;}
-else run(process.argv[2]).catch(error=>{console.error(error.message);process.exitCode=1;});
+try {
+  const {values,positionals} = parseArgs({allowPositionals:true,options:{preset:{type:"string",default:"olympia"}}});
+  if (positionals.length>1 || !["olympia","acropolis"].includes(values.preset)) throw Error("Usage: scripts/demo-loop [server-url] [--preset olympia|acropolis]");
+  await run(positionals[0] ?? "http://localhost:8787",values.preset);
+} catch(error) {console.error(error.message);process.exitCode=1;}

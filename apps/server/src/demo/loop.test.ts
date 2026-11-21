@@ -7,12 +7,17 @@ import { venueMissions } from "../venues/catalogue.ts";
 import { theatreLoop } from "./loop.ts";
 
 const graphFile = fileURLToPath(new URL("../../../../data/athens-centre.graph.json",import.meta.url));
-it.each([undefined, "absent-survey-for-test"])("finds a usable theatre loop for the installed graph (survey override %s)",survey => {
+it.each([
+  ["olympia",undefined],["olympia","absent-survey-for-test"],
+  ["acropolis",undefined],["acropolis","absent-survey-for-test"],
+] as const)("finds a usable %s loop for the installed graph (survey override %s)",(name,survey) => {
   const {graph} = loadGraph(graphFile,survey);
   const now = new Date("2026-11-21T15:00:00Z");
   const board = new MissionBoard(graph,{},()=>now,[],venueMissions());
-  const preset = theatreLoop(graph,board.all(),[],[],now);
-  expect(preset).not.toBeNull();
+  const preset = theatreLoop(graph,board.all(),[],[],now,name);
+  expect(preset?.preset).toBe(name);
+  expect(preset?.steps).toEqual([]);
+  if (name === "acropolis") expect(preset?.destination.id).toBe("landmark-odeon-of-herodes-atticus-r13249184");
   expect(preset!.alternatives).toHaveLength(1);
   const index = buildGraphIndex(graph);
   for (const p of [preset!,...preset!.alternatives]) {

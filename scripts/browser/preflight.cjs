@@ -13,7 +13,7 @@ const {launch,go} = require("./runtime.cjs");
         p.setDefaultTimeout(8000);
         const loop = path.startsWith("/stage") ? p.waitForResponse(r =>
           new URL(r.url()).pathname === "/api/demo/loop" && r.ok(), {timeout:10000}) : null;
-        await Promise.all([go(p,path), loop]);
+        await Promise.all([go(p,path+(path.includes("?") ? "&" : "?")+"loop="+encodeURIComponent(process.argv[3] ?? "olympia")), loop]);
 
         await p.locator(selector).first().waitFor({state:"attached"});
         console.log("OK · browser ·",path);

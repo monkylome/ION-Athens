@@ -1,12 +1,13 @@
 import {
-  buildGraphIndex, findRoute, haversineM, pointAlongPolyline, polylineLengthM, PROFILES,
+  buildGraphIndex, findRoute, haversineM, pointAlongPolyline, polylineLengthM, projectOntoPolyline, PROFILES,
   rerouteForObstacle, type GraphIndex, type LngLat, type Obstacle, type PedestrianGraph, type Route
 } from "@ion/core";
+import type { RouteNote } from "../sources/accessible-routes.ts";
 import type { Mission, Observation } from "../missions/missions.ts";
 import { EdgeIndex } from "../routing/edge-index.ts";
 import { places, point, venues, venueMissions } from "../venues/catalogue.ts";
 
-const venue = venues.find(p => p.id === "theatre-x-w780950690")!;
+const station = places.find(p => p.id === "metro_station-akropoli-n1957144319")!;
 const pointOf = (p:{lng:number;lat:number}):LngLat => [p.lng,p.lat];
 const streets = (r:Route) => [...new Set(r.steps.flatMap(s => s.onto ? [s.onto] : []))];
 const same = (a:Route,b:Route) => a.edges.length === b.edges.length && a.edges.every((e,i) => e === b.edges[i]);
@@ -36,7 +37,9 @@ function detour(index: GraphIndex, spatial: EdgeIndex, route:Route, crossingEdge
   return candidates.sort((a,b)=>Math.abs(a.replannedLengthM-route.lengthM-60)-Math.abs(b.replannedLengthM-route.lengthM-60) || Math.abs(a.distanceToDecisionM-35)-Math.abs(b.distanceToDecisionM-35))[0];
 }
 
-export function theatreLoop(graph:PedestrianGraph, missions:Mission[], observed:Observation[], obstacles:Obstacle[], at:Date) {
+export function theatreLoop(graph:PedestrianGraph, missions:Mission[], observed:Observation[], obstacles:Obstacle[], at:Date, preset: "olympia" | "acropolis" = "olympia", notes: readonly RouteNote[] = []) {
+  const acropolis = preset === "acropolis";
+  const venue = venues.find(p => p.id === (acropolis ? "landmark-odeon-of-herodes-atticus-r13249184" : "theatre-x-w780950690"))!;
   const index = buildGraphIndex(graph);
   const target = index.nodes.get(venue.nearestNodeId);
   if (!target) return null;
@@ -51,9 +54,9 @@ export function theatreLoop(graph:PedestrianGraph, missions:Mission[], observed:
   for (const node of graph.nodes) {
     const origin = pointOf(node);
     const direct = haversineM(origin,pointOf(target));
-    if (direct < 160 || direct > 525) continue;
+    if (acropolis ? haversineM(origin,point(station)) > 220 : direct < 160 || direct > 525) continue;
     const baseline = findRoute(index,node.id,target.id,{atTime:at,obstacles});
-    if (!baseline.ok || baseline.route.lengthM < 345 || baseline.route.lengthM > 510) continue;
+    if (!baseline.ok || baseline.route.lengthM < 345 || baseline.route.lengthM > (acropolis ? 1050 : 510)) continue;
     const route = baseline.route;
     const crossing = route.edges.map(e=>crossingByEdge.get(e)).find(m=>m !== undefined);
     if (!crossing) continue;
@@ -72,10 +75,29 @@ export function theatreLoop(graph:PedestrianGraph, missions:Mission[], observed:
       obstacle,walkerProgressM:route.lengthM*0.4,lengthM:route.lengthM,directM:haversineM(origin,point(venue)),streets:streets(route),
       profiles:profiles.map(({edges,...p})=>p),threeDistinct});
   }
-  candidates.sort((a,b)=>Number(b.crossing.open)-Number(a.crossing.open) || Number(b.threeDistinct)-Number(a.threeDistinct)
-    || Number(b.start.name!==b.start.landmark)-Number(a.start.name!==a.start.landmark) || a.start.landmarkDistanceM-b.start.landmarkDistanceM);
+  candidates.sort((a, b) => {
+    const crossingPriority = Number(b.crossing.open) - Number(a.crossing.open);
+    if (crossingPriority) return crossingPriority;
+    if (acropolis) {
+      const stationDistance = haversineM(pointOf(a.start), point(station)) - haversineM(pointOf(b.start), point(station));
+      if (stationDistance) return stationDistance;
+    }
+    return Number(b.threeDistinct) - Number(a.threeDistinct)
+      || Number(b.start.name !== b.start.landmark) - Number(a.start.name !== a.start.landmark)
+      || a.start.landmarkDistanceM - b.start.landmarkDistanceM;
+  });
   const recommended = candidates[0];
   if (!recommended) return null;
   const second = candidates.find(c=>haversineM(pointOf(c.start),pointOf(recommended.start))>20) ?? candidates[1];
-  return {...recommended,alternatives:second ? [second] : []};
+  const steps = [];
+  if (acropolis && notes.length) {
+    const selected = findRoute(index,recommended.start.nodeId,target.id,{atTime:at,obstacles});
+    if (selected.ok) for (const note of notes) {
+      if (note.routeId !== "visual-impairment-acropolis") continue;
+      const position = pointOf(note);
+      if (projectOntoPolyline(selected.route.geometry,position).distanceM <= 65)
+        steps.push({order:note.order,position});
+    }
+  }
+  return {preset,steps,...recommended,alternatives:second ? [second] : []};
 }

@@ -39,6 +39,10 @@ export interface ScenarioConfig {
 }
 
 export interface TheatreLoop {
+  preset?: "olympia" | "acropolis";
+  steps?: {order:number; position:LngLat}[];
+  museumCard?: {name:string; positions:LngLat[]; facts:{key:string;value:string;source:string}[]};
+  lift?: {working:number; total:number; fetchedAt:string};
   start: PlaceInfo;
   destination: PlaceInfo;
   crossing: { id: string; position: LngLat; edgeIds: string[]; open: boolean };

@@ -48,8 +48,8 @@ async function call<T>(method: "GET" | "POST", path: string, body?: unknown): Pr
   }
 }
 
-export async function loadLoop() {
-  const response = await call<import("./types").TheatreLoop>("GET", "/demo/loop");
+export async function loadLoop(preset: string) {
+  const response = await call<import("./types").TheatreLoop>("GET", "/demo/loop?preset=" + encodeURIComponent(preset));
   return response.data?.start && response.data?.obstacle && response.data?.crossing && response.data?.destination ? response.data : null;
 }
 

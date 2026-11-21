@@ -1,3 +1,4 @@
+import { haversineM } from "@ion/core";
 import { Choices } from "../profiles/Choices";
 import { Compare } from "../profiles/Compare";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -111,13 +112,13 @@ function MetricsPanel({ metrics }: { metrics: Metrics }) {
 
 const SOURCE_ROWS = 16; // what fits on a 16:9 stage at the smallest allowed type
 
-function SourcesPanel({ sources, builtIn }: { sources: SourceInfo[]; builtIn: "waiting" | "failed" | null }) {
+function SourcesPanel({ sources, builtIn, stepCount }: { stepCount: number; sources: SourceInfo[]; builtIn: "waiting" | "failed" | null }) {
   const shown = sources.slice(0, SOURCE_ROWS);
   const more = sources.length - shown.length;
   return (
     <section className="overlay sources" aria-label="Πηγές δεδομένων">
       <h2 className="overlay__title overlay__title--small">
-        Πηγές: {sources.length}
+        Πηγές: {sources.length}{stepCount > 0 && <small> · Διαδρομή 2 του Δήμου: {stepCount} κοντινά σημεία βημάτων</small>}
         {builtIn === "failed" && <span className="tag">Ενσωματωμένη λίστα, το /api/sources δεν απάντησε</span>}
         {builtIn === "waiting" && <span className="tag">Ενσωματωμένη λίστα, αναμονή του /api/sources</span>}
         {more > 0 && <span className="tag">Εδώ οι πρώτες {shown.length}</span>}
@@ -238,6 +239,12 @@ export function Stage() {
 
   const beat = state.moment?.beat ?? "none";
   const offline = state.connection === "offline" || state.localFallback;
+  const position = state.walker?.position ?? (state.start ? [state.start.lng,state.start.lat] as const : null);
+  const step = position ? state.loop?.steps?.map(s=>({order:s.order,d:haversineM(position,s.position)}))
+    .filter(s=>s.d<=65).sort((a,b)=>a.d-b.d)[0] : null;
+  const museum = state.loop?.museumCard;
+  const museumDistance = museum && position ? Math.round(Math.min(...museum.positions.map(p=>haversineM(position,p)))) : Infinity;
+  const lift = state.loop?.lift;
   const scale = decimal(state.timeScale, Number.isInteger(state.timeScale) ? 0 : 1);
   const steps = state.route?.steps ?? [];
   const tiles = query.get("tiles") !== "off";
@@ -254,7 +261,7 @@ export function Stage() {
 
   if (state.closing) return <main className="pitch-frame">
     <div className="pitch-seats" role="img" aria-label="Δύο καθίσματα θεάτρου"><i/><i/></div>
-    <p>Το θέατρο ήταν πάντα εκεί. Ο δρόμος ως την πόρτα του δεν ήταν γραμμένος πουθενά.</p>
+    <p>{state.loop?.preset === "acropolis" ? "Στη διαδρομή προς το Ηρώδειο προστέθηκε μια νέα μαρτυρία." : "Το θέατρο ήταν πάντα εκεί. Ο δρόμος ως την πόρτα του δεν ήταν γραμμένος πουθενά."}</p>
     <strong>Απόψε τον έγραψε η πόλη.</strong>
   </main>;
   if (statement) return <main className="pitch-frame"><p>Δεν υπάρχουν «άνθρωποι με ειδικές ανάγκες». Υπάρχουν άνθρωποι με αναπηρία, και πόλεις που ακόμη τους βάζουν εμπόδια.</p></main>;
@@ -272,6 +279,13 @@ export function Stage() {
         <StageMap state={state} reducedMotion={reducedMotion} tiles={tiles} />
 
         <div className="stage__flags">
+          {museum && museumDistance <= 80 && <aside className="flag" aria-label="Κοντινή καρτέλα χώρου">
+            {museum.name} · {museumDistance} μ.
+            {museum.facts.filter(f=>f.value === "yes" && f.source === "openstreetmap" && ["wheelchair","toilets:wheelchair"].includes(f.key))
+              .map(f=><span key={f.key}> · {f.key === "wheelchair" ? "πρόσβαση με αμαξίδιο" : "προσβάσιμη τουαλέτα"} (OSM)</span>)}
+          </aside>}
+          {step && <p className="flag">Κοντά σε σημείο της Προσβάσιμης Διαδρομής 2 του Δήμου, βήμα {step.order} · This is Athens / Δήμος Αθηναίων, 2021, άδεια σε εκκρεμότητα</p>}
+          {lift && !state.walker && <p className="flag">ΣΤΑΣΥ · Σταθμός Ακρόπολη · {lift.working}/{lift.total} ανελκυστήρες σε λειτουργία · {new Date(lift.fetchedAt).toLocaleTimeString("el-GR",{timeZone:"Europe/Athens"})}</p>}
           {state.discoveryNotice && <p className="flag crossing-answer" role="status">{state.discoveryNotice.label} · Ανακάλυψη από την κάμερα · {state.discoveryNotice.seenBy} δημότες</p>}
           {state.crossingNotice && !state.change && !state.waiting && <p className="flag crossing-answer" role="status">{state.crossingNotice}</p>}
           {state.loopFallback && <p className="flag">Εφεδρικό σενάριο · Δημαρχείο</p>}
@@ -320,7 +334,7 @@ export function Stage() {
       }} /> : <CaptionBar state={state} />}
       {compare && <Compare query={comparisonQuery} close={() => setCompare(false)} />}
 
-      {showSources && <SourcesPanel sources={sources ?? BUILT_IN_SOURCES} builtIn={sources === undefined ? "waiting" : sources === null ? "failed" : null} />}
+      {showSources && <SourcesPanel stepCount={state.loop?.steps?.length ?? 0} sources={sources ?? BUILT_IN_SOURCES} builtIn={sources === undefined ? "waiting" : sources === null ? "failed" : null} />}
       {help && (
         <section className="overlay help" aria-label="Πλήκτρα παρουσιαστή">
           <h2 className="overlay__title overlay__title--small">Πλήκτρα παρουσιαστή</h2>

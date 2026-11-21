@@ -93,7 +93,7 @@ export function useScenario(surface: "stage" | "phone", options: ScenarioOptions
     const query = new URLSearchParams(window.location.search);
     const config = configFromSearch(window.location.search);
     const useLoop = surface === "stage" && !query.has("from") && !query.has("to");
-    Promise.all([loadGraph(), useLoop ? loadLoop() : null]).then(
+    Promise.all([loadGraph(), useLoop ? loadLoop(query.get("loop") ?? "olympia") : null]).then(
       ([{ index }, loop]) => {
         if (disposed) return;
         const voice = browserVoice(() => query.get("voice") !== "off");
@@ -113,7 +113,7 @@ export function useScenario(surface: "stage" | "phone", options: ScenarioOptions
               else synth.setWalking(effect.on && (walkingSound.current?.() ?? true));
             },
           },
-          loop ? { ...config, sentence: "Θέλω να πάω στο θέατρο", durationS: query.has("duration") ? config.durationS : 60 } : config,
+          loop ? { ...config, sentence: loop.preset === "acropolis" ? loop.destination.name : "Θέλω να πάω στο θέατρο", durationS: query.has("duration") ? config.durationS : 60 } : config,
           { loop, fallback: useLoop && !loop, live: (query.get("citizen") ?? (query.get("room") ? "live" : "scripted")) === "live" },
         );
         try {

@@ -50,7 +50,7 @@ export const playApi = {
   rewards: (participant: string, demo = false) => call<Rewards>(`/rewards?participant=${participant}${demo ? "&demo=true" : ""}`),
   venue: (id: string) => call<Venue>(`/venues/${encodeURIComponent(id)}`),
   /** The rehearsed stage geometry: where the presenter starts and the place the walk ends at. */
-  demoLoop: () => call<{ start?: { lng: number; lat: number }; destination?: { lng: number; lat: number } }>("/demo/loop"),
+  demoLoop: (preset: string) => call<{ start?: { lng: number; lat: number }; destination?: { lng: number; lat: number } }>("/demo/loop?preset=" + encodeURIComponent(preset)),
   /** The scan mode's own endpoints. They may not exist: every caller treats a failure as "no scan mode". */
   visionStatus: () => call<unknown>("/vision/status"),
   discoveries: () => call<{ discoveries: unknown[] }>("/vision/discoveries"),
