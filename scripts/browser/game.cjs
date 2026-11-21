@@ -18,7 +18,7 @@ async function gameFlow(p, inspect, recording=false) {
   const answerPath=id=>"demo/missions/"+encodeURIComponent(id)+"/answer";
   if (!crossing.answers.yes) await api(answerPath(crossing.id),{participant:witness,answer:"yes"});
   const [lng,lat]=loop.obstacle.position;
-  const first=await api("reports",{lng,lat,category:"sidewalk",text:"Επίδειξη ION · προσωρινή αναφορά πρόβας"});
+  const first=await api("reports?rehearsal=1",{lng,lat,category:"sidewalk",text:"Επίδειξη ION · προσωρινή αναφορά πρόβας"});
   try {
     const obstacle=(await nearby([lng,lat])).find(m=>m.id==="obstacle_check:"+first.report.id);
     if (!obstacle) throw Error("The rehearsal report has no confirmation mission.");

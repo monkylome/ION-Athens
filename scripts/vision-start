@@ -10,6 +10,10 @@ HOSTPORT="${VISION_HOST:-127.0.0.1:11435}"
 MODEL="${VISION_MODEL:-qwen3-vl:4b-instruct}"
 [ -x "$V/bin/ollama" ] || { echo "Missing $V/bin/ollama (see apps/server/README.md, section Vision)." >&2; exit 1; }
 mkdir -p "$V/run" "$V/models"
+if [ "${1:-}" = "--foreground" ]; then
+  export OLLAMA_MODELS="$V/models" OLLAMA_HOST="$HOSTPORT" OLLAMA_KEEP_ALIVE=30m OLLAMA_NUM_PARALLEL=1
+  exec "$V/bin/ollama" serve
+fi
 if [ -f "$PIDFILE" ] && kill -0 "$(cat "$PIDFILE")" 2>/dev/null; then
   echo "vision: already running (pid $(cat "$PIDFILE")) on $HOSTPORT"
 else

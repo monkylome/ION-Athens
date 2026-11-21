@@ -33,6 +33,7 @@ function setup(opts: { graph?: boolean; demoEnabled?: boolean } = {}) {
       return send({ ok: true });
     }
     if (one && !found) return send({ error: { code: "not_found", message: "not found" } }, 404);
+    if (one && found && method === "GET") return send(found);
     if (one && found && one[2]) return send(Object.assign(found, { upvotes: Number(found["upvotes"]) + 1 }));
     if (one && found && method === "PATCH") return send(Object.assign(found, JSON.parse(String(init?.body)) as object));
     if (path === "/v1/pois") return send({ total: 1, page: 1, size: 20, items: [{ id: "poi-1", name: "Δοκιμαστικό σημείο", category: "kep", lat: 37.98, lng: 23.73, address: "Οδός 1, Αθήνα", distance_km: 0.25 }] });
@@ -61,6 +62,16 @@ type Json = Record<string, any>; // eslint-disable-line @typescript-eslint/no-ex
 const json = async (res: Response | Promise<Response>): Promise<Json> => (await (await res).json()) as Json;
 
 describe("reports and demo control", () => {
+  it("lists only receipts of rehearsal creations and forgets resolved reports", async () => {
+    const {app, post, point} = setup();
+    await post("/api/reports", point(50,3));
+    const owned = await json(post("/api/demo/obstacle", point(50,4)));
+    expect(await json(app.request("/api/demo/rewind-reports"))).toMatchObject({ids:[owned.report.id]});
+    await post("/api/demo/resolve/"+owned.report.id);
+    expect(await json(app.request("/api/demo/rewind-reports"))).toMatchObject({ids:[]});
+    expect((await setup({demoEnabled:false}).app.request("/api/demo/rewind-reports")).status).toBe(403);
+  });
+
   it("POST /api/reports creates an unconfirmed report: a partial obstacle", async () => {
     const { post, point, sandbox } = setup();
     const res = await post("/api/reports", { ...point(50, 4), category: "bulky_waste", text: "καναπές" });
