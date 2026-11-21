@@ -2,7 +2,7 @@
  * Routing backed by the real engine in `@ion/core`: A* with the pedestrian cost
  * model (crossings, steps, tactile paving) and turn-by-turn steps.
  */
-import { buildGraphIndex, findRoute, nearestNode, type GraphIndex } from "@ion/core";
+import { PROFILES, type ProfileId, buildGraphIndex, findRoute, nearestNode, type GraphIndex } from "@ion/core";
 import type { LngLat, Obstacle, PedestrianGraph, Route } from "@ion/core";
 import { EdgeIndex, type EdgeMatch } from "./edge-index.ts";
 import type { RoutingPort } from "./port.ts";
@@ -24,12 +24,13 @@ export class CoreRouting implements RoutingPort {
     return this.edges.nearestEdge(point, maxDistanceM);
   }
 
-  route(from: LngLat, to: LngLat, obstacles: readonly Obstacle[], now: Date): Route | null {
+  route(from: LngLat, to: LngLat, obstacles: readonly Obstacle[], now: Date, profile: ProfileId = "voice", eventEdges?: ReadonlySet<string>): Route | null {
     const start = nearestNode(this.index, from, SNAP_LIMIT_M);
     const goal = nearestNode(this.index, to, SNAP_LIMIT_M);
     if (!start || !goal) return null;
     const result = findRoute(this.index, start.node.id, goal.node.id, {
       atTime: now.toISOString(),
+      cost: {...PROFILES[profile].cost,eventEdges},
       obstacles: [...obstacles],
     });
     return result.ok ? result.route : null;

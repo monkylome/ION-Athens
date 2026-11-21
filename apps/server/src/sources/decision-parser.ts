@@ -35,7 +35,7 @@ export function parseDecision(subject: string) {
   const times = [...datePart.matchAll(/(?<![\d.])(\d{1,2})[:.](\d{2})(?![\d.])/g)];
   const hours = times.map(m => Number(m[1])*60 + Number(m[2]));
   const weekdays = days.flatMap((day,i) => datePart.includes(day) ? [i] : []);
-  const kind = /λωριδ/.test(text) ? "lane" : /γεραν|οψεων|προσοψ|εκτελεσησ εργασιων|ανυψωσησ/.test(text) ? "works" : /πορειασ|εκδηλωσ/.test(text) ? "event" : /πεζοδρομησ/.test(text) ? "pedestrian_zone" : /διακοπη|αποκλεισμ/.test(text) ? "closure" : "unknown";
+  const kind = /λωριδ/.test(text) ? "lane" : /γεραν|οψεων|προσοψ|εκτελεσησ εργασιων|ανυψωσησ/.test(text) ? "works" : /πορειασ|εκδηλωσ|μαραθων|αγωνα δρομου/.test(text) ? "event" : /πεζοδρομησ/.test(text) ? "pedestrian_zone" : /διακοπη|αποκλεισμ/.test(text) ? "closure" : "unknown";
   const fullPedestrian = /(?:πληρησ? διακοπη|απαγορευση) (?:τησ )?(?:κυκλοφοριασ|διελευσησ) (?:των )?πεζων/.test(text);
   const multi = /και (?:στην?|τησ) οδο|κατωθι οδικων τμηματων|οδικο αξονα .+,/.test(text);
   const unresolved = /παραταση|αρση |τροποποιηση|εξαιρ|αργι|εναλλαξ|μεγιστου μηκουσ|αποφασεισ που|δεν (?:απαγορευεται|διακοπτεται)/.test(text);

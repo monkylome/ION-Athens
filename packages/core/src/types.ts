@@ -153,6 +153,7 @@ export interface GraphEdge extends PavementSurvey {
   /** Both sides of a street as surveyed, relative to the direction from `from` to `to`. */
   pavementSides?: { left?: SurveyedSide; right?: SurveyedSide };
   crossingMarkings?: CrossingMarkings;
+  crowd?: { level: "busy" | "calm"; observedAt: string; expiresAt: string; source: string };
   crossingRamps?: CrossingRamps;
   /** Present exactly when the survey values above are set on this edge (`pavementSides` alone does not count). */
   survey?: SurveyNote;

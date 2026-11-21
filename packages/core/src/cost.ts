@@ -10,6 +10,8 @@ export type TimeInput = string | number | Date;
 export interface CostOptions {
   /** Fixed penalty added to every `steps` edge. */
   stepsPenaltyM: number;
+  busyFactor?: number;
+  eventEdges?: ReadonlySet<string>;
   /** Length multiplier for `shared_road` edges (walking on the carriageway). */
   sharedRoadFactor: number;
   /** Length multiplier for edges with tactilePaving "yes". Below 1 is a bonus. */
@@ -255,6 +257,12 @@ const NO_SURVEY: PavementSurvey = Object.freeze({});
  *   Any other active obstacle multiplies the cost by partialObstacleFactor (once,
  *   however many there are).
  */
+export function isBusy(edge: GraphEdge, time: TimeInput, eventEdges?: ReadonlySet<string>) {
+  const crowd = edge.crowd;
+  const at = toEpochMs(time);
+  return eventEdges?.has(edge.id) === true || !!(crowd && crowd.level === "busy" && Date.parse(crowd.observedAt)<=at && at<Date.parse(crowd.expiresAt));
+}
+
 export function edgeCost(
   edge: GraphEdge,
   obstacles: readonly Obstacle[],
@@ -274,6 +282,7 @@ export function edgeCost(
     const adjustment = surveyed ? surveyedCrossingAdjustmentM(edge, o) : 0;
     cost += Math.max(0, crossingPenaltyM(edge.crossing ?? UNKNOWN_CROSSING, o) + adjustment);
   }
+  if (o.busyFactor && isBusy(edge,atTime,o.eventEdges)) cost *= o.busyFactor;
   if (effect === "partial") cost *= o.partialObstacleFactor;
   return cost;
 }

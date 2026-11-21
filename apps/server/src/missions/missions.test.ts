@@ -163,3 +163,36 @@ describe("rewards", () => {
     expect(rewards.map((r) => [r.id, r.unlocked])).toEqual([["b1", true], ["b2", false], ["b3", false]]);
   });
 });
+
+it.each(["yes","no"] as const)("two independent crowd answers set a one-hour observation (%s)", answer => {
+  const g=graph();
+  const street=g.edges.find(e=>e.id==="s")!;
+  street.kind="pedestrian";
+  let time=NOW;
+  const board=new MissionBoard(g,{},()=>time);
+  const mission=board.near(A,[],100).find(m=>m.type==="crowd_check")!;
+  board.answer(mission.id,P1,answer,mission.position,time);
+  expect(street.crowd).toBeUndefined();
+  expect(board.answer(mission.id,P1,answer,mission.position,time).ok).toBe(false);
+  board.answer(mission.id,P2,answer,mission.position,time);
+  expect(street.crowd?.level).toBe(answer==="yes" ? "busy":"calm");
+  expect(board.near(A,[],100).some(m=>m.type==="crowd_check")).toBe(false);
+  time=new Date(+time+3600000);
+  expect(board.near(A,[],100).some(m=>m.type==="crowd_check")).toBe(true);
+});
+
+it("changes only the quiet route after citizens confirm a crowd", async () => {
+  const { CoreRouting }=await import("../routing/core.ts");
+  const g=graph();
+  g.edges=[
+    {id:"short",from:"a",to:"c",name:"Πλατεία Δοκιμής",lengthM:18,kind:"pedestrian",geometry:[A,C]},
+    {id:"detour",from:"a",to:"c",name:"Πεζόδρομος",lengthM:30,kind:"pedestrian",geometry:[A,C]},
+  ];
+  const board=new MissionBoard(g,{},()=>NOW);
+  const router=new CoreRouting(g);
+  const paths=()=> (["voice","wheels","quiet"] as const).map(profile=>router.route(A,C,[],NOW,profile)?.edges);
+  expect(paths()).toEqual([["short"],["short"],["short"]]);
+  const mission=board.near(A,[],100).find(m=>m.edgeIds.includes("short"))!;
+  for(const who of [P1,P2]) board.answer(mission.id,who,"yes",mission.position,NOW);
+  expect(paths()).toEqual([["short"],["short"],["detour"]]);
+});

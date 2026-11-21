@@ -1,10 +1,10 @@
 import { cachedAddress } from "./sources/decision-addresses.ts";
-import { upcomingStart } from "./sources/decision-parser.ts";
+import { activeUntil, upcomingStart } from "./sources/decision-parser.ts";
 /**
  * The HTTP API. Everything it needs is passed in, so tests can build it with
  * a fake sandbox client and a tiny graph.
  */
-import type { LngLat, Obstacle } from "@ion/core";
+import { PROFILES, routeFacts, type ProfileId, type LngLat, type Obstacle } from "@ion/core";
 import { Hono, type Context } from "hono";
 import { cors } from "hono/cors";
 import { streamSSE } from "hono/streaming";
@@ -13,6 +13,7 @@ import { DestinationResolver } from "./destination/resolve.ts";
 import type { ObstacleEvent } from "./obstacles/diff.ts";
 import { type EdgeLookup, type MappingOptions, DEFAULT_MAPPING_OPTIONS, reportToObstacle } from "./obstacles/rules.ts";
 import { ObstacleService } from "./obstacles/service.ts";
+import { CoreRouting } from "./routing/core.ts";
 import { isActive } from "./routing/fallback.ts";
 import { type MissionOptions, MissionBoard } from "./missions/missions.ts";
 import { type Benefit, toRewards } from "./missions/rewards.ts";
@@ -28,6 +29,7 @@ export interface AppDeps {
   /** Edge queries for the obstacle rules. */
   edges: EdgeLookup;
   graphLoaded: boolean;
+  metroStations?: LngLat[];
   /** Whether the pavement survey was applied to the graph, from loadGraph. */
   enrichment?: { applied: boolean; edgesCovered: number; problem?: string };
   mapping?: Partial<MappingOptions>;
@@ -55,7 +57,7 @@ const destinationBodySchema = z.object({
   text: z.string().trim().min(1).max(300),
   location: pointSchema.optional(),
 });
-const routeBodySchema = z.object({ from: pointSchema, to: pointSchema });
+const routeBodySchema = z.object({ from: pointSchema, to: pointSchema, profile:z.enum(["voice","wheels","quiet"]).default("voice") });
 const ID = /^[A-Za-z0-9_-]{1,64}$/;
 
 /** What a person is told when ION files the report for them. No personal data. */
@@ -80,7 +82,7 @@ export function createApp(deps: AppDeps) {
   const { client, routing } = deps;
   const city = deps.citySources ?? offlineCitySources();
   const mapping = { ...DEFAULT_MAPPING_OPTIONS, ...deps.mapping };
-  const board = new MissionBoard(routing.graph, deps.missions, now);
+  const board = new MissionBoard(routing.graph, deps.missions, now, deps.metroStations);
   const index = streetIndex(routing.graph);
   let decisions: Placed[] = [];
   let cacheKey = "";
@@ -310,7 +312,11 @@ export function createApp(deps: AppDeps) {
     return c.json({ sandbox: true, ...(await destinations.resolve(b.data.text, b.data.location)) });
   });
 
-  app.post("/api/route", async (c) => {
+  const profiles = Object.values(PROFILES);
+  app.get("/api/profiles",c=>c.json({profiles:profiles.map(({id,label,description})=>({id,label,description}))}));
+  const coreRouting = routing instanceof CoreRouting ? routing : new CoreRouting(routing.graph);
+  const indexedEdges = new Map(routing.graph.edges.map(e=>[e.id,e]));
+  app.post("/api/:operation{routes?}", async (c) => {
     const b = await body(c, routeBodySchema);
     if (!b.ok) return b.res;
     const clock = demoClock(c);
@@ -326,11 +332,31 @@ export function createApp(deps: AppDeps) {
     if (!deps.graphLoaded) {
       return c.json({ ...meta, error: { code: "graph_not_loaded", message: "The walking graph is not available yet" } }, 503);
     }
-    const route = routing.route(from, to, active, at);
+    const activeEvents = decisions.filter(d=>(d.placement==="address" || d.placement==="stretch") && d.parse.kind==="event"
+      && activeUntil(d.parse,new Date(d.issueDate),at));
+    const events = new Set(activeEvents.flatMap(d=>d.edges.map(e=>e.id)));
+    const crowdSources = activeEvents.map(d=>({level:"busy",observedAt:new Date(d.issueDate).toISOString(),
+      expiresAt:activeUntil(d.parse,new Date(d.issueDate),at),source:d.ada,edgeIds:d.edges.map(e=>e.id)}));
+    function compute(profile: ProfileId, obs: readonly Obstacle[]) {
+      if (profile==="voice" && routing.engine==="fallback") return routing.route(from,to,obs,at);
+      return coreRouting.route(from,to,obs,at,profile,events);
+    }
+    const voice = compute("voice",active);
+    if (c.req.param("operation")==="routes") {
+      const routes = profiles.map(({id})=>{
+        const route = id==="voice" ? voice : compute(id,active);
+        return {profile:id,route,lengthM:route?.lengthM ?? null,facts:route ? routeFacts(route,indexedEdges,at,events,voice) : null,
+          differsFromVoice:route && voice ? route.edges.length!==voice.edges.length || route.edges.some((e,i)=>e!==voice.edges[i]) : null,
+          lengthDeltaM:route && voice ? route.lengthM-voice.lengthM : null};
+      });
+      return c.json({...meta,routes,crowdSources});
+    }
+    const profile = b.data.profile;
+    const route = profile==="voice" ? voice : compute(profile,active);
     if (!route) {
       return c.json({ ...meta, error: { code: "no_route", message: "No walkable route between these points" } }, 404);
     }
-    const baseline = active.length > 0 ? routing.route(from, to, [], at) : route;
+    const baseline = active.length > 0 ? compute(profile,[]) : route;
     const onRoute = new Set(route.edges);
     const onBaseline = new Set(baseline?.edges ?? []);
     const affecting: Array<Obstacle & { effect: "avoided" | "on_route" }> = [];
@@ -341,6 +367,7 @@ export function createApp(deps: AppDeps) {
     return c.json({
       ...meta,
       route,
+      crowdSources, profile, facts:routeFacts(route,indexedEdges,at,events,voice),
       rerouted: affecting.some((o) => o.effect === "avoided"),
       /** The route if there were no obstacles, for comparison. */
       withoutObstacles: baseline ? { lengthM: baseline.lengthM, cost: baseline.cost } : null,

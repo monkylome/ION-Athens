@@ -224,3 +224,17 @@ it("isolates the demo clock across route, decisions and obstacle reads", async (
     expect((await json(post("/api/route"+query,{from:point(0,0),to:point(100,0)}))).simulatedTime).toBe(demoEnabled || undefined);
   }
 });
+
+it("lists three preferences, defaults to voice and returns comparable routes", async () => {
+  const {app,post,point}=setup();
+  const body={from:point(0,0),to:point(100,0)};
+  const prefs=await json(app.request("/api/profiles"));
+  expect(prefs.profiles.map((p:Json)=>p.id)).toEqual(["voice","wheels","quiet"]);
+  expect((await json(post("/api/route",body))).profile).toBe("voice");
+  const single=await json(post("/api/route",{...body,profile:"quiet"}));
+  expect(single.profile).toBe("quiet");
+  const comparison=await json(post("/api/routes",body));
+  expect(comparison.routes).toHaveLength(3);
+  expect(comparison.routes[2].facts).toEqual(single.facts);
+  expect((await post("/api/route",{...body,profile:"other"})).status).toBe(400);
+});

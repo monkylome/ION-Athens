@@ -1,3 +1,4 @@
+import { readFileSync, existsSync } from "node:fs";
 /** Starts the ION Athens server. Run with `npm run dev --workspace @ion/server`. */
 import { serve } from "@hono/node-server";
 import { createApp } from "./app.ts";
@@ -18,11 +19,15 @@ log(enrichment.applied ? `pavement survey applied to ${enrichment.edgesCovered} 
 if (!client.configured) log("SANDBOX or SANDBOX_KEY is not set: every sandbox call will fail with not_configured");
 
 const routing = createRouting(graph);
+const placesFile = new URL("../../../data/places.json",import.meta.url);
+const metroStations = existsSync(placesFile) ? (JSON.parse(readFileSync(placesFile,"utf8")) as {kind:string;lat:number;lng:number}[])
+  .filter(p=>p.kind==="metro_station").map(p=>[p.lng,p.lat] as [number,number]) : [];
 const { app, obstacles } = createApp({
   client,
   routing,
   edges: { nearestEdge: (p, max) => routing.nearestEdge(p, max), edgesInBBox: (() => { const index = new EdgeIndex(graph); return (box) => index.edgesInBBox(box); })() },
   graphLoaded: loaded,
+  metroStations,
   enrichment,
   citySources: createCitySources({ log }),
   pollMs: config.pollMs,

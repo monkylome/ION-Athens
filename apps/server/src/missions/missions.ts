@@ -15,7 +15,7 @@ import { localDay } from "../sources/decision-parser.ts";
 import type { GraphEdge, LngLat, Obstacle, PedestrianGraph, Tri } from "@ion/core";
 import { distanceM } from "../geo.ts";
 
-export type MissionType = "crossing_sound" | "crossing_tactile" | "obstacle_check" | "pavement_check";
+export type MissionType = "crossing_sound" | "crossing_tactile" | "obstacle_check" | "pavement_check" | "crowd_check";
 export type Answer = "yes" | "no" | "unsure";
 
 export interface Mission {
@@ -63,9 +63,10 @@ export const DEFAULT_MISSION_OPTIONS: MissionOptions = {
   unsurePoints: 2,
 };
 
-const POINTS: Record<MissionType, number> = { crossing_sound: 15, crossing_tactile: 10, pavement_check: 15, obstacle_check: 20 };
+const POINTS: Record<MissionType, number> = { crowd_check: 10, crossing_sound: 15, crossing_tactile: 10, pavement_check: 15, obstacle_check: 20 };
 
 const QUESTIONS: Record<MissionType, string> = {
+  crowd_check: "Έχει πολύ κόσμο εδώ τώρα;",
   pavement_check: "Είναι ελεύθερο το πεζοδρόμιο εδώ;",
   crossing_sound: "Έχει ηχητικό σήμα το φανάρι σε αυτή τη διάβαση;",
   crossing_tactile: "Υπάρχει οδηγός όδευσης τυφλών σε αυτή τη διάβαση;",
@@ -121,10 +122,18 @@ export class MissionBoard {
   private readonly answered = new Map<string, number>();
   private readonly confirmedCount = new Map<string, number>();
   private readonly daily = new Map<string, number>();
+  private crowdPlaces: {edge:GraphEdge; position:LngLat; token:string}[] = [];
   private mapMissions: Mission[] = [];
 
-  constructor(private readonly graph: PedestrianGraph, opts: Partial<MissionOptions> = {}, private readonly now = () => new Date()) {
+  constructor(private readonly graph: PedestrianGraph, opts: Partial<MissionOptions> = {}, private readonly now = () => new Date(), metro: readonly LngLat[] = []) {
     this.opts = { ...DEFAULT_MISSION_OPTIONS, ...opts };
+    for (const edge of graph.edges) {
+      if (!edge.name || !edge.geometry.length) continue;
+      const position=middle(edge.geometry);
+      if (edge.kind==="pedestrian" || /πλατε[ίι]α/i.test(edge.name) || metro.some(p=>distanceM(p,position)<=100)) {
+        this.crowdPlaces.push({edge,position,token:createHash("sha256").update(edge.id).digest("hex").slice(0,24)});
+      }
+    }
     this.rebuild();
   }
 
@@ -210,15 +219,23 @@ export class MissionBoard {
   }
 
   all(obstacles: readonly Obstacle[] = []): Mission[] {
-    return [...this.obstacleMissions(obstacles), ...this.mapMissions.map((m) => ({ ...m, answers: this.counts(m.id) }))];
+    const at = +this.now();
+    const crowd: Mission[] = this.crowdPlaces.flatMap(({edge,position,token}) => {
+      if (edge.crowd && Date.parse(edge.crowd.expiresAt)>at) return [];
+      const id = "crowd_check:"+token+"_"+Math.floor(at/3600000);
+      return [{id,type:"crowd_check",position,where:edge.name,edgeIds:[edge.id],question:QUESTIONS.crowd_check,points:POINTS.crowd_check,answers:this.counts(id)}];
+    });
+    return [...this.obstacleMissions(obstacles), ...this.mapMissions.map((m) => ({ ...m, answers: this.counts(m.id) })), ...crowd];
   }
 
   /** Open missions nearest to a point, obstacle checks first when equally near. */
   near(point: LngLat, obstacles: readonly Obstacle[] = [], radiusM = 500, limit = 20): Array<Mission & { distanceM: number }> {
+    let crowdCount=0;
     return this.all(obstacles)
       .map((m) => ({ ...m, distanceM: Math.round(distanceM(point, m.position)) }))
       .filter((m) => m.distanceM <= radiusM)
       .sort((a, b) => a.distanceM - b.distanceM || (a.type === "obstacle_check" ? -1 : 1))
+      .filter(m=>m.type!=="crowd_check" || ++crowdCount<=3)
       .slice(0, limit);
   }
 
@@ -305,6 +322,8 @@ export class MissionBoard {
     const value: Tri = o.value;
     for (const e of this.graph.edges) {
       if (!ids.has(e.id)) continue;
+      if (o.type === "crowd_check") e.crowd = {level:o.value==="yes" ? "busy":"calm",observedAt:o.confirmedAt,
+        expiresAt:new Date(Date.parse(o.confirmedAt)+3600000).toISOString(),source:"citizen_mission"};
       if (o.type === "crossing_sound" && e.crossing) e.crossing = { ...e.crossing, sound: value };
       if (o.type === "crossing_tactile") e.tactilePaving = value;
     }

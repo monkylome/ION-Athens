@@ -267,3 +267,9 @@ on `RouteStep` `surveyNotice`. New types: `PavementSurvey`, `SurveyedSide`,
 - Survey facts at nodes (`surveyedRamp`, `surveyedCrossing`) are carried, not priced.
 - Final wording, speech, and any language other than Greek.
 - Reading the clock. Time is always an argument.
+
+## Walking preferences
+
+The default `voice` preset preserves the original costs. `wheels` closes mapped step segments, penalises missing ramps and poor or narrow pavements, and removes the tactile and audible-signal bonuses. `quiet` uses distance and obstacle constraints with an eightfold multiplier on a stretch currently marked busy. Unknown crowd conditions leave the cost unchanged. Use the presets for the walk someone wants today.
+
+`routeFacts` reports metres on known tactile guidance, busy stretches and surveyed shared roads without a pavement. Crossing counts distinguish ramps at both ends, one end and confirmed absence; unknowns contribute to none of those counts. Steps count mapped step segments, not individual stairs. Steps avoided are segments used by the comparison voice route but omitted on the selected route.
