@@ -143,6 +143,13 @@ export class ObstacleService {
   }
 
   /** Applies the rules to the data in memory and announces the differences. */
+  project(now: Date): ObstacleSnapshot {
+    const mapped = mapSandboxData(this.reports, this.projects, this.o.edges, now, this.o.mapping);
+    return {...this.current(), skipped:mapped.skipped, obstacles:[
+      ...mapped.obstacles.filter(o=>Date.parse(o.observedAt)<=+now), ...this.o.decisionObstacles(now)
+    ]};
+  }
+
   remap(): void {
     const now = this.o.now();
     const mapped = mapSandboxData(this.reports, this.projects, this.o.edges, now, this.o.mapping);

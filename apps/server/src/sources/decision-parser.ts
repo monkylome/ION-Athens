@@ -19,7 +19,7 @@ export function parseDecision(subject: string) {
   const text = normal(subject);
   const stop = /[,;·»]|\s+(?:στο|στη|μεταξυ|απο|εωσ|μεχρι|για|περιοχησ|κατα|λογω|στισ|την|τισ|και στην|του δημου)\s/u;
   const clean = (s: string) => s.split(stop)[0]!.trim().replace(/[.\s]+$/, "");
-  const refs = [...text.matchAll(/(?<!\p{L})(?:οδου|οδο|λεωφ\.|λεωφορου|λεωφορο)\s+/gu)].map(m => clean(text.slice(m.index + m[0].length)));
+  const refs = [...text.matchAll(/(?<!\p{L})(?:οδου|οδο|λεωφ\.|λεωφορου|λεωφορο|λ\.)\s+/gu)].map(m => clean(text.slice(m.index + m[0].length)));
   const between = text.match(/μεταξυ (?:των )?οδων (.+?) και (.+)/u);
   const stretch = text.match(/απο (?:το υψοσ |την? )?(?:τησ )?(?:συμβολησ? τησ με )?(?:την? )?οδο (.+?) (?:εωσ|μεχρι) (?:το υψοσ |την? )?(?:τησ )?(?:συμβολησ? τησ με )?(?:την? )?οδο (.+)/u);
   const ends = between ?? stretch;
@@ -37,7 +37,7 @@ export function parseDecision(subject: string) {
   const weekdays = days.flatMap((day,i) => datePart.includes(day) ? [i] : []);
   const kind = /λωριδ/.test(text) ? "lane" : /γεραν|οψεων|προσοψ|εκτελεσησ εργασιων|ανυψωσησ/.test(text) ? "works" : /πορειασ|εκδηλωσ/.test(text) ? "event" : /πεζοδρομησ/.test(text) ? "pedestrian_zone" : /διακοπη|αποκλεισμ/.test(text) ? "closure" : "unknown";
   const fullPedestrian = /(?:πληρησ? διακοπη|απαγορευση) (?:τησ )?(?:κυκλοφοριασ|διελευσησ) (?:των )?πεζων/.test(text);
-  const multi = /και (?:στην?|τησ) οδο|κατωθι οδικων τμηματων/.test(text);
+  const multi = /και (?:στην?|τησ) οδο|κατωθι οδικων τμηματων|οδικο αξονα .+,/.test(text);
   const unresolved = /παραταση|αρση |τροποποιηση|εξαιρ|αργι|εναλλαξ|μεγιστου μηκουσ|αποφασεισ που|δεν (?:απαγορευεται|διακοπτεται)/.test(text);
   const validSchedule = calendar.length > 0 && calendar.every(Boolean) && (calendar.length === 1 || (shared && dates.length === 1) || (range && calendar.length === 2) || (calendar.length === 2 && datePart.slice(dates[0]!.index!+dates[0]![0].length, dates[1]!.index).trim()==="και")) &&
     (hours.length === 0 || hours.length === 2) && times.every(m => Number(m[1]) < 24 && Number(m[2]) < 60) && (!/ωρ(?:εσ|ων|α)\s/.test(datePart) || hours.length === 2) && !unresolved &&
@@ -64,6 +64,22 @@ export function activeUntil(p: Parsed, issued: Date, now: Date): string | null {
   for (const offset of [3,2]) {
     const candidate = new Date(target-offset*3600000);
     if (clock.format(candidate).replace(" ","T") === new Date(target).toISOString().slice(0,16) && candidate > now) return candidate.toISOString();
+  }
+  return null;
+}
+
+/** Exact starts within seven days, evaluated against the same Athens schedule as routing. */
+export function upcomingStart(parse: Parsed, issued: Date, now: Date) {
+  if (!parse.validSchedule || activeUntil(parse, issued, now)) return null;
+  const localMidnight = Date.parse(localDay(now) + "T00:00Z");
+  const horizon = +now + 7 * 86400000;
+  for (let day = 0; day <= 7; day++) {
+    const wall = localMidnight + day * 86400000 + (parse.hours[0] ?? 0) * 60000;
+    for (const offset of [3, 2]) {
+      const start = new Date(wall - offset * 3600000);
+      if (+start > +now && +start <= horizon && activeUntil(parse, issued, start) &&
+          !activeUntil(parse, issued, new Date(+start - 1))) return start.toISOString();
+    }
   }
   return null;
 }

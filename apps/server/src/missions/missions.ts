@@ -180,7 +180,7 @@ export class MissionBoard {
         const previous = groups.get(id);
         if (previous) previous.edgeIds.push(o.edgeId);
         else groups.set(id, {id, type:"pavement_check", question:QUESTIONS.pavement_check, position:o.position, edgeIds:[o.edgeId],
-          points:POINTS.pavement_check, answers:this.counts(id), where:this.graph.edges.find(e=>e.id===o.edgeId)?.name});
+          points:POINTS.pavement_check, answers:this.counts(id), where:o.id.startsWith("hint:") ? o.label : this.graph.edges.find(e=>e.id===o.edgeId)?.name});
         continue;
       }
       if (o.source.kind !== "sandbox_request" || o.blocks !== "partial" || !o.source.ref || !o.position) continue;

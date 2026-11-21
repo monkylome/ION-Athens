@@ -212,3 +212,16 @@ describe("other endpoints", () => {
     obstacles.stop();
   });
 });
+
+it("isolates the demo clock across route, decisions and obstacle reads", async () => {
+  const query="?at=2026-11-23T10:00:00Z";
+  for (const demoEnabled of [true,false]) {
+    const {app,post,point} = setup({demoEnabled});
+    for (const path of ["/api/obstacles","/api/decisions"]) {
+      expect((await json(app.request(path+query))).simulatedTime).toBe(demoEnabled || undefined);
+      expect((await json(app.request(path))).simulatedTime).toBeUndefined();
+      expect((await app.request(path+"?at=bad")).status).toBe(demoEnabled ? 400 : 200);
+    }
+    expect((await json(post("/api/route"+query,{from:point(0,0),to:point(100,0)}))).simulatedTime).toBe(demoEnabled || undefined);
+  }
+});

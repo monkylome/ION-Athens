@@ -62,3 +62,39 @@ it.each(["yes","no"] as const)("applies two matching %s answers to the stretch o
   expect(changed.map(o=>o.blocks)).toEqual(answer==="yes"?[]:["full","full"]);
   expect(board.applyPavementAnswers(obs,new Date("2026-05-05T10:00Z"))).toEqual(obs);
 });
+
+import { decisionHint } from "./diavgeia.ts";
+import { upcomingStart } from "./decision-parser.ts";
+const boxGraph: PedestrianGraph = {...graph,meta:{...graph.meta,bbox:[22.99,37.99,23.001,38.01]}};
+const ix = streetIndex(boxGraph);
+const address = {...input,subject:"Διακοπή στην οδό Άλφα, στο ύψος του αριθμού 9, στις 04/05/2026"};
+it("keeps an unlocated number as a mission only, and confirms a nearby exact address", () => {
+  const hint = placeDecision(address,ix);
+  expect(hint).toMatchObject({inside:true,placement:"street_only",reason:"building_number_only"});
+  expect(decisionObstacles(hint,now)).toEqual([]);
+  expect(decisionHint(hint,now)).toHaveLength(1);
+  expect(placeDecision(address,ix,[23,38.001]).placement).toBe("street_only");
+  const precise = placeDecision(address,ix,[23,38.0001]);
+  expect(precise.placement).toBe("address");
+  expect(decisionObstacles(precise,now)).toHaveLength(1);
+});
+it("reports why a decision cannot be placed", () => {
+  for (const [subject,reason] of [
+    ["Διακοπή της οδού Ανύπαρκτης","outside_area"],["Κατωθι οδικών τμημάτων","several_streets"],
+    ["Ρυθμίσεις 105","subject_too_vague"],["Οδός: λείπει το όνομα","parse_failed"],
+  ]) expect(placeDecision({...input,subject:subject!},ix)).toMatchObject({reason,placement:"unplaced"});
+});
+it("uses a one-ended explicit stretch only when its continuation reaches the box boundary", () => {
+  const base = "Διακοπή της οδού Άλφα, από την οδό Πρώτη έως την οδό Άγνωστη, στις 04/05/2026";
+  const g = {...boxGraph,edges:[edge("aa","Άλφα","a","b"),edge("first","Πρώτη","a","x")]};
+  expect(placeDecision({...input,subject:base},streetIndex(g))).toMatchObject({placement:"stretch",missingCrossStreets:["αγνωστη"]});
+  expect(placeDecision({...input,subject:base.replace("από την οδό Πρώτη έως την οδό","μεταξύ των οδών Πρώτη και")},streetIndex(g)).placement).toBe("street_only");
+});
+it("lists the exact upcoming Athens start, capped at seven days", () => {
+  const p = parseDecision("Έργα στις 04/05/2026, ώρες 08:00 έως 09:00");
+  expect(upcomingStart(p,issued,new Date("2026-05-03T12:00Z"))).toBe("2026-05-04T05:00:00.000Z");
+  expect(upcomingStart(p,issued,new Date("2026-04-20T12:00Z"))).toBeNull();
+});
+it("does not count an event or municipality name as a matched street", () => {
+  expect(placeDecision({...input,subject:"Εορτασμός Άλφα στην πόλη"},ix).inside).toBe(false);
+});

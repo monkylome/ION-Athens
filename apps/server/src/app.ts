@@ -1,3 +1,5 @@
+import { cachedAddress } from "./sources/decision-addresses.ts";
+import { upcomingStart } from "./sources/decision-parser.ts";
 /**
  * The HTTP API. Everything it needs is passed in, so tests can build it with
  * a fake sandbox client and a tiny graph.
@@ -17,7 +19,7 @@ import { type Benefit, toRewards } from "./missions/rewards.ts";
 import type { RoutingPort } from "./routing/port.ts";
 import { SandboxError, type SandboxClient } from "./sandbox/client.ts";
 import { REPORT_CATEGORIES, type SandboxPoi, type SandboxReport } from "./sandbox/schemas.ts";
-import { streetIndex, placeDecision, decisionObstacles, type Placed } from "./sources/diavgeia.ts";
+import { streetIndex, placeDecision, decisionObstacles, decisionHint, reasons, type Placed } from "./sources/diavgeia.ts";
 import { type CitySources, gisPlaces, offlineCitySources, registerCityRoutes } from "./sources/index.ts";
 
 export interface AppDeps {
@@ -82,13 +84,21 @@ export function createApp(deps: AppDeps) {
   const index = streetIndex(routing.graph);
   let decisions: Placed[] = [];
   let cacheKey = "";
+  let computing = Promise.resolve();
   async function refreshDecisions(waitMs?: number) {
     const feeds = await Promise.all(city.decisions.map(feed => feed.get(undefined, waitMs)));
     const key = feeds.map(f => f.fetchedAt).join("|");
     if (key !== cacheKey) {
-      decisions = [...new Map(feeds.flatMap(f => f.records).map(d => [d.ada, d])).values()].map(d => placeDecision(d,index));
+      const unique = [...new Map(feeds.flatMap(f => f.records).map(d => [d.ada,d])).values()];
       cacheKey = key;
+      computing = Promise.all(unique.map(async d => {
+        const hint = placeDecision(d,index);
+        if (hint.placement !== "street_only" || !hint.streetName || !hint.parse.address) return hint;
+        const point = await cachedAddress(hint.streetName,hint.parse.address.replace(/^0+(?=\d)/,""));
+        return point ? placeDecision(d,index,point) : hint;
+      })).then(located => { if (cacheKey === key) decisions = located; });
     }
+    await computing;
     return feeds.map(({ stale, problem, fetchedAt }) => ({ stale, problem, fetchedAt }));
   }
   const obstacles = new ObstacleService({
@@ -236,7 +246,21 @@ export function createApp(deps: AppDeps) {
 
   // --- obstacles and places -------------------------------------------------------
 
-  app.get("/api/obstacles", async (c) => c.json(snapshotBody(await obstacles.snapshot())));
+  function demoClock(c: Context) {
+    const raw = c.req.query("at");
+    if (raw === undefined || deps.demoEnabled === false) return {at:now(), simulated:false as const};
+    if (!z.string().datetime({offset:true}).safeParse(raw).success || !Number.isFinite(Date.parse(raw))) return null;
+    return {at:new Date(raw), simulated:true as const};
+  }
+  const badClock = (c: Context) => c.json({error:{code:"invalid_time",message:"Expected ISO timestamp with timezone"}},400);
+  app.get("/api/obstacles", async c => {
+    const clock = demoClock(c);
+    if (!clock) return badClock(c);
+    const live = await obstacles.snapshot();
+    if (!clock.simulated) return c.json(snapshotBody(live));
+    await refreshDecisions();
+    return c.json({...snapshotBody(obstacles.project(clock.at)),simulatedTime:true,at:clock.at.toISOString()});
+  });
 
   app.get("/api/places", async (c) => {
     const q = (c.req.query("q") ?? "").trim().slice(0, 100);
@@ -289,12 +313,16 @@ export function createApp(deps: AppDeps) {
   app.post("/api/route", async (c) => {
     const b = await body(c, routeBodySchema);
     if (!b.ok) return b.res;
-    const at = now();
-    const snap = await obstacles.snapshot();
+    const clock = demoClock(c);
+    if (!clock) return badClock(c);
+    const {at} = clock;
+    const live = await obstacles.snapshot();
+    if (clock.simulated) await refreshDecisions();
+    const snap = clock.simulated ? obstacles.project(at) : live;
     const active = snap.obstacles.filter((o) => isActive(o, at));
     const from: LngLat = [b.data.from.lng, b.data.from.lat];
     const to: LngLat = [b.data.to.lng, b.data.to.lat];
-    const meta = { sandbox: true, engine: routing.engine, graphLoaded: deps.graphLoaded, obstaclesStale: snap.stale };
+    const meta = { ...(clock.simulated ? {simulatedTime:true,at:at.toISOString()} : {}), sandbox: true, engine: routing.engine, graphLoaded: deps.graphLoaded, obstaclesStale: snap.stale };
     if (!deps.graphLoaded) {
       return c.json({ ...meta, error: { code: "graph_not_loaded", message: "The walking graph is not available yet" } }, 503);
     }
@@ -347,7 +375,7 @@ export function createApp(deps: AppDeps) {
   const placedAnswerSchema = answerSchema.merge(pointSchema);
 
   const answerMission = async (c: Context, id: string, data: z.infer<typeof answerSchema>, at: LngLat | null) => {
-    const current = obstacles.current().obstacles;
+    const current = [...obstacles.current().obstacles,...decisions.flatMap(d=>decisionHint(d,now()))];
     const result = board.answer(id, data.participant, data.answer, at, now(), current);
     if (!result.ok) {
       const status = result.code === "not_found" ? 404 : result.code === "daily_limit" ? 429 : result.code === "too_far" ? 422 : 409;
@@ -371,15 +399,23 @@ export function createApp(deps: AppDeps) {
     const lat = Number(c.req.query("lat"));
     const radius = Math.min(5000, Math.max(50, Number(c.req.query("radius")) || 500));
     const limit = Math.min(100, Math.max(1, Number(c.req.query("limit")) || 20));
-    const summary = board.summary(snap.obstacles);
-    if (!Number.isFinite(lng) || !Number.isFinite(lat) || !c.req.query("lng")) return c.json({ summary, missions: board.all(snap.obstacles).slice(0, limit) });
-    return c.json({ summary, missions: board.near([lng, lat], snap.obstacles, radius, limit) });
+    const candidates = [...snap.obstacles,...decisions.flatMap(d=>decisionHint(d,now()))];
+    const summary = board.summary(candidates);
+    if (!Number.isFinite(lng) || !Number.isFinite(lat) || !c.req.query("lng")) return c.json({ summary, missions: board.all(candidates).slice(0, limit) });
+    return c.json({ summary, missions: board.near([lng, lat], candidates, radius, limit) });
   });
 
   app.get("/api/decisions", async c => {
     const feeds = await refreshDecisions();
-    const placed = decisions.filter(d => d.edges.length).length;
-    return c.json({ total: decisions.length, placed, feeds, decisions: decisions.map(({edges,...d}) => ({...d, edgeIds: edges.map(e=>e.id)})) });
+    const clock = demoClock(c);
+    if (!clock) return badClock(c);
+    const placed = decisions.filter(d=>d.placement!=="unplaced").length;
+    const breakdown = Object.fromEntries(reasons.map(r=>[r,decisions.filter(d=>d.placement==="unplaced" && d.reason===r).length]));
+    const inside = decisions.filter(d=>d.inside).length;
+    const streetOnly = decisions.filter(d=>d.placement==="street_only").length;
+    return c.json({ total:decisions.length, placed, precise:placed-streetOnly, streetOnly, inside, breakdown, feeds,
+      ...(clock.simulated ? {simulatedTime:true,at:clock.at.toISOString()} : {}),
+      decisions:decisions.map(({edges,...d}) => ({...d,upcomingStart:upcomingStart(d.parse,new Date(d.issueDate),clock.at),edgeIds:edges.map(e=>e.id)})) });
   });
   app.get("/api/missions/observations", (c) => c.json({ observations: board.confirmedObservations() }));
 
