@@ -9,9 +9,9 @@ cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.."
 failed=0
 for f in scripts/* .githooks/*; do
     [[ -f "$f" ]] || continue
-    case "$(head -n 1 "$f")" in
+    case "$(head -n 1 "$f")$f" in
         *bash*) bash -n "$f" || failed=1 ;;
-        *python*) python3 -c 'import ast,sys; ast.parse(open(sys.argv[1], encoding="utf-8").read(), sys.argv[1])' "$f" || failed=1 ;;
+        *python*|*agentlib*) python3 -c 'import ast,sys; ast.parse(open(sys.argv[1], encoding="utf-8").read(), sys.argv[1])' "$f" || failed=1 ;;
     esac
 done
 

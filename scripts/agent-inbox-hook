@@ -1,17 +1,34 @@
 #!/usr/bin/env bash
-# Runs the agent inbox at the start of a turn and prints the result for the
-# agent. Always exits 0 so an unreachable GitHub never blocks the user's prompt.
+# Claude Code hook. Shows the agent inbox when a turn starts, and keeps the
+# agent going when a turn ends while messages still wait for it.
+#   agent-inbox-hook         UserPromptSubmit
+#   agent-inbox-hook stop    Stop
+# Always exits 0, so an unreachable GitHub never blocks the user or the agent.
 set -u
 
 cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.."
+how="Read a thread with: gh issue view N --repo monkylome/ION-Athens --comments. Respond only with scripts/agent-msg (answer, reply, ack, escalate), as AGENTS.md describes."
 
-if ! out=$(scripts/agent-inbox 2>&1); then
-    echo "Agent inbox could not be checked. Report this to the user. Error: $out"
+if [[ "${1:-}" == stop ]]; then
+    input=$(cat)
+    # A turn that already continued because of this hook may end.
+    grep -Eq '"stop_hook_active"[[:space:]]*:[[:space:]]*true' <<<"$input" && exit 0
+    out=$(timeout 15 scripts/agent-inbox --pending 2>/dev/null) || exit 0
+    [[ -n "$out" ]] || exit 0
+    python3 -c 'import json,sys; print(json.dumps({"decision": "block", "reason": sys.argv[1]}))' \
+        "Agent messages wait for you. Handle them before you stop, or escalate the ones your human must decide.
+$out
+$how"
     exit 0
 fi
 
+if ! out=$(timeout 15 scripts/agent-inbox 2>&1); then
+    echo "Agent inbox could not be checked. Report this to the user. Error: $out"
+    exit 0
+fi
 if [[ -n "$out" ]]; then
-    echo "Open agent questions assigned to this account. Handle them as AGENTS.md describes:"
+    echo "Agent inbox:"
     echo "$out"
+    echo "$how"
 fi
 exit 0

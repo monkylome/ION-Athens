@@ -1,6 +1,41 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/usr/bin/env python3
+"""List the agent messages that wait for this agent.
 
-gh issue list --repo monkylome/ION-Athens --assignee @me --state open \
-    --limit 100 --json number,title,url \
-    --jq '.[] | select(.title | startswith("[Agent question] ")) | "#\(.number) \(.title) \(.url)"'
+  agent-inbox            open threads waiting for me, threads waiting for my human,
+                         and answers to my own messages (each answer is shown once)
+  agent-inbox --pending  only open threads I can act on now (used when a turn ends)
+"""
+import os, sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from agentlib import STATE, threads, me, mine, involves
+
+pending_only = "--pending" in sys.argv[1:]
+seen_path = os.path.join(STATE, f"seen-{me()}")
+seen = set(open(seen_path).read().split()) if os.path.exists(seen_path) else set()
+lines, newly_seen = [], []
+
+
+def short(text):
+    text = " ".join(l for l in text.splitlines() if not l.lstrip().startswith("<!--")).strip()
+    return text[:220] + ("..." if len(text) > 220 else "")
+
+
+for t in threads():
+    if not involves(t):
+        continue
+    last = t["msgs"][-1]
+    head = f"#{t['number']} {t['title']}"
+    if t["open"] and "needs-human" in t["labels"]:
+        if not pending_only:
+            lines.append(f"WAITS FOR YOUR HUMAN  {head}\n    {t['url']}")
+    elif t["open"] and not mine(last):
+        lines.append(f"WAITS FOR YOU  {head}\n    {last['kind']} from {last['from']}: {short(last['body'])}\n    {t['url']}")
+    elif not t["open"] and not mine(last) and last["id"] not in seen and not pending_only:
+        lines.append(f"ANSWERED  {head}\n    {last['kind']} from {last['from']}: {short(last['body'])}\n    {t['url']}")
+        newly_seen.append(last["id"])
+
+if lines:
+    print("\n".join(lines))
+if newly_seen:
+    os.makedirs(STATE, exist_ok=True)
+    open(seen_path, "a").write("\n".join(newly_seen) + "\n")

@@ -1,0 +1,71 @@
+#!/usr/bin/env python3
+"""Send and answer messages between the agents. Every message goes through here.
+
+  agent-msg send --kind question|request|note|handoff --title T (--body B | --body-file F) [--to LOGIN|AGENT@LOGIN]
+  agent-msg reply N (--body B | --body-file F)    add to a thread and leave it open
+  agent-msg ack N                                 confirm you read a note or handoff
+  agent-msg answer N (--body B | --body-file F)   reply and close the thread
+  agent-msg escalate N                            mark that your human must decide
+
+question and request need an answer. note and handoff need an ack.
+"""
+import argparse, os, subprocess, sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from agentlib import REPO, gh, login, me, marker, threads
+
+
+def body_of(a):
+    if a.body_file:
+        return open(a.body_file, encoding="utf-8").read().strip()
+    if a.body:
+        return a.body.strip()
+    sys.exit("Give --body or --body-file.")
+
+
+def other_collaborator():
+    names = [n for n in gh("api", f"repos/{REPO}/collaborators", "-q", ".[].login").split() if n != login()]
+    if len(names) != 1:
+        sys.exit(f"Give --to. Collaborators: {', '.join(names) or 'none found'}")
+    return names[0]
+
+
+def counterpart(number):
+    for t in threads():
+        if t["number"] == number:
+            root = t["msgs"][0]
+            if root["from"] == me():
+                return root["to"] or (t["assignees"] or [root["author"]])[0]
+            return root["from"] if not root["from"].startswith("human@") else root["author"]
+    sys.exit(f"#{number} is not an agent thread opened by a collaborator.")
+
+
+def comment(number, kind, text):
+    gh("issue", "comment", str(number), "--repo", REPO, "--body-file", "-",
+       stdin=f"{marker(me(), counterpart(number), kind)}\n{text}\n")
+
+
+p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+sub = p.add_subparsers(dest="cmd", required=True)
+s = sub.add_parser("send"); s.add_argument("--to"); s.add_argument("--kind", required=True, choices=["question", "request", "note", "handoff"])
+s.add_argument("--title", required=True); s.add_argument("--body"); s.add_argument("--body-file")
+for name in ("reply", "answer"):
+    s = sub.add_parser(name); s.add_argument("number", type=int); s.add_argument("--body"); s.add_argument("--body-file")
+for name in ("ack", "escalate"):
+    s = sub.add_parser(name); s.add_argument("number", type=int)
+a = p.parse_args()
+
+if a.cmd == "send":
+    to = a.to or other_collaborator()
+    url = gh("issue", "create", "--repo", REPO, "--title", f"[Agent {a.kind}] {a.title}", "--label", "agent-msg",
+             "--assignee", to.split("@")[-1], "--body-file", "-", stdin=f"{marker(me(), to, a.kind)}\n{body_of(a)}\n").strip()
+    print(f"Sent {a.kind} to {to}: {url}")
+elif a.cmd == "reply":
+    comment(a.number, "reply", body_of(a)); print(f"Replied on #{a.number}; the thread stays open.")
+elif a.cmd == "ack":
+    comment(a.number, "ack", "Read."); gh("issue", "close", str(a.number), "--repo", REPO); print(f"Acknowledged and closed #{a.number}.")
+elif a.cmd == "answer":
+    comment(a.number, "answer", body_of(a))
+    subprocess.run(["gh", "issue", "edit", str(a.number), "--repo", REPO, "--remove-label", "needs-human"], capture_output=True)
+    gh("issue", "close", str(a.number), "--repo", REPO); print(f"Answered and closed #{a.number}.")
+elif a.cmd == "escalate":
+    gh("issue", "edit", str(a.number), "--repo", REPO, "--add-label", "needs-human"); print(f"#{a.number} is marked needs-human. Ask your human, then answer.")
