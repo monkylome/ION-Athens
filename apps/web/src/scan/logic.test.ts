@@ -22,7 +22,7 @@ describe("scan logic", () => {
 
   it("makes the always-visible line follow the donate switch", () => {
     expect(notice(false)).toBe("Η εικόνα αναλύεται και δεν αποθηκεύεται. Αποφασίζετε εσείς τι μπαίνει στον χάρτη.");
-    expect(notice(true)).toBe("Η φωτογραφία αυτή θα κρατηθεί στον διακομιστή του Δήμου για ανάλυση. Μπορεί να δείχνει περαστικούς.");
+    expect(notice(true)).toBe("Η φωτογραφία αυτή θα κρατηθεί στον διακομιστή αυτής της επίδειξης για ανάλυση. Μπορεί να δείχνει περαστικούς.");
     expect(NOTICE_OFF).not.toBe(NOTICE_ON);
   });
 

@@ -287,7 +287,7 @@ export function Scan() {
         {ready && mode === "describe" && (
           <button type="button" className="scan__btn scan__btn--primary scan__btn--huge" disabled={!canScan} aria-busy={busy} onClick={() => void scan("describe")}>{busy ? "Αναλύω…" : "Τι υπάρχει μπροστά μου;"}</button>
         )}
-        {ready && <Switch label="Δωρίστε αυτή τη φωτογραφία στον Δήμο για μελλοντική ανάλυση" on={donate} onChange={setDonate} small />}
+        {ready && <Switch label="Κρατήστε αυτή τη φωτογραφία για μελλοντική ανάλυση" on={donate} onChange={setDonate} small />}
         {!hasFix && ready && <p className="scan__plain">Χρειάζομαι τη θέση σας. Επιτρέψτε την τοποθεσία στη σελίδα.</p>}
         {mode === "map" && <p className="scan__count" aria-live="off">{counterText(proposed, confirmed)}</p>}
       </section>

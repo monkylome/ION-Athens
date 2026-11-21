@@ -58,7 +58,7 @@ export function pointsText(points: number): string {
 
 export const DISCOVERY_LINE = "Βρήκατε κάτι που δεν είχε χαρτογραφηθεί";
 export const NOTICE_OFF = "Η εικόνα αναλύεται και δεν αποθηκεύεται. Αποφασίζετε εσείς τι μπαίνει στον χάρτη.";
-export const NOTICE_ON = "Η φωτογραφία αυτή θα κρατηθεί στον διακομιστή του Δήμου για ανάλυση. Μπορεί να δείχνει περαστικούς.";
+export const NOTICE_ON = "Η φωτογραφία αυτή θα κρατηθεί στον διακομιστή αυτής της επίδειξης για ανάλυση. Μπορεί να δείχνει περαστικούς.";
 export const notice = (donate: boolean) => (donate ? NOTICE_ON : NOTICE_OFF);
 
 /** Distance in metres between two points, close enough for a movement gate. */

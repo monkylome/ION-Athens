@@ -15,7 +15,7 @@ import { ModelError, type VisionModel } from "./model.ts";
 import { cleanText, type Confidence, CONFIDENCES, EVIDENCE, hasGreek, KINDS, type Kind, LABELS, mentionsPeople, rawOutput } from "./vocab.ts";
 
 export const IMAGE_NOTICE = "Η εικόνα αναλύεται και δεν αποθηκεύεται. Αποφασίζετε εσείς τι μπαίνει στον χάρτη.";
-export const KEEP_NOTICE = "Η φωτογραφία αυτή θα κρατηθεί στον διακομιστή του Δήμου για ανάλυση. Μπορεί να δείχνει περαστικούς.";
+export const KEEP_NOTICE = "Η φωτογραφία αυτή θα κρατηθεί στον διακομιστή αυτής της επίδειξης για ανάλυση. Μπορεί να δείχνει περαστικούς.";
 export const KEPT_LATER = "Η φωτογραφία κρατήθηκε και θα αναλυθεί αργότερα.";
 
 export type Answer = "yes" | "no";
