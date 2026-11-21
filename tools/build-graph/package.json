@@ -1,0 +1,13 @@
+{
+  "name": "@ion/build-graph",
+  "private": true,
+  "type": "module",
+  "exports": "./src/index.ts",
+  "scripts": {
+    "build": "tsx src/index.ts",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@ion/core": "*"
+  }
+}
