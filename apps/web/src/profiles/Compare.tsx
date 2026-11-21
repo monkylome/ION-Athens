@@ -111,7 +111,7 @@ export function Compare({ query, close }: { query: URLSearchParams; close: () =>
   return <section className="compare" role="dialog" aria-modal="true" aria-label="Σύγκριση διαδρομών">
     <header>{ids.map(id => <button key={id} ref={id === "voice" ? headingButton : undefined} data-pattern={id} aria-pressed={id === selected} onClick={() => { setChanged(false); setStep(ids.indexOf(id)); }}>{PROFILES[id].label}</button>)}
       <button className="compare__close" onClick={close}>Έξοδος</button></header>
-    <div className="compare__frame"><CompareMap rows={rows} selected={selected} /><p className="credit">© OpenStreetMap</p></div>
+    <div className="compare__frame"><CompareMap rows={rows} selected={selected} /></div>
     <footer aria-live="polite"><h1>{step >= ids.length ? "Η ίδια πόλη. Η διαδρομή του καθενός." : PROFILES[selected].label}</h1>
       <p>{error || (step < ids.length ? row ? caption(row) : "Αναζήτηση διαδρομών…" : "")}</p>
       {changed && <p>Ενημέρωση από επιβεβαίωση δημοτών.</p>}</footer>

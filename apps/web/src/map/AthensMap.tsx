@@ -1,6 +1,6 @@
 import type * as GeoJSON from "geojson";
 import { useEffect, useRef, useState } from "react";
-import { AttributionControl, Map, Marker, type GeoJSONSource } from "maplibre-gl";
+import { Map, Marker, type GeoJSONSource } from "maplibre-gl";
 import type { LngLat, Obstacle, Route } from "@ion/core";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { addBuildings, addNetwork, blankStyle, tokenColors } from "./base";
@@ -40,7 +40,7 @@ export function AthensMap({ route, obstacles, walker, missions, center }: { miss
     const colors = tokenColors(container.current!);
     // The ION basemap: token colours, and the pedestrian graph as its streets, served from this machine.
     const instance = new Map({ container: container.current!, style: blankStyle(colors), center: [23.7275, 37.9775], zoom: 15, attributionControl: false, fadeDuration: 0 });
-    instance.addControl(new AttributionControl({ compact: false, customAttribution: '<a href="https://www.openstreetmap.org/copyright">© OpenStreetMap</a>' }));
+    // No credit on the map itself: the attribution is on the About page, one interaction away.
     let disposed = false;
     instance.once("load", () => {
       setMap(instance);

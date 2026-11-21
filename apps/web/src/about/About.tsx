@@ -1,0 +1,43 @@
+/**
+ * Everything that is credit, licence, source or explanation lives here, one interaction away from every map,
+ * and never on a main view. The OpenStreetMap attribution guidelines accept this for small screens.
+ */
+import { Link } from "react-router-dom";
+
+export function About() {
+  return (
+    <main className="page" data-surface="phone">
+      <Link className="btn btn--quiet" to="/">Πίσω</Link>
+      <h1>Σχετικά</h1>
+      <p className="page__lead">
+        Το ION Athens είναι ο χάρτης της Αθήνας που φτιάχνουν οι ίδιοι οι δημότες, για να περπατά ο καθένας όπως του ταιριάζει σήμερα: με φωνή, με ρόδες ή με ησυχία.
+      </p>
+
+      <h2>Πηγές και άδειες</h2>
+      <ul>
+        <li>Χάρτης και δίκτυο πεζών: <a href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors</a>, άδεια ODbL.</li>
+        <li>Πλακίδια χάρτη στο παιχνίδι: <a href="https://openfreemap.org">OpenFreeMap</a>, © <a href="https://openmaptiles.org">OpenMapTiles</a>.</li>
+        <li>Βοηθός, αιτήματα δημοτών και Κάρτα Αθηναίου: AthensGov Sandbox του Δήμου Αθηναίων. Είναι δοκιμαστικά δεδομένα.</li>
+        <li>Απογραφή πεζοδρομίων: Δήμος Αθηναίων και ΕΜΠ, 2022. Η άδεια επαναχρησιμοποίησης εκκρεμεί και τα δεδομένα δεν δημοσιεύονται με τον κώδικα.</li>
+        <li>Αποφάσεις της Τροχαίας: Διαύγεια. Ανελκυστήρες μετρό: ΣΤΑ.ΣΥ. Καιρός: Open-Meteo.</li>
+        <li>Γραμματοσειρές: Sofia Sans και Sofia Sans Condensed, άδεια SIL Open Font.</li>
+      </ul>
+
+      <h2>Τι είναι πραγματικό</h2>
+      <ul>
+        <li>Πραγματικά: ο χάρτης, οι χώροι, οι διαδρομές και οι αποστολές που βγαίνουν από αυτόν.</li>
+        <li>Δοκιμαστικά: τα αιτήματα και τα προνόμια του sandbox. Το πρόγραμμα προνομίων δεν αντιστοιχεί σε υπαρκτό πρόγραμμα του Δήμου.</li>
+        <li>Στημένα για την επίδειξη: ό,τι φέρει την ένδειξη «επίδειξη» ή «προσομοίωση» στην οθόνη.</li>
+      </ul>
+
+      <h2>Τα δεδομένα σας</h2>
+      <ul>
+        <li>Δεν υπάρχει λογαριασμός. Η συσκευή έχει έναν τυχαίο αριθμό.</li>
+        <li>Η θέση σας χρησιμεύει για να βρεθούν οι κοντινές ερωτήσεις και δεν αποθηκεύεται.</li>
+        <li>Η κάμερα ανοίγει μόνο όταν το ζητήσετε. Καμία εικόνα δεν αποθηκεύεται.</li>
+      </ul>
+
+      <p>Το ION είναι βοήθημα προσανατολισμού. Δεν αντικαθιστά το λευκό μπαστούνι, τον σκύλο-οδηγό ή την εκπαίδευση κινητικότητας, και δεν αποφασίζει πότε είναι ασφαλές να διασχίσετε δρόμο.</p>
+    </main>
+  );
+}

@@ -250,7 +250,6 @@ export function Stage() {
 
       <main className="stage__map" inert={compare}>
         <StageMap state={state} reducedMotion={reducedMotion} tiles={tiles} />
-        <p className="credit">© OpenStreetMap{tiles ? ", OpenMapTiles, OpenFreeMap" : ""}</p>
 
         <div className="stage__flags">
           {offline && <p className="flag flag--alert">ΕΚΤΟΣ ΣΥΝΔΕΣΗΣ · ΤΟΠΙΚΗ ΠΡΟΣΟΜΟΙΩΣΗ</p>}

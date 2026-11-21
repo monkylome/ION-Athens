@@ -193,7 +193,7 @@ export function Phone() {
           <p className="t-secondary">Προορισμός</p>
           <h1 className="t-instruction" tabIndex={-1}>{destination.name}</h1>
           {destination.address && <p className="t-secondary">{destination.address}</p>}
-          {destination.local && <p>Από τον τοπικό κατάλογο OpenStreetMap, όχι από τον Δήμο.</p>}
+          {destination.local && <p>Από τον τοπικό κατάλογο, όχι από τον Δήμο.</p>}
           {destination.hospital && (
             <section className="emergency" aria-label="Έκτακτη ανάγκη">
               <p className="t-secondary">Αν είναι επείγον, καλέστε το 112.</p>
