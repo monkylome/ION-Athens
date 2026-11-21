@@ -1,0 +1,28 @@
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Dependencies and build output
+node_modules/
+dist/
+build/
+.next/
+out/
+coverage/
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Caches and logs
+.cache/
+*.log
+
+# Editor, OS and per-user agent files
+.idea/
+.vscode/
+.DS_Store
+.claude/settings.local.json

@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Runs the agent inbox at the start of a turn and prints the result for the
+# agent. Always exits 0 so an unreachable GitHub never blocks the user's prompt.
+set -u
+
+cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.."
+
+if ! out=$(scripts/agent-inbox 2>&1); then
+    echo "Agent inbox could not be checked. Report this to the user. Error: $out"
+    exit 0
+fi
+
+if [[ -n "$out" ]]; then
+    echo "Open agent questions assigned to this account. Handle them as AGENTS.md describes:"
+    echo "$out"
+fi
+exit 0
