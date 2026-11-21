@@ -162,6 +162,7 @@ export interface ScenarioState {
   loopFallback: boolean;
   injected: boolean;
   waiting: boolean;
+  discoveryNotice?: { label: string; at: LngLat; seenBy: number };
   crossingNotice: string;
   card: VenueCard | null;
   closing: boolean;
@@ -217,4 +218,5 @@ export type ServerEvent =
   | { type: "snapshot"; obstacles: Obstacle[]; stale?: boolean }
   | { type: "obstacle_added" | "obstacle_changed" | "obstacle_removed"; obstacle: Obstacle }
   | { type: "mission_answered"; missionId: string; answers: { yes: number; no: number } }
+  | { type: "discovery_confirmed"; discovery: unknown }
   | { type: "map_updated" };

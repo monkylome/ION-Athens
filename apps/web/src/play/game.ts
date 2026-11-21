@@ -169,28 +169,35 @@ export function addStamp(stamps: readonly StampRecord[], stamp: StampRecord): St
 
 /* ---------- discoveries: what the scan mode finds that nobody had mapped ---------- */
 
-export interface Discovery { id: string; at: LngLat; label: string; participant?: string }
+export interface Discovery { id: string; at: LngLat; label: string; confirmed: boolean; seenBy: number }
 
-/** `GET /api/vision/status`: is there a model to scan with. Another team's endpoint, read by trying its likely fields. */
 export function visionReady(body: unknown): boolean {
-  if (!body || typeof body !== "object") return false;
-  const o = body as Record<string, unknown>;
-  if (o.error) return false;
-  return o.configured === true || o.available === true || o.ready === true || o.enabled === true || (typeof o.model === "string" && o.model.length > 0);
+  return !!body && typeof body === "object" && "configured" in body && body.configured === true
+    && "answering" in body && body.answering === true;
 }
 
-/** A discovery as the server announces or lists it. Anything without a place and a name is ignored. */
 export function readDiscovery(raw: unknown): Discovery | null {
   if (!raw || typeof raw !== "object") return null;
-  const outer = raw as Record<string, unknown>;
-  const o = (outer.discovery && typeof outer.discovery === "object" ? outer.discovery : outer) as Record<string, unknown>;
-  const p = Array.isArray(o.position) ? o.position : Array.isArray(o.at) ? o.at : [o.lng, o.lat];
-  const lng = p[0], lat = p[1];
-  if (typeof lng !== "number" || typeof lat !== "number" || !Number.isFinite(lng) || !Number.isFinite(lat)) return null;
-  const label = [o.label, o.title, o.what, o.name, o.kind, o.type].find((v): v is string => typeof v === "string" && v.length > 0 && v !== "discovery");
-  if (!label) return null;
-  const id = typeof o.id === "string" || typeof o.id === "number" ? String(o.id) : `${label}@${lng.toFixed(5)},${lat.toFixed(5)}`;
-  return { id, at: [lng, lat], label, ...(typeof o.participant === "string" ? { participant: o.participant } : {}) };
+  const o = raw as Record<string, unknown>;
+  if (typeof o.id !== "string" || typeof o.label !== "string" || typeof o.confirmed !== "boolean"
+      || typeof o.seenBy !== "number" || o.seenBy < 1 || (o.confirmed && o.seenBy < 2)
+      || !Array.isArray(o.position) || o.position.length !== 2 || !o.position.every(Number.isFinite)) return null;
+  return { id: o.id, at: [o.position[0], o.position[1]], label: o.label, confirmed: o.confirmed, seenBy: o.seenBy };
+}
+
+export function discoveryEvent(raw: {type?: string; discovery?: unknown} | null): Discovery | null {
+  if (!raw || (raw.type !== "discovery_added" && raw.type !== "discovery_confirmed")) return null;
+  const found = readDiscovery(raw.discovery);
+  return found && found.confirmed === (raw.type === "discovery_confirmed") ? found : null;
+}
+
+// A list request can finish after the live confirmation of the same object.
+export function mergeDiscoveries(list: Discovery[], incoming: Discovery[]): Discovery[] {
+  const entries = new Map(list.map(d => [d.id, d]));
+  for (const d of incoming) {
+    if ((entries.get(d.id)?.seenBy ?? 0) <= d.seenBy) entries.set(d.id, d);
+  }
+  return [...entries.values()];
 }
 
 /* ---------- points, levels, rewards ---------- */

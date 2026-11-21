@@ -16,7 +16,7 @@ import { Scan } from "./scan/Scan";
 
 function BackupLabel() {
   const { pathname, search } = useLocation();
-  if (!(pathname === "/stage" || pathname === "/play") || new URLSearchParams(search).get("backup") !== "1") return null;
+  if (!(pathname === "/stage" || pathname === "/play" || pathname === "/play/scan") || new URLSearchParams(search).get("backup") !== "1") return null;
   return <span className="backup-label" lang="el">ΗΧΟΓΡΑΦΗΜΕΝΟ</span>;
 }
 

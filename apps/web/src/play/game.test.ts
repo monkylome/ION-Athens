@@ -3,7 +3,7 @@ import type { LngLat } from "@ion/core";
 import { moveBy } from "./geo";
 import {
   changeSentence, crossed, describeNearby, levelProgress, missionLine, nearby, neighbourhoodLine, nextReward, nextRewardLine,
-  addStamp, albumTiles, readDiscovery, visionReady, factKnown, factWords, kindOf, typeLabel, outcome, outsideLine, parseSpokenAnswer, venueLine, venueProgress, places, pointsObject, pointsWords, readNeighbourhood, refusal, type Mission, type Reward,
+  addStamp, albumTiles, discoveryEvent, mergeDiscoveries, readDiscovery, visionReady, factKnown, factWords, kindOf, typeLabel, outcome, outsideLine, parseSpokenAnswer, venueLine, venueProgress, places, pointsObject, pointsWords, readNeighbourhood, refusal, type Mission, type Reward,
 } from "./game";
 
 const here: LngLat = [23.7257, 37.9762];
@@ -193,19 +193,22 @@ describe("outside the mapped area", () => {
 });
 
 describe("discoveries from the scan mode", () => {
-  it("knows when a vision model is there", () => {
-    expect(visionReady({ configured: true, model: "x" })).toBe(true);
-    expect(visionReady({ model: "llava" })).toBe(true);
-    expect(visionReady({ configured: false })).toBe(false);
-    expect(visionReady({ error: { code: "not_found" } })).toBe(false);
-    expect(visionReady(null)).toBe(false);
+  it("requires a configured model that answers", () => {
+    expect(visionReady({ configured: true, answering: true })).toBe(true);
+    expect(visionReady({ configured: true, answering: false })).toBe(false);
+    expect(visionReady({ model: "llava" })).toBe(false);
   });
-  it("reads a discovery in the shapes an event or a list may have", () => {
-    expect(readDiscovery({ type: "discovery", discovery: { id: "d1", position: [23.73, 37.98], label: "Ράμπα", participant: "abc" } }))
-      .toEqual({ id: "d1", at: [23.73, 37.98], label: "Ράμπα", participant: "abc" });
-    expect(readDiscovery({ lng: 23.73, lat: 37.98, kind: "steps" })).toMatchObject({ at: [23.73, 37.98], label: "steps" });
-    expect(readDiscovery({ label: "Ράμπα" })).toBeNull();
-    expect(readDiscovery({ position: [23.73, 37.98] })).toBeNull();
+  it("merges actual stream events and a late list response without downgrading proof", () => {
+    const first = {id:"d1", position:[23.73,37.98], label:"Ράμπα", seenBy:1, confirmed:false};
+    const second = {...first, confirmed:true, seenBy:2};
+    const added = discoveryEvent({type:"discovery_added", discovery:first})!;
+    const fact = discoveryEvent({type:"discovery_confirmed", discovery:second})!;
+    expect(added.confirmed).toBe(false);
+    expect(fact.at).toEqual(first.position);
+    expect(mergeDiscoveries([fact], [added])).toEqual([fact]);
+    expect(discoveryEvent({type:"discovery_confirmed", discovery:first})).toBeNull();
+    expect(discoveryEvent({type:"map_updated", discovery:second})).toBeNull();
+    expect(readDiscovery({...second, position:null})).toBeNull();
   });
 });
 

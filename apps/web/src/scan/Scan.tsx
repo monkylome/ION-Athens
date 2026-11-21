@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { helperDevice } from "../assist/device";
+import { participantId } from "../play/api";
+import { parseFake } from "../play/sensors";
 import { cancelSpeech, speak } from "../voice/speech";
 import { type VisionStatus, VisionError, vision } from "./api";
 import { captureFrame } from "./frame";
 import { Glyph } from "./glyph";
 import {
-  CONFIDENCE_WORD, DISCOVERY_LINE, STOP_TEXT, WALK_INTERVAL_MS, type ConfirmResult, type Proposal,
+  CONFIDENCE_WORD, STOP_TEXT, WALK_INTERVAL_MS, type ConfirmResult, type Proposal,
   confirmText, counterText, movedEnough, notice, walkStop,
 } from "./logic";
 import "./scan.css";
@@ -16,13 +17,16 @@ type Fix = { lng: number; lat: number; heading?: number };
 interface Tile {
   id: number;
   proposal: Proposal;
-  state: "open" | "sending" | "done" | "wrong" | "error";
+  position: Fix;
+  state: "open" | "sending" | "done" | "error";
   text?: string;
 }
 
 /** Position for testing without a GPS: /play/scan?lng=23.7275&lat=37.9755 */
 function fixedPosition(): Fix | null {
   const q = new URLSearchParams(location.search);
+  const fake = parseFake(q.get("fake"));
+  if (fake) return { lng: fake[0], lat: fake[1] };
   const lng = Number(q.get("lng")), lat = Number(q.get("lat"));
   return q.has("lng") && q.has("lat") && Number.isFinite(lng) && Number.isFinite(lat) ? { lng, lat } : null;
 }
@@ -54,10 +58,14 @@ export function Scan() {
   const video = useRef<HTMLVideoElement>(null);
   const stream = useRef<MediaStream | null>(null);
   const fix = useRef<Fix | null>(fixedPosition());
-  const participant = useRef(helperDevice());
+  const participant = useRef(participantId());
   const tileId = useRef(0);
   const lastSent = useRef<{ at: number; fix: Fix | null }>({ at: 0, fix: null });
   const latency = useRef<number | null>(null);
+  const [receipt, setReceipt] = useState<{at: number[]; before: number; text: string; confirmed: boolean} | null>(null);
+  const request = useRef<AbortController | null>(null);
+  const params = new URLSearchParams(location.search);
+  const back = "/play?" + params;
   const busyRef = useRef(false);
   const recent = useRef(new Map<string, number>());
   const donateRef = useRef(donate);
@@ -80,6 +88,7 @@ export function Scan() {
       if (!navigator.mediaDevices?.getUserMedia) throw new DOMException("no media", "SecurityError");
       stream.current?.getTracks().forEach((t) => t.stop());
       const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 } }, audio: false });
+      if (!video.current) { s.getTracks().forEach(track => track.stop()); return; }
       stream.current = s;
       if (video.current) {
         video.current.srcObject = s;
@@ -96,6 +105,7 @@ export function Scan() {
     return () => {
       stream.current?.getTracks().forEach((t) => t.stop());
       stream.current = null;
+      request.current?.abort();
       cancelSpeech();
     };
   }, [startCamera]);
@@ -133,6 +143,10 @@ export function Scan() {
     if (busyRef.current || !video.current || !position) return false;
     busyRef.current = true;
     setBusy(true);
+    const controller = new AbortController();
+    request.current = controller;
+    const timeout = window.setTimeout(() => controller.abort("timeout"), 18000);
+    video.current.pause();
     const started = performance.now();
     if (!automatic) say(purpose === "describe" ? "Αναλύω την εικόνα." : "Αναλύω την εικόνα. Περιμένετε λίγα δευτερόλεπτα.");
     try {
@@ -141,14 +155,14 @@ export function Scan() {
       const result = await vision.observe({
         image, lng: position.lng, lat: position.lat, ...(position.heading !== undefined ? { heading: Math.round(position.heading) } : {}),
         participant: participant.current, purpose, ...(donateRef.current ? { keep: true } : {}),
-      });
+      }, controller.signal);
       latency.current = performance.now() - started;
       if (result.queued) { say(result.message ?? "Η φωτογραφία κρατήθηκε και θα αναλυθεί αργότερα."); return true; }
       if (purpose === "describe") {
         const speech = result.speech ?? "";
         setSpoken(speech);
-        say(speech);
-        speak(speech, { priority: 1 });
+        say("Εκτίμηση του μοντέλου. " + speech);
+        speak("Εκτίμηση του μοντέλου. " + speech, { priority: 1 });
         return true;
       }
       const now = Date.now();
@@ -158,15 +172,20 @@ export function Scan() {
         recent.current.set(key, now);
         return !(automatic && seen !== undefined && now - seen < 60_000);
       });
-      setTiles(fresh.map((proposal) => ({ id: ++tileId.current, proposal, state: "open" as const })));
+      setTiles(fresh.map((proposal) => ({ id: ++tileId.current, proposal, position, state: "open" as const })));
       setProposed((n) => n + fresh.length);
       say(fresh.length ? `Το μοντέλο πρότεινε ${fresh.length}. Πατήστε «Σωστό» ή «Λάθος» σε καθένα.` : automatic ? "" : "Δεν είδα κάτι που να μπορώ να προτείνω. Δοκιμάστε από άλλη γωνία.");
       return true;
     } catch (error) {
       latency.current = performance.now() - started;
-      if (!automatic || !(error instanceof VisionError && error.code === "busy")) say(error instanceof VisionError ? error.message : "Δεν μπόρεσα να πάρω φωτογραφία. Δοκιμάστε ξανά.");
+      if (controller.signal.aborted) {
+        if (controller.signal.reason === "timeout") say("Το μοντέλο άργησε. Δοκιμάστε ξανά ή επιστρέψτε στον χάρτη.");
+      } else if (!automatic || !(error instanceof VisionError && error.code === "busy")) say(error instanceof VisionError ? error.message : "Δεν μπόρεσα να πάρω φωτογραφία. Δοκιμάστε ξανά.");
       return false;
     } finally {
+      window.clearTimeout(timeout);
+      request.current = null;
+      void video.current?.play().catch(() => undefined);
       busyRef.current = false;
       setBusy(false);
     }
@@ -195,12 +214,13 @@ export function Scan() {
   const patch = (id: number, change: Partial<Tile>) => setTiles((list) => list.map((t) => (t.id === id ? { ...t, ...change } : t)));
 
   const right = async (tile: Tile) => {
-    const position = fix.current;
-    if (!position) return;
+    const position = tile.position;
     patch(tile.id, { state: "sending" });
     try {
       const result: ConfirmResult = await vision.confirm(participant.current, tile.proposal, position);
       const text = confirmText(result);
+      setReceipt(previous => ({at: [position.lng, position.lat], before: previous?.before ?? result.profile.points - result.pointsEarned,
+        text: tile.proposal.label + " · " + text, confirmed: !result.needsSecond}));
       patch(tile.id, { state: "done", text });
       setConfirmed((n) => n + 1);
       say(`${tile.proposal.label}. ${text}`);
@@ -211,8 +231,8 @@ export function Scan() {
     }
   };
   const wrong = (tile: Tile) => {
-    patch(tile.id, { state: "wrong", text: "Απορρίφθηκε. Δεν μπήκε στον χάρτη." });
-    say(`${tile.proposal.label}. Απορρίφθηκε.`);
+    setTiles(list => list.filter(t => t.id !== tile.id));
+    say("");
   };
 
   const ready = status !== "loading" && status !== "error" && status.configured && status.answering;
@@ -222,10 +242,12 @@ export function Scan() {
     <main className="scan" data-surface="phone" data-mode={mode}>
       <h1 className="visually-hidden">Σάρωση με την κάμερα</h1>
       <header className="scan__top">
+        <Link className="scan__back" to={back} state={{scanReceipt: receipt}}>Πίσω στον χάρτη</Link>
+        {fixedPosition() && <span className="scan__tag">{params.get("demo") === "1" ? "ΘΕΣΗ ΚΑΙ ΑΠΑΝΤΗΣΗ ΕΠΙΔΕΙΞΗΣ" : "ΘΕΣΗ ΕΠΙΔΕΙΞΗΣ"}</span>}
         <p className="scan__notice" data-keep={donate}>{notice(donate)}</p>
         <nav className="scan__modes" aria-label="Τρόπος σάρωσης">
-          <button type="button" aria-pressed={mode === "map"} onClick={() => setMode("map")}>Χαρτογράφηση</button>
-          <button type="button" aria-pressed={mode === "describe"} onClick={() => { setMode("describe"); setWalk(false); }}>Για όποιον δεν βλέπει</button>
+          <button type="button" disabled={busy} aria-pressed={mode === "map"} onClick={() => setMode("map")}>Χαρτογράφηση</button>
+          <button type="button" disabled={busy} aria-pressed={mode === "describe"} onClick={() => { setMode("describe"); setWalk(false); }}>Για όποιον δεν βλέπει</button>
         </nav>
       </header>
 
@@ -238,12 +260,14 @@ export function Scan() {
             <button type="button" className="scan__btn" onClick={() => void startCamera()}>Δοκιμάστε ξανά</button>
           </div>
         )}
-        {mode === "map" && tiles.length > 0 && (
+        {busy && <div className="scan__plate"><p>Το μοντέλο κοιτάζει…</p>
+          <button type="button" className="scan__btn" onClick={() => { setWalk(false); request.current?.abort(); say("Η σάρωση ακυρώθηκε."); }}>Ακύρωση</button></div>}
+        {!busy && mode === "map" && tiles.length > 0 && (
           <ul className="scan__tiles" aria-label="Προτάσεις του μοντέλου">
             {visibleTiles(tiles).map((t) => <TileView key={t.id} tile={t} onRight={() => void right(t)} onWrong={() => wrong(t)} />)}
           </ul>
         )}
-        {mode === "describe" && spoken && <p className="scan__speech" lang="el">{spoken}</p>}
+        {mode === "describe" && spoken && <p className="scan__speech" lang="el">Εκτίμηση του μοντέλου · {spoken}</p>}
       </div>
 
       <section className="scan__controls" aria-label="Χειριστήρια">
@@ -297,7 +321,7 @@ function TileView({ tile, onRight, onWrong }: { tile: Tile; onRight: () => void;
       <div className="scan__tile-head">
         <Glyph kind={p.kind} />
         <div>
-          {p.discovery && !decided && <p className="scan__found">{DISCOVERY_LINE}</p>}
+          {!decided && <p className="scan__found">Πρόταση του μοντέλου</p>}
           <p className="scan__label">{p.label}</p>
           <p className="scan__evidence" hidden={decided}>{CONFIDENCE_WORD[p.confidence]}: {p.evidence}</p>
           {p.mission && !decided && <p className="scan__question">Απαντά στην ερώτηση: {p.mission.question}</p>}
@@ -309,7 +333,7 @@ function TileView({ tile, onRight, onWrong }: { tile: Tile; onRight: () => void;
           <button type="button" className="scan__btn" disabled={tile.state === "sending"} onClick={onWrong}>Λάθος</button>
         </div>
       ) : (
-        <p className="scan__result" data-state={tile.state}>{tile.state === "done" ? "Σωστό. " : tile.state === "wrong" ? "Λάθος. " : "Δεν καταγράφηκε. "}{tile.text}</p>
+        <p className="scan__result" data-state={tile.state}>{tile.state === "done" ? "Σωστό. " : "Δεν καταγράφηκε. "}{tile.text}</p>
       )}
     </li>
   );

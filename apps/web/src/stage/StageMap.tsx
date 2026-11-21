@@ -165,6 +165,7 @@ export function StageMap({ state, reducedMotion, tiles }: { state: ScenarioState
           <span className="place-pin" data-bare={route !== null}><span className="place-pin__mark" aria-hidden="true" />{route ? null : start.name}</span>
         </MapMarker>
       )}
+      {map && state.discoveryNotice && <MapMarker map={map} at={state.discoveryNotice.at} anchor="bottom"><span className="crossing-notice" aria-label={state.discoveryNotice.label}>✓</span></MapMarker>}
       {map && state.crossingNotice && state.loop && (
         <MapMarker map={map} at={state.loop.crossing.position} anchor="bottom">
           <span className="crossing-notice" aria-label={state.crossingNotice}>♪</span>

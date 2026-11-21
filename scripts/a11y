@@ -2,6 +2,7 @@
 import runtime from "./browser/runtime.cjs";
 import fs from "node:fs";
 import game from "./browser/game.cjs";
+import scan from "./browser/scan.cjs";
 const {launch,webRequire,phone,stage,button,go,stageFlow}=runtime;
 const rows=[];
 const tags=["wcag2a","wcag2aa","wcag21a","wcag21aa","wcag22a","wcag22aa"];
@@ -40,6 +41,21 @@ async function main(){
     await button(p,"Δείτε το με την κάμερα").click(); await button(p,"Χωρίς κάμερα").waitFor(); await audit(p,"camera");
     await button(p,"Χωρίς κάμερα").click(); await p.locator(".pl-card__question").waitFor(); await audit(p,"camera fallback");
     await game.gameFlow(p,(page,state)=>state==="ticket" ? audit(page,state) : Promise.resolve());
+    // UI-state accessibility fixtures also work on a server without vision weights.
+    const proposal = {kind:"tactile_paving", label:"Οδηγός όδευσης τυφλών", confidence:"high", evidence:"ανάγλυφες γραμμές", discovery:true};
+    const discovery = {id:"axe-camera", position:[23.722,37.981], label:proposal.label, seenBy:2, confirmed:true};
+    await p.route("**/api/vision/*", route => {
+      const endpoint = new URL(route.request().url()).pathname.split("/").pop();
+      const request = route.request().postDataJSON();
+      const responses = {
+        status:{configured:true, answering:true},
+        observe:request?.purpose==="describe" ? {speech:"Διακρίνω ανάγλυφες γραμμές."} : {proposals:[proposal]},
+        confirm:{...proposal, profile:{points:30}, pointsEarned:30, needsSecond:false, confirmed:discovery},
+        discoveries:{discoveries:[discovery]},
+      };
+      return route.fulfill({json:responses[endpoint]});
+    });
+    await scan.scanFlow(p,audit,false,{fixture:true,describe:true});
     await ctx.close();
     const large=await browser.newPage({viewport:stage,reducedMotion:"reduce"}); await stageFlow(large,audit);
     if(rows.some(r=>r.issues.some(i=>["serious","critical"].includes(i.impact))))process.exitCode=1;

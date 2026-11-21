@@ -52,7 +52,7 @@ function structureKey(s: ScenarioState): string {
     s.waiting,
     s.injected,
     s.closing,
-    s.crossingNotice,
+    s.crossingNotice, s.discoveryNotice?.label, s.discoveryNotice?.at.join(","), s.discoveryNotice?.seenBy,
     s.card?.name,
     s.paused,
     s.busy,

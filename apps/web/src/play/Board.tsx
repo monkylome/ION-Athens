@@ -231,7 +231,7 @@ export function Board({ centre, player, heading, reach, spots, venues, discoveri
       })}
       {map && discoveries.map((d) => (
         <MapMarker key={d.id} map={map} at={d.at} anchor="bottom" className="ob-host ob-host--near">
-          <span className="ob ob--found"><span className="ob__name">{d.label}</span><span className="ob__head"><Eye weight="fill" className="ob__glyph" /></span><span className="ob__stem" /><span className="ob__foot" /></span>
+          <span className="ob ob--found" data-confirmed={d.confirmed}><span className="ob__name">{d.label} · {d.confirmed ? "Επιβεβαιώθηκε" : "Μία μαρτυρία"}</span><span className="ob__head"><Eye weight="fill" className="ob__glyph" /></span><span className="ob__stem" /><span className="ob__foot" /></span>
         </MapMarker>
       ))}
       {map && streets.map((street) => (
