@@ -1,0 +1,85 @@
+#!/usr/bin/env node
+// Run on a fresh rehearsal API. Only resolve the sandbox report returned to this run.
+import assert from "node:assert/strict";
+import {randomUUID} from "node:crypto";
+import {performance} from "node:perf_hooks";
+
+async function run(server) {
+  const base = new URL("/api/", server);
+  const tag = randomUUID();
+  const mapper = "demo-mapper-" + tag, witness = "demo-witness-" + tag;
+  const began = performance.now();
+  const say = text => console.log(`[+${((performance.now()-began)/1000).toFixed(2)} s] ${text}`);
+  async function api(path, data) {
+    const response = await fetch(new URL(path,base), {method:data === undefined ? "GET" : "POST",
+      ...(data === undefined ? {} : {headers:{"content-type":"application/json"},body:JSON.stringify(data)}),
+      signal:AbortSignal.timeout(30000)});
+    const result = await response.json();
+    assert(response.ok, path + " (" + response.status + "): " + JSON.stringify(result));
+    return result;
+  }
+  const answer = (id,participant) => api("demo/missions/"+encodeURIComponent(id)+"/answer",{participant,answer:"yes"});
+  let reportId, trailId;
+  const leftovers = new Set();
+  say("All answers, participants and indoor directions in this run are DEMO fixtures.");
+  try {
+    const loop = await api("demo/loop");
+    assert(loop.demo && loop.crossing.open && loop.venueMissionOpen, "Use a fresh rehearsal process with open missions.");
+    const dest = await api("destination",{text:"Θέλω να πάω στο θέατρο"});
+    assert(dest.understood && dest.place.id===loop.destination.id);
+    say("Destination understood: "+dest.place.name);
+    const body = {from:loop.start,to:dest.place,venueId:dest.place.id,profile:"voice"};
+    const {route} = await api("route",body);
+    const crosses = route => route.edges.some(id=>loop.crossing.edgeIds.includes(id));
+    assert(crosses(route) && route.edges.includes(loop.obstacle.edgeId));
+    say(`Route from ${loop.start.name}: ${route.lengthM.toFixed(1)} m; walker at ${loop.walkerProgressM.toFixed(1)} m, decision ${loop.obstacle.distanceToDecisionM.toFixed(1)} m ahead.`);
+    assert(!(await answer(loop.crossing.id,witness)).confirmed);
+    leftovers.add(loop.crossing.id);
+    assert.equal((await answer(loop.crossing.id,mapper)).confirmed?.value,"yes");
+    say("Two demo participants confirmed the audible signal at "+loop.crossing.id);
+    const ahead = await api("route",body);
+    assert(crosses(ahead.route) && ahead.route.edges.includes(loop.obstacle.edgeId), "Crossing confirmation changed the route away from the planned obstacle.");
+    const [lng,lat] = loop.obstacle.position;
+    const first = await api("reports",{lng,lat,category:"sidewalk",text:"Επίδειξη ION — προσωρινό δοκιμαστικό εμπόδιο "+tag});
+    reportId = first.report.id;
+    assert.equal(first.obstacle?.edgeId,loop.obstacle.edgeId);
+    assert.equal(first.obstacle.blocks,"partial");
+    say("Demo obstacle reported: "+reportId+" on "+loop.obstacle.edgeId);
+    const seen = await answer("obstacle_check:"+reportId,mapper);
+    assert.equal(seen.obstacle?.blocks,"full");
+    assert.equal(seen.obstacle?.edgeId,loop.obstacle.edgeId);
+    say("Second observer closed the edge. Mapper points: "+seen.profile.points);
+    const venueFirst = await answer(loop.venueMissionId,mapper);
+    leftovers.add(loop.venueMissionId);
+    assert(!venueFirst.confirmed);
+    const rewards = await api("rewards?demo=true&participant="+mapper);
+    const offer = rewards.rewards.find(r=>r.unlocked && /θέατρ|θεατρ/i.test(r.partner));
+    assert(rewards.demo && offer, "No unlocked demo theatre offer");
+    say(`Three mapper answers earned ${rewards.points} points. ${offer.partner}: ${offer.title} (demo threshold ${offer.pointsRequired}).`);
+    assert.equal((await answer(loop.venueMissionId,witness)).confirmed?.value,"yes");
+    say("Two participants confirmed the demo step-free entrance fact.");
+    const trailPath = "venues/"+dest.place.id+"/trails";
+    const trail = await api(trailPath,{participant:mapper,start:"κύρια είσοδος (επίδειξη)",target:"ταμείο",
+      segments:[{metres:10,steps:14,turn:"straight"},{metres:2,steps:3,turn:"left"}]});
+    trailId = trail.id;
+    assert(!trail.confirmed && trailId);
+    assert((await api(trailPath+"/"+trailId+"/confirm",{participant:witness})).confirmed);
+    say("Demo trail to the ticket desk recorded and confirmed: "+trailId);
+    const after = await api("route",body);
+    assert(crosses(after.route) && !after.route.edges.includes(loop.obstacle.edgeId));
+    assert(after.route.lengthM > ahead.route.lengthM && after.route.lengthM-ahead.route.lengthM < 120);
+    assert(after.arrival.speech.includes("χωρίς σκαλιά") && after.arrival.speech.includes(trail.speech));
+    say(`Replanned from start: ${ahead.route.lengthM.toFixed(1)} → ${after.route.lengthM.toFixed(1)} m. In-walk detour: ${loop.obstacle.walkingDetourM.toFixed(1)} m total.`);
+    say(after.arrival.speech);
+  } finally {
+    if (leftovers.size || trailId) say("Process-local demo answers, points and trail have no delete endpoint: "+[...leftovers,trailId].filter(Boolean).join(", "));
+    if (reportId) {
+      say("Resolving only this run's report: "+reportId);
+      assert.equal((await api("demo/resolve/"+encodeURIComponent(reportId),{})).report.status,"resolved");
+      say("Report resolved; its sandbox history remains.");
+    }
+  }
+}
+
+if (process.argv.length !== 3) {console.error("Usage: scripts/demo-loop http://localhost:8790");process.exitCode=2;}
+else run(process.argv[2]).catch(error=>{console.error(error.message);process.exitCode=1;});

@@ -1,3 +1,4 @@
+import { theatreLoop } from "./demo/loop.ts";
 import { area, centres, entrance, matchVenue, venues, venueMissions } from "./venues/catalogue.ts";
 import { venueApi } from "./venues/trails.ts";
 import { cachedAddress } from "./sources/decision-addresses.ts";
@@ -573,6 +574,15 @@ export function createApp(deps: AppDeps) {
   demo.use("*", async (c, next) => {
     if (deps.demoEnabled === false) return c.json({ sandbox: true, error: { code: "demo_disabled", message: "Demo control is switched off" } }, 403);
     return next();
+  });
+
+  demo.get("/loop",async c => {
+    const snap = await obstacles.snapshot();
+    const at = now();
+    const active = snap.obstacles.filter(o => isActive(o, at));
+    const loop = theatreLoop(routing.graph, board.all(active), board.confirmedObservations(), active, at);
+    if (!loop) return c.json({demo:true,error:{code:"no_matching_loop",message:"No route met the crossing and detour requirements on the loaded graph."}},422);
+    return c.json({demo:true,surveyApplied:deps.enrichment?.applied ?? false,...loop});
   });
 
   demo.post("/obstacle", async (c) => {

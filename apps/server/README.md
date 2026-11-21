@@ -455,3 +455,9 @@ small signalling messages in a room and stores nothing of the call. Devices are 
 
 `/api/events` announces `assist_requested`, `assist_accepted` and `assist_ended`, carrying only the rounded position.
 Rooms named `assist-...` exist only while a request holds them; other names are free for relays such as `?room=` on the web app.
+
+### Theatre loop rehearsal
+
+`GET /api/demo/loop` searches the loaded graph for a walking route of roughly 350–500 m to Olympia. The response contains the recommended start, an alternative, the audible-crossing mission, venue mission, obstacle position and edge, walker progress (metres along the original route) and the decision node. Lengths are metres. `walkingDetourM` preserves the part already walked; `replannedLengthM` starts over at the origin. Street names come from route instructions. The result can change with the survey, obstacle feed and citizen confirmations. HTTP 422 means the loaded graph and observations yield no suitable geometry.
+
+Run `scripts/demo-loop http://localhost:8790` against a fresh rehearsal API with the sandbox configured. Both participant IDs are generated for the run. All answers and indoor directions are demo fixtures. The script resolves its own report and prints which observations and trail remain in process memory. A second run against confirmed missions exits before writing. Theatre offers are sandbox discounts. The phase timings measure API responses, not human walking time.
