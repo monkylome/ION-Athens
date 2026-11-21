@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+# Blocks conflict markers and secrets before they are committed or pushed.
+#   scripts/check-commit          checks what is staged (pre-commit, pre-merge-commit)
+#   scripts/check-commit --tree   checks conflict markers in every tracked file (sync-main)
+set -uo pipefail
+
+cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.."
+
+marker_re='^(<<<<<<<|>>>>>>>) '
+secret_re='sbx_[A-Za-z0-9_-]{20,}|sk-[A-Za-z0-9_-]{20,}|ghp_[A-Za-z0-9]{30,}|github_pat_[A-Za-z0-9_]{20,}|AKIA[0-9A-Z]{16}|-----BEGIN [A-Z ]*PRIVATE KEY-----'
+failed=0
+
+if [[ "${1:-}" == --tree ]]; then
+    if hits=$(git grep -nIE "$marker_re" -- . 2>/dev/null); then
+        echo "Conflict markers in tracked files:" >&2
+        echo "$hits" | cut -c1-160 >&2
+        exit 1
+    fi
+    exit 0
+fi
+
+env_files=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '(^|/)\.env(\.|$)' | grep -vE '\.env\.example$' || true)
+if [[ -n "$env_files" ]]; then
+    echo "Refusing to commit environment files:" >&2
+    echo "$env_files" >&2
+    failed=1
+fi
+
+added=$(git diff --cached -U0 --no-color --diff-filter=ACMR | grep -E '^\+' | grep -vE '^\+\+\+ ' | cut -c2- || true)
+
+if hits=$(grep -nE "$marker_re" <<<"$added"); then
+    echo "Staged changes contain conflict markers:" >&2
+    echo "$hits" | cut -c1-160 >&2
+    failed=1
+fi
+
+if hits=$(grep -noE "$secret_re" <<<"$added"); then
+    echo "Staged changes look like they contain a secret. Matches, shortened:" >&2
+    echo "$hits" | sed -E 's/^([0-9]+:.{8}).*/\1.../' >&2
+    failed=1
+fi
+
+if (( failed )); then
+    echo "Commit blocked by scripts/check-commit. Remove the lines above and commit again." >&2
+    exit 1
+fi

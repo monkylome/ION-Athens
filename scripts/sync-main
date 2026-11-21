@@ -25,6 +25,17 @@ for attempt in 1 2 3; do
         exit 1
     fi
 
+    if [[ "$(git rev-parse HEAD)" != "$remote_head" ]]; then
+        if ! scripts/check-commit --tree; then
+            echo "Not pushed. Fix the conflict markers, commit, and rerun scripts/sync-main." >&2
+            exit 1
+        fi
+        if ! timeout 60 ${ION_CHECK_CMD:-scripts/check}; then
+            echo "Not pushed: scripts/check failed or took over 60 seconds. Your commits are local. Fix, commit, and rerun scripts/sync-main." >&2
+            exit 1
+        fi
+    fi
+
     if git push origin HEAD:refs/heads/main; then
         exit 0
     fi

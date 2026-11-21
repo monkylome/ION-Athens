@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Project checks that must pass before a commit is published to main.
+# sync-main runs this with a 60 second limit. Keep it fast, and add the
+# project's lint, typecheck and tests here once they exist.
+set -uo pipefail
+
+cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.."
+
+failed=0
+for f in scripts/* .githooks/*; do
+    [[ -f "$f" ]] || continue
+    case "$(head -n 1 "$f")" in
+        *bash*) bash -n "$f" || failed=1 ;;
+        *python*) python3 -c 'import ast,sys; ast.parse(open(sys.argv[1], encoding="utf-8").read(), sys.argv[1])' "$f" || failed=1 ;;
+    esac
+done
+
+exit "$failed"
