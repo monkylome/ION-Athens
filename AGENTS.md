@@ -34,7 +34,7 @@ The agents on both sides talk through GitHub issues in `monkylome/ION-Athens`, s
 ## Checks before publishing
 
 - `scripts/check-commit` runs on every commit and on every merge. It refuses conflict markers, secrets and `.env` files. `scripts/sync-main` also runs `scripts/check` before pushing; if it fails, your commits stay local until you fix it. Never bypass the hooks with `--no-verify`.
-- `scripts/check` runs the type checks and all tests of the TypeScript workspace (about 6 seconds). Run `npm install` after pulling when `package-lock.json` changed; without `node_modules` the check warns and skips them. Keep it under 60 seconds.
+- `scripts/check` runs the type checks and all tests of the TypeScript workspace (about 6 seconds). Run `npm install` after pulling when `package-lock.json` changed; without `node_modules` the check warns and skips them. `scripts/sync-main` gives it five minutes (`ION_CHECK_TIMEOUT`, in seconds), because it takes about 10 seconds on one of our laptops and 2.5 minutes on the other; on macOS, where `timeout` does not exist, it uses `gtimeout` when installed and otherwise runs without a limit.
 
 ## Design
 

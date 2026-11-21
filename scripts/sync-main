@@ -41,8 +41,14 @@ for attempt in 1 2 3; do
             echo "Not pushed. Fix the conflict markers, commit, and rerun scripts/sync-main." >&2
             exit 1
         fi
-        if ! timeout 60 ${ION_CHECK_CMD:-scripts/check}; then
-            echo "Not pushed: scripts/check failed or took over 60 seconds. Your commits are local. Fix, commit, and rerun scripts/sync-main." >&2
+        # macOS has no `timeout`: use gtimeout from coreutils when present, otherwise run without a limit.
+        # The limit is generous because the same check takes about 10 s on one laptop and 2.5 minutes on another.
+        limit="${ION_CHECK_TIMEOUT:-300}"
+        if command -v timeout >/dev/null 2>&1; then limiter=(timeout "$limit")
+        elif command -v gtimeout >/dev/null 2>&1; then limiter=(gtimeout "$limit")
+        else limiter=(); fi
+        if ! "${limiter[@]}" ${ION_CHECK_CMD:-scripts/check}; then
+            echo "Not pushed: scripts/check failed or took over $limit seconds. Your commits are local. Fix, commit, and rerun scripts/sync-main." >&2
             exit 1
         fi
     fi
