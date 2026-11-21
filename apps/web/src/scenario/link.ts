@@ -49,6 +49,11 @@ export function hostLink(
 function structureKey(s: ScenarioState): string {
   return [
     s.phase,
+    s.waiting,
+    s.injected,
+    s.closing,
+    s.crossingNotice,
+    s.card?.name,
     s.paused,
     s.busy,
     s.connection,

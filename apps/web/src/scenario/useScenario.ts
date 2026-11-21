@@ -4,7 +4,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { synth } from "../sound/synth";
-import { browserApi, browserVoice, loadGraph, places } from "./browser";
+import { browserApi, browserVoice, loadLoop, loadGraph, places } from "./browser";
 import { configFromSearch } from "./config";
 import { initialState, ScenarioEngine } from "./engine";
 import { hostLink } from "./link";
@@ -92,8 +92,9 @@ export function useScenario(surface: "stage" | "phone", options: ScenarioOptions
     let cleanup = () => undefined as void;
     const query = new URLSearchParams(window.location.search);
     const config = configFromSearch(window.location.search);
-    loadGraph().then(
-      ({ index }) => {
+    const useLoop = surface === "stage" && !query.has("from") && !query.has("to");
+    Promise.all([loadGraph(), useLoop ? loadLoop() : null]).then(
+      ([{ index }, loop]) => {
         if (disposed) return;
         const voice = browserVoice(() => query.get("voice") !== "off");
         const instance = new ScenarioEngine(
@@ -101,6 +102,7 @@ export function useScenario(surface: "stage" | "phone", options: ScenarioOptions
             index,
             places,
             api: browserApi,
+            ...(loop ? { rehearsalRoute: browserApi.route(loop.start, loop.destination, "voice").then(r => r.data?.route ?? null) } : {}),
             voice,
             now: () => performance.now(),
             wallNow: () => Date.now(),
@@ -111,7 +113,8 @@ export function useScenario(surface: "stage" | "phone", options: ScenarioOptions
               else synth.setWalking(effect.on && (walkingSound.current?.() ?? true));
             },
           },
-          config,
+          loop ? { ...config, sentence: "Θέλω να πάω στο θέατρο", durationS: query.has("duration") ? config.durationS : 60 } : config,
+          { loop, fallback: useLoop && !loop, live: (query.get("citizen") ?? (query.get("room") ? "live" : "scripted")) === "live" },
         );
         try {
           const profile = localStorage.getItem("ion-walk-profile");

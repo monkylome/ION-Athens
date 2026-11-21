@@ -34,6 +34,7 @@ export interface RouteResponse {
   engine?: string;
   route: Route;
   rerouted?: boolean;
+  arrival?: { speech: string };
 }
 
 export interface ReportResponse {
@@ -59,9 +60,11 @@ export interface SourceInfo {
 type Point = { lng: number; lat: number };
 
 export interface ApiPort {
+  venue?(id: string): Promise<ApiResult<import("./types").VenueCard>>;
   destination(text: string, location?: Point): Promise<ApiResult<DestinationResponse>>;
   route(from: Point, to: Point, profile: import("@ion/core").ProfileId): Promise<ApiResult<RouteResponse>>;
   report(input: Point & { category?: string; text?: string }): Promise<ApiResult<ReportResponse>>;
+  demoConfirm?(reportId: string): Promise<ApiResult<ReportResponse>>;
   confirm(reportId: string): Promise<ApiResult<ReportResponse>>;
   resolve(reportId: string): Promise<ApiResult<ReportResponse>>;
   reset(): Promise<ApiResult<{ reset: boolean; sandbox?: boolean; demo?: boolean }>>;

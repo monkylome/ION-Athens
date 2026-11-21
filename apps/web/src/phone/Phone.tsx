@@ -135,7 +135,7 @@ export function Phone() {
       }
     };
     instance.onerror = () => {
-      setLocal("Δεν σας άκουσα. Δοκιμάστε ξανά, ή γράψτε τον προορισμό.");
+      setLocal("Η αναγνώριση ομιλίας διακόπηκε. Πείτε ξανά ή γράψτε τον προορισμό.");
     };
     instance.onend = () => setListening(false);
     setListening(true);

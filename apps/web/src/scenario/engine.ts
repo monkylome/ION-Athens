@@ -48,6 +48,7 @@ import type {
 export interface EngineDeps {
   index: GraphIndex;
   places: readonly PlaceRecord[];
+  rehearsalRoute?: Promise<Route | null>;
   api: ApiPort;
   voice: VoicePort;
   /** Monotonic milliseconds. */
@@ -80,6 +81,7 @@ const MOVING: readonly Phase[] = ["walking", "reported", "rerouting", "walking_n
 export function initialState(config: ScenarioConfig): ScenarioState {
   return {
     profile: "voice",
+    loop: null, citizen: "scripted", loopFallback: false, injected: false, waiting: false, crossingNotice: "", card: null, closing: false,
     rev: 0,
     ready: false,
     phase: "idle",
@@ -163,6 +165,7 @@ export class ScenarioEngine {
   /** When the call that may close a pavement was sent, by obstacle id. */
   private readonly sentAt = new Map<string, number>();
   private announced: string[] = [];
+  private arrivalSpeech: string | null = null;
   private route: Route | null = null;
   private walker: WalkerState | null = null;
   private simT = 0;
@@ -178,10 +181,17 @@ export class ScenarioEngine {
   constructor(
     private readonly deps: EngineDeps,
     config: ScenarioConfig,
+    presentation?: { loop: ScenarioState["loop"]; fallback: boolean; live: boolean },
   ) {
     this.state = { ...initialState(config), ready: true };
     const start = findPlace(deps.places, config.from) ?? searchPlaces(deps.places, config.from);
     if (start) this.state.start = toPlaceInfo(start);
+    if (presentation) {
+      this.state.loop = presentation.loop;
+      this.state.loopFallback = presentation.fallback;
+      this.state.citizen = presentation.live ? "live" : "scripted";
+      if (presentation.loop) this.state.start = presentation.loop.start;
+    }
   }
 
   getState(): ScenarioState {
@@ -203,6 +213,7 @@ export class ScenarioEngine {
         if (this.state.phase === "idle" && !this.state.busy) this.patch({ profile: command.profile });
         return;
       case "advance":
+        if (this.state.phase === "arrived") { this.patch({ closing: true }); return; }
         if (this.state.phase === "idle") return this.setDestination(this.state.config.sentence);
         if (this.state.phase === "destination") return this.start();
         return;
@@ -270,6 +281,11 @@ export class ScenarioEngine {
     } else {
       speech = result.data && !result.data.understood ? result.data.speech : SAY.notUnderstood;
     }
+    const loop = this.state.loop;
+    if (loop && sentence === this.state.config.sentence && destination?.id !== loop.destination.id) {
+      destination = { ...loop.destination, how: "demo_loop", local: false, hospital: false };
+      speech = "Προορισμός: " + destination.name + ". Να ξεκινήσουμε;";
+    }
     if (destination) {
       if (destination.hospital) speech = `${speech} ${SAY.emergency}`;
       this.patch({ busy: false, destination, phase: "destination", notice: speech });
@@ -286,6 +302,21 @@ export class ScenarioEngine {
     const result = await this.deps.api.route({ lng: start.lng, lat: start.lat }, { lng: destination.lng, lat: destination.lat }, this.state.profile);
     this.note(result);
     let route: Route | null = result.ok && result.data && this.usable(result.data.route) ? result.data.route : null;
+    const loop = this.activeLoop();
+    if (loop && this.state.profile === "voice" && route && !route.edges.includes(loop.obstacle.edgeId)
+        && [...this.tracked.values()].some(t => t.closes && t.obstacle.edgeId === loop.obstacle.edgeId)) {
+      // Show the original walk before revealing a confirmation that arrived during the phone act.
+      const openingRoute = await this.deps.rehearsalRoute;
+      if (openingRoute && this.usable(openingRoute) && openingRoute.edges.includes(loop.obstacle.edgeId)) {
+        route = openingRoute;
+      } else {
+        const baseline = findRoute(this.deps.index, loop.start.nodeId!, loop.destination.nodeId!, {
+          cost: PROFILES.voice.cost, atTime: this.deps.wallNow(),
+          obstacles: this.routingObstacles().filter(o => o.edgeId !== loop.obstacle.edgeId),
+        });
+        if (baseline.ok && baseline.route.edges.includes(loop.obstacle.edgeId)) route = baseline.route;
+      }
+    }
     if (!route && result.code !== "no_route") {
       const from = start.nodeId && this.deps.index.nodes.has(start.nodeId) ? start.nodeId : nearestNode(this.deps.index, [start.lng, start.lat])?.node.id;
       const to = destination.nodeId && this.deps.index.nodes.has(destination.nodeId) ? destination.nodeId : nearestNode(this.deps.index, [destination.lng, destination.lat])?.node.id;
@@ -303,12 +334,17 @@ export class ScenarioEngine {
       this.say({ text: SAY.noRoute, kind: "info", urgent: true });
       return;
     }
+    this.arrivalSpeech = result.data?.arrival?.speech ?? null;
     this.route = route;
     this.simT = 0;
     this.announced = [];
     this.handled.clear();
-    for (const id of this.tracked.keys()) this.handled.add(id); // already part of this route's calculation
-    this.baseScale = resolveTimeScale(this.state.config, route.lengthM);
+    for (const [id, t] of this.tracked) if (t.obstacle.edgeId !== loop?.obstacle.edgeId) this.handled.add(id); // already part of this route's calculation
+    const config = this.state.config;
+    // Reserve real time for the confirmation, the three beats and the spoken place card.
+    this.baseScale = loop && config.timeScale === "auto"
+      ? Math.max(1, Math.min(30, route.lengthM / (config.speedMps * Math.max(15, config.durationS - 39))))
+      : resolveTimeScale(config, route.lengthM);
     this.lastTick = this.deps.now();
     this.run = this.lastRun = null;
     this.state = {
@@ -338,6 +374,8 @@ export class ScenarioEngine {
     let planned: Placement | null = null;
     if (at === "walker") {
       point = walker.position;
+    } else if (this.activeLoop()) {
+      point = this.state.loop!.obstacle.position;
     } else {
       // The presenter needs a few seconds for the confirmations: ask for that much more warning.
       const lead = config.confirmLeadS * config.speedMps * this.baseScale;
@@ -357,6 +395,7 @@ export class ScenarioEngine {
       point = planned.position;
     }
     this.patch({ busy: true });
+    if (this.activeLoop() && at === "ahead") this.state.injected = true;
     const result = await this.deps.api.report({ lng: point[0], lat: point[1], category: config.category, text: config.obstacleText });
     this.note(result);
     this.state.busy = false;
@@ -415,10 +454,13 @@ export class ScenarioEngine {
     }
     if (this.state.busy) return;
     const id = target.obstacle.id;
+    if (this.activeLoop()) this.state.injected = true;
     this.sentAt.set(id, this.deps.now());
     if (!target.local && target.reportId) {
       this.patch({ busy: true });
-      const result = await this.deps.api.confirm(target.reportId);
+      const result = this.activeLoop() && this.deps.api.demoConfirm
+        ? await this.deps.api.demoConfirm(target.reportId)
+        : await this.deps.api.confirm(target.reportId);
       this.note(result);
       this.state.busy = false;
       if (result.ok && result.data) {
@@ -480,8 +522,14 @@ export class ScenarioEngine {
     this.speaking = false;
     this.pending = null;
     this.currentUtterance++;
-    const result = await this.deps.api.reset();
-    this.note(result);
+    if (this.state.loop || this.state.loopFallback) {
+      for (const t of this.tracked.values()) {
+        if (t.createdHere && t.reportId && !t.local) await this.deps.api.resolve(t.reportId);
+      }
+    } else {
+      const result = await this.deps.api.reset();
+      this.note(result);
+    }
     for (const [id, t] of this.tracked) if (t.createdHere || t.local) this.tracked.delete(id);
     this.state.localFallback = false;
     this.clear();
@@ -489,6 +537,7 @@ export class ScenarioEngine {
 
   /** Back to the start, keeping what is known about the server. */
   private clear(): void {
+    this.arrivalSpeech = null;
     this.route = null;
     this.walker = null;
     this.simT = 0;
@@ -501,6 +550,7 @@ export class ScenarioEngine {
       ...this.state,
       phase: "idle",
       busy: false,
+      waiting: false, closing: false, injected: false, card: null, crossingNotice: "",
       request: this.state.config.sentence,
       destination: null,
       route: null,
@@ -558,6 +608,17 @@ export class ScenarioEngine {
         this.remove(event.obstacle.id);
         break;
       }
+      case "mission_answered": {
+        const crossing = this.state.loop?.crossing;
+        if (this.state.citizen === "live" && crossing && event.missionId === crossing.id && event.answers) {
+          const street = crossing.edgeIds.map(id => this.deps.index.edges.get(id)?.name).find(Boolean);
+          const where = street ? " στην οδό " + street : " στη διάβαση";
+          this.state.crossingNotice = event.answers.yes && !event.answers.no
+            ? "Ένας δημότης μόλις είπε: το φανάρι" + where + " ακούγεται."
+            : "Νέα απάντηση για το ηχητικό φανάρι" + where + ".";
+        }
+        break;
+      }
       default:
         this.toast(`SSE ${event.type} · SANDBOX`, "ok");
     }
@@ -603,6 +664,10 @@ export class ScenarioEngine {
         this.state.focusObstacleId = obstacle.id;
       }
       return;
+    }
+    if (this.activeLoop() && report) {
+      if (obstacle.edgeId !== this.state.loop!.obstacle.edgeId || !this.state.waiting) return;
+      if (this.state.citizen === "scripted" && !tracked.createdHere && !this.state.injected) return;
     }
     this.consider(tracked, meta.receivedAt);
   }
@@ -727,6 +792,7 @@ export class ScenarioEngine {
     this.route = result.route;
     this.simT = result.progressM / this.state.config.speedMps;
     this.state.route = result.route;
+    this.state.waiting = false;
     this.state.phase = "rerouting";
     this.state.focusObstacleId = obstacle.id;
     this.state.timeScale = 1; // the voice speaks in real time, so the walker moves in real time while it does
@@ -833,7 +899,17 @@ export class ScenarioEngine {
     let changed = this.expireToasts(now);
     if (this.route && this.isMoving()) {
       this.simT += dt * this.state.timeScale;
-      this.advance();
+      const loop = this.activeLoop();
+      if (loop && !this.state.change && this.route.edges.includes(loop.obstacle.edgeId)
+          && this.simT * this.state.config.speedMps >= loop.walkerProgressM) {
+        this.simT = loop.walkerProgressM / this.state.config.speedMps;
+        this.advance();
+        if (!this.state.waiting) this.deps.effect?.({ type: "walking", on: false });
+        this.state.waiting = true;
+        const confirmed = [...this.tracked.values()].find(t => t.closes && t.obstacle.edgeId === loop.obstacle.edgeId
+          && (this.state.citizen === "live" || t.createdHere || this.state.injected));
+        if (confirmed) this.consider(confirmed);
+      } else this.advance();
       changed = true;
     }
     if (this.runMoment(now)) changed = true;
@@ -881,6 +957,10 @@ export class ScenarioEngine {
     if (a.type === "arrival" && a.phase === "now") {
       this.signal("arrived");
       this.deps.effect?.({ type: "earcon", name: "arrival" });
+      if (this.activeLoop()) {
+        void this.readArrival(text);
+        return;
+      }
       this.state.notice = text;
       this.say({ text, kind: "instruction", urgent: true });
       return;
@@ -944,6 +1024,25 @@ export class ScenarioEngine {
 
   // ---- helpers ----------------------------------------------------------------------------
 
+  private activeLoop() {
+    const loop = this.state.loop;
+    return loop && this.state.destination?.id === loop.destination.id ? loop : null;
+  }
+
+  private async readArrival(fallback: string) {
+    const { start, destination, profile } = this.state;
+    const route = this.route;
+    if (!start || !destination?.id) return;
+    const [arrival, card] = await Promise.all([
+      this.deps.api.route(start, destination, profile),
+      this.deps.api.venue?.(destination.id),
+    ]);
+    if (this.route !== route || this.state.closing) return;
+    const text = arrival.data?.arrival?.speech ?? this.arrivalSpeech ?? fallback;
+    this.patch({ card: card?.data ?? null, notice: text });
+    this.say({ text, kind: "instruction", urgent: true });
+  }
+
   private phraseContext() {
     const destination = this.state.destination;
     return {
@@ -965,7 +1064,8 @@ export class ScenarioEngine {
   }
 
   private confirmTarget(): TrackedObstacle | undefined {
-    const open = [...this.tracked.values()].filter((t) => t.report && !t.closes);
+    const loop = this.activeLoop();
+    const open = [...this.tracked.values()].filter(t => t.report && !t.closes && (!loop || t.obstacle.edgeId === loop.obstacle.edgeId));
     const focus = open.find((t) => t.obstacle.id === this.state.focusObstacleId);
     return focus ?? open.reverse().find((t) => t.createdHere) ?? open[0];
   }

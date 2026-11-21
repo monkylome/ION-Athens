@@ -38,6 +38,18 @@ export interface ScenarioConfig {
   obstacleText: string;
 }
 
+export interface TheatreLoop {
+  start: PlaceInfo;
+  destination: PlaceInfo;
+  crossing: { id: string; position: LngLat; edgeIds: string[]; open: boolean };
+  obstacle: { edgeId: string; position: LngLat };
+  walkerProgressM: number;
+}
+export interface VenueCard {
+  name: string;
+  facts: { key: string; entranceId: string | null; question: string; value: string | null; source: string }[];
+}
+
 export interface PlaceInfo {
   id: string | null;
   name: string;
@@ -145,6 +157,14 @@ export interface Toast {
 
 export interface ScenarioState {
   profile: import("@ion/core").ProfileId;
+  loop: TheatreLoop | null;
+  citizen: "live" | "scripted";
+  loopFallback: boolean;
+  injected: boolean;
+  waiting: boolean;
+  crossingNotice: string;
+  card: VenueCard | null;
+  closing: boolean;
   rev: number;
   ready: boolean;
   phase: Phase;
@@ -196,4 +216,5 @@ export type Effect =
 export type ServerEvent =
   | { type: "snapshot"; obstacles: Obstacle[]; stale?: boolean }
   | { type: "obstacle_added" | "obstacle_changed" | "obstacle_removed"; obstacle: Obstacle }
-  | { type: "mission_answered" | "map_updated" };
+  | { type: "mission_answered"; missionId: string; answers: { yes: number; no: number } }
+  | { type: "map_updated" };

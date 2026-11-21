@@ -18,7 +18,7 @@ function setLine(map: MapLibreMap, id: string, coordinates: readonly LngLat[]) {
 export function obstacleWords(t: TrackedObstacle): { title: string; count: string | null; stamp: string } {
   const count = t.report ? `${Math.min(t.witnesses, t.needed)} από ${t.needed}` : null;
   const title = t.report ? (t.closes ? "Εμπόδιο" : "Αναφορά") : "Έργα";
-  const stamp = t.local ? "Τοπικό, για το demo" : t.createdHere ? "Για το demo" : "Test data";
+  const stamp = t.local ? "Τοπικό, για το demo" : t.createdHere ? "Για το demo" : "Δοκιμαστικό";
   return { title, count, stamp };
 }
 
@@ -163,6 +163,11 @@ export function StageMap({ state, reducedMotion, tiles }: { state: ScenarioState
         <MapMarker map={map} at={route?.geometry[0] ?? [start.lng, start.lat]} anchor="top-left" className="pin-wrap">
           {/* Once the walk begins the walker marks the place; the name would only cover the first steps. */}
           <span className="place-pin" data-bare={route !== null}><span className="place-pin__mark" aria-hidden="true" />{route ? null : start.name}</span>
+        </MapMarker>
+      )}
+      {map && state.crossingNotice && state.loop && (
+        <MapMarker map={map} at={state.loop.crossing.position} anchor="bottom">
+          <span className="crossing-notice" aria-label={state.crossingNotice}>♪</span>
         </MapMarker>
       )}
       {map && destination && (

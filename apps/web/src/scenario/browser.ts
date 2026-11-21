@@ -48,10 +48,18 @@ async function call<T>(method: "GET" | "POST", path: string, body?: unknown): Pr
   }
 }
 
+export async function loadLoop() {
+  const response = await call<import("./types").TheatreLoop>("GET", "/demo/loop");
+  return response.data?.start && response.data?.obstacle && response.data?.crossing && response.data?.destination ? response.data : null;
+}
+
 export const browserApi: ApiPort = {
+  venue: id => call("GET", "/venues/" + encodeURIComponent(id)),
   destination: (text, location) => call("POST", "/destination", { text, ...(location ? { location } : {}) }),
   route: (from, to, profile) => call("POST", "/route", { from, to, profile }),
   report: (input) => call("POST", "/reports", input),
+  demoConfirm: id => call("POST", "/demo/missions/" + encodeURIComponent("obstacle_check:" + id) + "/answer",
+    {participant: "stage-witness-" + Math.random().toString(36).slice(2), answer: "yes"}),
   confirm: (id) => call("POST", `/reports/${encodeURIComponent(id)}/confirm`),
   resolve: (id) => call("POST", `/demo/resolve/${encodeURIComponent(id)}`),
   reset: () => call("POST", "/demo/reset"),
