@@ -1,0 +1,363 @@
+/* The stage: 16:9, read from the back of a hall. Sizes are vw so the projector scales them. */
+
+.stage {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  background: var(--bg);
+  color: var(--fg);
+  overflow: hidden;
+  font-size: var(--t-body);
+  --hair: 0.25vw; /* half of the stage border, for plates inside the map */
+}
+
+/* ---- status line ---- */
+.stage__top {
+  display: flex;
+  align-items: center;
+  gap: 2vw;
+  padding: 0.9vw 2vw;
+  border-bottom: var(--border);
+}
+.stage__brand {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: var(--weight-instruction);
+  font-size: var(--t-secondary);
+  line-height: 1;
+  white-space: nowrap;
+}
+.provenance {
+  display: flex;
+  gap: 1.2vw;
+  margin: 0 0 0 auto;
+  padding: 0;
+  list-style: none;
+}
+.plate {
+  display: flex;
+  border: var(--hair) solid var(--fg);
+  font-family: var(--font-display);
+  font-weight: var(--weight-secondary);
+  font-size: var(--t-body);
+  line-height: 1;
+  white-space: nowrap;
+}
+.plate__name { padding: 0.5vw 0.8vw; }
+.plate__state {
+  padding: 0.5vw 0.8vw;
+  background: var(--fg);
+  color: var(--bg);
+  font-weight: var(--weight-instruction);
+  letter-spacing: 0.015em;
+}
+
+/* ---- map ---- */
+.stage__map { position: relative; min-height: 0; }
+.stage-canvas { position: absolute; inset: 0; }
+.stage-canvas .maplibregl-canvas { outline: none; }
+
+.pin-wrap { z-index: 2; }
+.obstacle-wrap { z-index: 4; }
+.walker-wrap { z-index: 5; }
+
+.tag,
+.credit,
+.place-pin,
+.flag,
+.toast {
+  font-family: var(--font-display);
+  font-weight: var(--weight-secondary);
+  font-size: var(--t-body);
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.place-pin {
+  display: flex;
+  align-items: center;
+  gap: 0.6vw;
+  margin-top: 1.4vw;
+  padding: 0.3vw 0.8vw;
+  background: var(--bg);
+  border: var(--hair) solid var(--fg);
+}
+.place-pin__mark { width: 1vw; height: 1vw; background: var(--fg); }
+.place-pin[data-bare="true"] { margin-top: 0; padding: 0.3vw; transform: translate(-50%, -50%); }
+.place-pin--end { background: var(--fg); color: var(--bg); }
+.place-pin--end .place-pin__mark { background: var(--bg); }
+
+/* The walker: a point, so a circle is allowed. White dot, yellow ring. */
+.walker {
+  display: block;
+  width: 2.6vw;
+  height: 2.6vw;
+  border-radius: 50%;
+  background: var(--fg);
+  border: 0.55vw solid var(--accent);
+  outline: 0.3vw solid var(--bg);
+}
+
+/* The obstacle: orange octagon, black sign, always inside a white ring, always with words. */
+.obstacle {
+  --ring: 4.6vw;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5vw;
+  /* the marker is anchored at its bottom edge: put the centre of the ring on the point */
+  transform: translateY(calc(var(--ring) / 2));
+  font-family: var(--font-display);
+  font-size: var(--t-body);
+  line-height: 1;
+  white-space: nowrap;
+}
+.obstacle__label { display: flex; border: var(--hair) solid var(--fg); background: var(--bg); font-weight: var(--weight-instruction); }
+.obstacle__title { padding: 0.4vw 0.7vw; color: var(--alert); }
+.obstacle__count { padding: 0.4vw 0.7vw; background: var(--fg); color: var(--bg); }
+/* The stamp: this obstacle is not a real incident. */
+.obstacle__stamp { padding: 0.4vw 0.7vw; border-left: var(--hair) dashed var(--fg); font-weight: var(--weight-secondary); }
+.obstacle__ring {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: var(--ring);
+  height: var(--ring);
+  border-radius: 50%;
+  background: var(--bg);
+  border: 0.45vw solid var(--fg);
+}
+.obstacle__sign {
+  display: grid;
+  place-items: center;
+  width: 3.2vw;
+  height: 3.2vw;
+  background: var(--alert);
+  color: var(--bg);
+  clip-path: polygon(30% 0, 70% 0, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0 70%, 0 30%);
+  font-weight: var(--weight-instruction);
+  font-size: 2.6vw;
+}
+/* One person has seen it: a broken ring and a small sign. Shape and words carry the state, not colour. */
+.obstacle[data-closes="false"] .obstacle__ring { border-style: dashed; }
+.obstacle[data-closes="false"] .obstacle__sign { width: 2vw; height: 2vw; font-size: 1.6vw; }
+/* Confirmed: one white ring expands from it, once. */
+.obstacle[data-fresh="true"] .obstacle__ring::after {
+  content: "";
+  position: absolute;
+  inset: -0.45vw;
+  border-radius: 50%;
+  border: 0.3vw solid var(--fg);
+  animation: ring-out 600ms var(--ease-hard) 1 forwards;
+}
+@keyframes ring-out {
+  from { transform: scale(1); opacity: 1; }
+  to { transform: scale(2.4); opacity: 0; }
+}
+
+.credit {
+  position: absolute;
+  left: 2vw;
+  bottom: 1.2vw;
+  margin: 0;
+  padding: 0.3vw 0.8vw;
+  background: var(--bg);
+  border: var(--hair) solid var(--fg);
+}
+
+.stage__flags {
+  position: absolute;
+  top: 1.2vw;
+  left: 2vw;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.6vw;
+}
+.flag {
+  margin: 0;
+  padding: 0.4vw 0.9vw;
+  background: var(--fg);
+  color: var(--bg);
+  font-weight: var(--weight-instruction);
+}
+.flag--alert { background: var(--bg); color: var(--alert); border: var(--hair) solid var(--alert); }
+
+.tag {
+  display: inline-block;
+  margin: 0;
+  padding: 0.2vw 0.7vw;
+  border: var(--hair) solid var(--fg);
+  background: var(--bg);
+  color: var(--fg);
+}
+.tag--solid { background: var(--fg); color: var(--bg); font-weight: var(--weight-instruction); }
+
+.stage__foot {
+  position: absolute;
+  right: 2vw;
+  bottom: 1.2vw;
+  display: flex;
+  gap: 0.8vw;
+  margin: 0;
+}
+
+.toasts {
+  position: absolute;
+  right: 2vw;
+  top: 1.2vw;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5vw;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.toast {
+  padding: 0.35vw 0.9vw;
+  background: var(--bg);
+  border: var(--hair) solid var(--fg);
+  font-family: var(--font-body);
+  font-weight: var(--weight-body);
+}
+.toast:nth-last-child(n + 3) { display: none; }
+.toast[data-tone="error"] { border-style: dashed; color: var(--alert); border-color: var(--alert); }
+.toast[data-tone="local"] { border-style: dashed; }
+
+/* The two measurements. Numbers are white: yellow is kept for the route. */
+.metrics {
+  position: absolute;
+  top: 1.2vw;
+  right: 2vw;
+  bottom: 1.2vw;
+  width: 29vw;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1.4vw;
+  padding: 0 1.4vw;
+  background: var(--bg);
+  border: var(--border);
+}
+.metrics__row { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 0.9vw; margin: 0; }
+.metrics__number {
+  font-family: var(--font-display);
+  font-weight: var(--weight-instruction);
+  font-size: 5.6vw;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.metrics__unit { font-family: var(--font-display); font-weight: var(--weight-instruction); font-size: 2.4vw; line-height: 1; }
+.metrics__what { flex-basis: 100%; font-family: var(--font-display); font-weight: var(--weight-secondary); font-size: var(--t-body); line-height: 1.1; }
+.stage[data-metrics="true"] .toasts { right: 33vw; }
+
+/* ---- caption bar: the words of the voice ---- */
+.caption {
+  box-sizing: border-box;
+  height: 23.3vw; /* small label and two lines at 8vw: measured on the specimen */
+  padding: 1vw 2vw 0;
+  border-top: var(--border-accent);
+  background: var(--bg);
+  overflow: hidden;
+}
+.caption__label {
+  display: flex;
+  align-items: center;
+  gap: 1vw;
+  height: 3vw;
+  margin: 0 0 0.6vw;
+  font-family: var(--font-display);
+  font-weight: var(--weight-secondary);
+  font-size: var(--t-body);
+  line-height: 1;
+}
+.caption[data-kind="obstacle"] .caption__label > span:first-child { color: var(--alert); }
+.caption[data-kind="obstacle"] .caption__label::before {
+  content: "!";
+  display: grid;
+  place-items: center;
+  width: 2.4vw;
+  height: 2.4vw;
+  background: var(--alert);
+  color: var(--bg);
+  clip-path: polygon(30% 0, 70% 0, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0 70%, 0 30%);
+  font-weight: var(--weight-instruction);
+}
+.caption__text { margin: 0; text-wrap: balance; }
+.caption__text[data-size="medium"] { font-size: 6.6vw; }
+.caption__text[data-size="small"] { font-size: 6vw; }
+/* A word takes its place before it is said, so the line never reflows; it appears with a hard cut. */
+.caption__word[data-said="false"] { visibility: hidden; }
+.caption__quote { color: var(--fg); }
+.caption__signal { margin-left: auto; }
+
+/* ---- the moment: a hard cut to near black. Only the caption remains. ---- */
+.stage[data-moment="dark"] .stage-canvas,
+.stage[data-moment="dark"] .credit,
+.stage[data-moment="dark"] .metrics { opacity: 0.1; }
+/* What says "this is not live" stays readable in the dark. */
+.stage[data-moment="dark"] .stage__top,
+.stage[data-moment="dark"] .stage__flags { opacity: 0.4; }
+.stage[data-moment="dark"] .toasts,
+.stage[data-moment="dark"] .stage__foot { visibility: hidden; }
+
+/* ---- overlays ---- */
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  padding: 1.6vw 3vw;
+  background: var(--bg);
+  overflow: hidden;
+}
+.overlay__title {
+  margin: 0 0 1.5vw;
+  font-family: var(--font-display);
+  font-weight: var(--weight-instruction);
+  font-size: 5vw;
+  line-height: 1;
+}
+.overlay__title--small { display: flex; align-items: center; gap: 1.5vw; margin-bottom: 0.6vw; font-size: 3.4vw; }
+.help__keys { display: grid; grid-template-columns: 1fr 1fr; gap: 0.9vw 3vw; margin: 0; }
+.help__row { display: grid; grid-template-columns: 13vw 1fr; align-items: center; gap: 1vw; }
+.help__row dt, .help__row dd { margin: 0; }
+.help__row dd { font-family: var(--font-display); font-weight: var(--weight-secondary); line-height: 1.1; }
+kbd {
+  display: inline-block;
+  min-width: 3.4vw;
+  padding: 0.3vw 0.8vw;
+  border: var(--hair) solid var(--fg);
+  font-family: var(--font-display);
+  font-weight: var(--weight-instruction);
+  font-size: var(--t-body);
+  text-align: center;
+}
+.sources__table { width: 100%; border-collapse: collapse; table-layout: fixed; font-family: var(--font-display); font-weight: var(--weight-secondary); }
+.sources__table th, .sources__table td {
+  padding: 0.2vw 0.8vw 0.2vw 0;
+  border-bottom: var(--hair) solid var(--fg);
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.1;
+}
+.sources__table thead th { font-weight: var(--weight-instruction); border-bottom-width: 0.5vw; }
+.sources__table th:nth-child(1) { width: 34%; }
+.sources__table th:nth-child(2) { width: 24%; }
+.sources__table th:nth-child(3) { width: 21%; }
+.sources__table tbody th { font-weight: var(--weight-instruction); }
+.sources__table tr[data-down="true"] td { color: var(--alert); }
+
+.blackout {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: flex-end;
+  padding: 2vw;
+  background: var(--bg);
+}
+.blackout .tag { border-color: var(--map-label); color: var(--map-label); }

@@ -205,7 +205,7 @@ The sandbox has no test data on the demo streets, so the team creates the obstac
 
 | Endpoint | What it does |
 | --- | --- |
-| `POST /api/demo/obstacle` | Body as in `/api/reports`. Creates the report and upvotes it twice, so it is a full block at once. 201, same shape as `/api/reports`. |
+| `POST /api/demo/obstacle` | Body as in `/api/reports`. Creates the report and adds the one confirmation a second person would give, so it is a full block at once. 201, same shape as `/api/reports`. |
 | `POST /api/demo/resolve/:id` | Sets the report to `resolved`; the obstacle disappears and `obstacle_removed` is sent. Works only for reports this key created (otherwise 403 `sandbox_forbidden`). |
 | `POST /api/demo/reset` | `POST /v1/sandbox/reset`: removes everything this key created (reports, conversations, bookings). Answers `{ "sandbox": true, "demo": true, "reset": true, "obstacles": 2 }`. |
 
@@ -300,7 +300,7 @@ One module, `src/obstacles/rules.ts`, pure and tested (`rules.test.ts`). Every n
 | No obstacle when status is | `resolved`, `rejected` |
 | Distance to the nearest walkable edge | up to 15 m accepted; 15 to 25 m accepted with confidence falling linearly to half; beyond 25 m rejected. Recorded as `snapDistanceM`. |
 | One report alone | `partial`, confidence 0.6 |
-| 2 or more upvotes | `full`, confidence 0.85 |
+| 1 or more upvotes (the reporter and one more person) | `full`, confidence 0.85 |
 | Confidence under 0.5 after the distance penalty | `partial`, whatever the upvotes (the contract says such an obstacle never closes an edge) |
 | Expiry | 12 hours after `created_at` |
 

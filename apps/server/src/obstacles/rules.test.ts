@@ -70,13 +70,13 @@ describe("reports: categories", () => {
 
 describe("reports: trust, status and expiry", () => {
   it("one report alone is partial with moderate confidence", () => {
-    const o = obstacleOf({ upvotes: 1 });
+    const o = obstacleOf({ upvotes: 0 });
     expect(o.blocks).toBe("partial");
     expect(o.confidence).toBe(0.6);
   });
 
-  it("two upvotes make it a full block", () => {
-    const o = obstacleOf({ upvotes: 2 });
+  it("a second person confirming it makes it a full block", () => {
+    const o = obstacleOf({ upvotes: 1 });
     expect(o.blocks).toBe("full");
     expect(o.confidence).toBe(0.85);
   });

@@ -72,10 +72,9 @@ describe("reports and demo control", () => {
     expect(sandbox.reports[0]).toMatchObject({ title: "Ογκώδη αντικείμενα στο πεζοδρόμιο", address: "Οδός AB, Αθήνα", description: "καναπές" });
   });
 
-  it("two confirmations turn it into a full block", async () => {
+  it("a report alone is partial; a second person confirming it makes it a full block", async () => {
     const { post, point } = setup();
-    await post("/api/reports", point(50, 4));
-    expect((await json(post("/api/reports/req-1001/confirm"))).obstacle.blocks).toBe("partial");
+    expect((await json(post("/api/reports", point(50, 4)))).obstacle.blocks).toBe("partial");
     expect((await json(post("/api/reports/req-1001/confirm"))).obstacle).toMatchObject({ blocks: "full", confidence: 0.85 });
   });
 
@@ -93,7 +92,7 @@ describe("reports and demo control", () => {
     await post("/api/demo/resolve/req-1001");
 
     const made = await json(post("/api/demo/obstacle", point(50, 3)));
-    expect(made).toMatchObject({ sandbox: true, demo: true, report: { upvotes: 2 }, obstacle: { blocks: "full", edgeId: "AB" } });
+    expect(made).toMatchObject({ sandbox: true, demo: true, report: { upvotes: 1 }, obstacle: { blocks: "full", edgeId: "AB" } });
 
     const list = await json(app.request("/api/obstacles"));
     expect(list).toMatchObject({ sandbox: true, stale: false, counts: { reports: 2, obstacles: 1 } });

@@ -95,7 +95,7 @@ export const DEFAULT_MAPPING_OPTIONS: MappingOptions = {
   snapAcceptM: 15,
   snapRejectM: 25,
   snapFarFactor: 0.5,
-  fullBlockUpvotes: 2,
+  fullBlockUpvotes: 1,
   singleReportConfidence: 0.6,
   confirmedReportConfidence: 0.85,
   reportTtlHours: 12,

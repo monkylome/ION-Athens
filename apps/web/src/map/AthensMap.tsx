@@ -3,8 +3,9 @@ import { useEffect, useRef, useState } from "react";
 import { AttributionControl, Map, Marker, type GeoJSONSource } from "maplibre-gl";
 import type { LngLat, Obstacle, Route } from "@ion/core";
 import "maplibre-gl/dist/maplibre-gl.css";
+import { addBuildings, addNetwork, blankStyle, tokenColors } from "./base";
+import { loadGraph } from "../scenario/browser";
 
-export const BASEMAP_URL = "https://tiles.openfreemap.org/styles/dark";
 export function drawRoute(map: Map, route?: Route) {
   const features: GeoJSON.Feature<GeoJSON.LineString>[] = route && route.geometry.length > 1
     ? [{ type: "Feature", properties: {}, geometry: { type: "LineString", coordinates: route.geometry } }]
@@ -14,7 +15,7 @@ export function drawRoute(map: Map, route?: Route) {
   if (source) return source.setData(data);
   map.addSource("ion-route", { type: "geojson", data });
   const color = getComputedStyle(map.getContainer()).getPropertyValue("--accent").trim();
-  map.addLayer({ id: "ion-route", type: "line", source: "ion-route", paint: { "line-color": color, "line-width": 5 } });
+  map.addLayer({ id: "ion-route", type: "line", source: "ion-route", layout: { "line-cap": "butt", "line-join": "miter" }, paint: { "line-color": color, "line-width": 8 } });
 }
 
 function marker(map: Map, point: LngLat, className: string, label: string) {
@@ -25,10 +26,10 @@ function marker(map: Map, point: LngLat, className: string, label: string) {
   return new Marker({ element }).setLngLat(point).addTo(map);
 }
 export function drawObstacles(map: Map, obstacles: readonly Obstacle[]) {
-  return obstacles.flatMap(o => o.position ? [marker(map, o.position, "obstacle", o.label)] : []);
+  return obstacles.flatMap(o => o.position ? [marker(map, o.position, "obstacle-dot", o.label)] : []);
 }
 export function moveWalker(map: Map, point: LngLat, previous?: Marker) {
-  return previous ? previous.setLngLat(point) : marker(map, point, "walker", "Θέση πεζού");
+  return previous ? previous.setLngLat(point) : marker(map, point, "walker-dot", "Θέση πεζού");
 }
 
 export function AthensMap({ route, obstacles, walker, missions, center }: { missions?: {position: LngLat; question: string}[]; center?: LngLat; route?: Route; obstacles?: Obstacle[]; walker?: LngLat }) {
@@ -36,10 +37,22 @@ export function AthensMap({ route, obstacles, walker, missions, center }: { miss
   const walkerMarker = useRef<Marker | undefined>(undefined);
   const [map, setMap] = useState<Map>();
   useEffect(() => {
-    const instance = new Map({ container: container.current!, style: BASEMAP_URL, center: [23.7275, 37.9775], zoom: 15, attributionControl: false });
+    const colors = tokenColors(container.current!);
+    // The ION basemap: token colours, and the pedestrian graph as its streets, served from this machine.
+    const instance = new Map({ container: container.current!, style: blankStyle(colors), center: [23.7275, 37.9775], zoom: 15, attributionControl: false, fadeDuration: 0 });
     instance.addControl(new AttributionControl({ compact: false, customAttribution: '<a href="https://www.openstreetmap.org/copyright">© OpenStreetMap</a>' }));
-    instance.once("load", () => setMap(instance));
-    return () => { walkerMarker.current?.remove(); instance.remove(); };
+    let disposed = false;
+    instance.once("load", () => {
+      setMap(instance);
+      void loadGraph().then(({ graph }) => {
+        if (disposed) return;
+        addNetwork(instance, graph, colors);
+        addBuildings(instance, colors);
+        // Streets go under the route, whichever was drawn first.
+        if (instance.getLayer("ion-route")) instance.moveLayer("ion-route");
+      }, () => undefined);
+    });
+    return () => { disposed = true; walkerMarker.current?.remove(); instance.remove(); };
   }, []);
   useEffect(() => { if (map) drawRoute(map, route); }, [map, route]);
   useEffect(() => {

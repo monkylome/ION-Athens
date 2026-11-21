@@ -88,23 +88,23 @@ export function Missions() {
       setNotice(error instanceof Error && /[Α-ω]/.test(error.message) ? error.message : "Αδυναμία καταχώρισης της απάντησης.");
     } finally { setBusy(false); }
   }
-  return <main className="missions">
-    <Link to="/">Αρχική</Link><h1>Αποστολές πολιτών</h1>
+  return <main className="page missions" data-surface="phone">
+    <Link className="btn page__back" to="/">Αρχική</Link><h1>Αποστολές πολιτών</h1>
     <label><input type="checkbox" checked={demo} disabled={busy} onChange={e => { setDemo(e.target.checked); setBoard(undefined); }} /> Θέση επίδειξης στην κοντινότερη αποστολή</label>
     <p role="status">{demo ? "Ενεργή θέση επίδειξης" : locationState}</p>
     <AthensMap missions={board?.missions} walker={position} center={position ?? origin} />
     <section aria-live="polite" aria-atomic="true">
-      {board && <p>{board.summary.open} ανοιχτές αποστολές · {board.summary.confirmed} επιβεβαιώσεις</p>}
-      {nearest ? <><h2>{nearest.question}</h2><p>{nearest.where || "Σημείο στον χάρτη"} · {demo ? 0 : nearest.distanceM} μ. · {nearest.points} πόντοι</p>
-        <p>Ναι {nearest.answers.yes} · Όχι {nearest.answers.no}</p></> : <p>{board ? "Δεν υπάρχουν άλλες αποστολές κοντά σου." : origin ? "Αναζήτηση αποστολών…" : "Αναμονή θέσης"}</p>}
+      {board && <p>{board.summary.open} ανοιχτές αποστολές, {board.summary.confirmed} επιβεβαιώσεις.</p>}
+      {nearest ? <><h2>{nearest.question}</h2><p>{nearest.where || "Σημείο στον χάρτη"}, σε {demo ? 0 : nearest.distanceM} μέτρα. {nearest.points} πόντοι.</p>
+        <p>Ναι: {nearest.answers.yes}. Όχι: {nearest.answers.no}.</p></> : <p>{board ? "Δεν υπάρχουν άλλες αποστολές κοντά σου." : origin ? "Αναζήτηση αποστολών…" : "Αναμονή θέσης"}</p>}
     </section>
     {nearest && <div className="choices">{([["yes","Ναι"],["no","Όχι"],["unsure","Δεν είμαι σίγουρος"]] as const).map(([value,label]) =>
-      <button key={value} disabled={busy || !position} onClick={() => void answer(value)}>{label}</button>)}
+      <button key={value} className={value === "yes" ? "btn btn--primary" : undefined} data-on={value === "yes" ? "accent" : undefined} disabled={busy || !position} onClick={() => void answer(value)}>{label}</button>)}
       <button disabled={busy} onClick={() => setSkip(ids => [...ids, nearest.id])}>Παράλειψη</button></div>}
     <p role="status">{busy ? "Καταχώριση…" : notice}</p>
-    <p aria-live="polite">{profile && `${profile.points} πόντοι · ${profile.level}. ${profile.nextLevel ? `Σε ${profile.nextLevel.pointsNeeded} πόντους: ${profile.nextLevel.name}.` : "Έφτασες στο τελευταίο επίπεδο."}`}</p>
+    <p aria-live="polite">{profile && `${profile.points} πόντοι, επίπεδο ${profile.level}. ${profile.nextLevel ? `Σε ${profile.nextLevel.pointsNeeded} πόντους: ${profile.nextLevel.name}.` : "Έφτασες στο τελευταίο επίπεδο."}`}</p>
     <button aria-expanded={showRewards} onClick={() => setShowRewards(!showRewards)}>Προνόμια Κάρτας Αθηναίου</button>
     {showRewards && <section aria-live="polite"><h2>Προνόμια</h2>{rewards ? <><p>{rewards.note}</p><ul>{rewards.rewards.map(r =>
-      <li key={r.id}>{r.title} — {r.unlocked ? "Διαθέσιμο" : `Χρειάζεσαι ακόμη ${r.pointsRequired - rewards.points} πόντους`}</li>)}</ul></> : <p>Φόρτωση προνομίων…</p>}</section>}
+      <li key={r.id}>{r.title}: {r.unlocked ? "Διαθέσιμο" : `Χρειάζεσαι ακόμη ${r.pointsRequired - rewards.points} πόντους`}</li>)}</ul></> : <p>Φόρτωση προνομίων…</p>}</section>}
   </main>;
 }

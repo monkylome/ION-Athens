@@ -1,0 +1,89 @@
+/* The screen in the hand: one thing per screen, very large type, maximum contrast. Sizes in rem. */
+
+.phone {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--fg);
+}
+.phone__top {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-2);
+  border-bottom: var(--border);
+}
+.phone__brand { font-family: var(--font-display); font-weight: var(--weight-instruction); font-size: var(--t-body); line-height: 1; }
+.phone__tags { display: flex; flex-wrap: wrap; gap: var(--space-1); margin: 0; padding: 0; list-style: none; }
+.phone__tags:empty { display: none; }
+.chip {
+  padding: 0 var(--space-1);
+  border: var(--border);
+  font-family: var(--font-display);
+  font-weight: var(--weight-secondary);
+  font-size: var(--t-body);
+  line-height: 1.1;
+}
+.chip--alert { color: var(--alert); border-color: var(--alert); }
+
+.phone__screen {
+  display: grid;
+  align-content: start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-2);
+  min-width: 0;
+}
+.phone__screen .t-secondary { line-height: 1.15; }
+.phone__screen h2.t-secondary { font-weight: var(--weight-instruction); }
+
+.instruction { display: grid; gap: var(--space-1); }
+.instruction__icon { width: 5rem; height: 5rem; }
+.instruction__distance { font-weight: var(--weight-instruction); }
+
+.emergency { display: grid; gap: var(--space-2); padding: var(--space-2); border: var(--border); }
+
+/* Route change, first beat: the word, the sign in its white ring, on black. */
+.alert { display: grid; justify-items: start; gap: var(--space-2); }
+.alert__ring {
+  display: grid;
+  place-items: center;
+  width: 9rem;
+  height: 9rem;
+  border-radius: 50%; /* a point marker, as on the map */
+  border: var(--border);
+  border-width: var(--space-1);
+}
+.alert__sign {
+  display: grid;
+  place-items: center;
+  width: 6.4rem;
+  height: 6.4rem;
+  background: var(--alert);
+  color: var(--bg);
+  clip-path: polygon(30% 0, 70% 0, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0 70%, 0 30%);
+  font-family: var(--font-display);
+  font-weight: var(--weight-instruction);
+  font-size: 5rem;
+  line-height: 1;
+}
+.alert__word {
+  color: var(--alert);
+  font-size: 5rem; /* top of the instruction range: a single word */
+  line-height: 1;
+}
+
+/* Second beat: the whole screen becomes the route, with the new instruction in black. */
+.phone[data-view="new_route"] { background: var(--accent); color: var(--on-accent); }
+.phone[data-view="new_route"] .phone__top { border-color: var(--on-accent); }
+.phone[data-view="new_route"] .chip { border-color: var(--on-accent); color: var(--on-accent); }
+.new-route { display: grid; gap: var(--space-2); }
+
+.phone__foot {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border-top: var(--border);
+}
+.phone[data-view="new_route"] .phone__foot { border-color: var(--on-accent); }
+.phone__message:empty, .phone__signal:empty { display: none; }
+.phone__signal { font-family: var(--font-display); font-weight: var(--weight-secondary); }
