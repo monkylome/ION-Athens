@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.."
+
+if [[ "$(git symbolic-ref --quiet --short HEAD || true)" != main ]]; then
+    echo "Switch to main before syncing." >&2
+    exit 1
+fi
+
+if [[ -n "$(git status --porcelain)" ]] ||
+    git rev-parse --verify --quiet MERGE_HEAD >/dev/null; then
+    echo "Finish any in-progress merge and commit your work before syncing." >&2
+    exit 1
+fi
+
+for attempt in 1 2 3; do
+    git fetch origin refs/heads/main
+    remote_head=$(git rev-parse FETCH_HEAD)
+
+    if ! git merge --no-edit "$remote_head"; then
+        echo "Inspect git status. Resolve any conflicts, verify, commit the merge, and rerun scripts/sync-main." >&2
+        exit 1
+    fi
+
+    if git push origin HEAD:refs/heads/main; then
+        exit 0
+    fi
+
+    # Retry when a teammate published another commit during this attempt.
+    git fetch origin refs/heads/main
+    if git merge-base --is-ancestor FETCH_HEAD HEAD; then
+        echo "Push failed. Check the Git error above." >&2
+        exit 1
+    fi
+done
+
+echo "origin/main kept advancing. Run scripts/sync-main again." >&2
+exit 1
