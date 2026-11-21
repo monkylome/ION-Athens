@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+export ION_SYNC_IN_PROGRESS=1
+
 cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.."
 
 if [[ "$(git symbolic-ref --quiet --short HEAD || true)" != main ]]; then

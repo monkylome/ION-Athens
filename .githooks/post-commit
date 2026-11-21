@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -eu
+
+if [[ "${ION_SYNC_IN_PROGRESS:-}" == 1 ]] ||
+    [[ "$(git symbolic-ref --quiet --short HEAD || true)" != main ]]; then
+    exit 0
+fi
+
+if ! scripts/sync-main; then
+    echo "Commit was created. Sync needs attention; inspect git status and the output above." >&2
+fi
