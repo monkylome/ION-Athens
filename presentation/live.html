@@ -11,10 +11,10 @@
   Keys (they work whichever frame was clicked last, as soon as the pointer leaves the app):
     Right, Space, PageDown   next slide          Left, PageUp   previous slide        R   replay the slide
     Enter   the app on the right advances (next step of the walkthrough, next act of the stage)
-    The right arrow runs the next cue of the story: it changes the slide, the screen of the app and presses the app's
-    keys, so the app moves by itself as the slides advance (?cues=off turns that off). Without cues,
-    the arrows walk a short list of slides (?slides=1,2,6,3,9,11 by default, ?slides=all for every slide).
-    The page opens on the walkthrough (?view=1 for the game). With ?sync=on the app follows the slides instead.
+    The game opens on the right and plays by itself (/play with auto=1) while the arrows change the slides.
+    With ?cues=on the right arrow instead runs a list of cues that also drives the walkthrough and the stage.
+    The arrows walk a short list of slides (?slides=1,2,6,3,9,11 by default, ?slides=all for every slide).
+    With ?sync=on the app follows the slides instead.
     1   the game (/play)     2   the stage (/stage)     3   the camera scan (/play/scan)     4   the Serafeio walkthrough (/walkthrough)
     0   reload the app frame F   full screen
   Options in the address: ?app=http://127.0.0.1:5173  (where the app is served)
@@ -50,7 +50,7 @@
   var params = new URLSearchParams(location.search);
   var base = (params.get("app") || "http://127.0.0.1:5173").replace(/\/$/, "");
   var views = {
-    "1": { path: "/play?demo=1&loop=acropolis", label: "Το παιχνίδι · /play", w: 390, h: 800, wide: false },
+    "1": { path: "/play?demo=1&loop=acropolis&auto=1", label: "Το παιχνίδι · /play", w: 390, h: 800, wide: false },
     "2": { path: "/stage?loop=acropolis&citizen=scripted", label: "Η σκηνή · /stage", w: 1280, h: 720, wide: true },
     "3": { path: "/play/scan", label: "Η σάρωση · /play/scan", w: 390, h: 800, wide: false },
     "4": { path: "/walkthrough", label: "Σεράφειο · /walkthrough", w: 1040, h: 940, wide: true }
@@ -90,8 +90,8 @@
   var at = 0;
   // One key tells the whole story: each press of the right arrow runs the next cue, which may change the slide,
   // change the screen of the app, and press keys inside the app, so the app moves by itself as the slides advance.
-  // ?cues=off gives the arrows back to the slides alone.
-  var cues = params.get("cues") === "off" || !playlist ? null : [
+  // Only with ?cues=on. By default the game plays by itself on the right and the arrows change the slides.
+  var cues = params.get("cues") !== "on" || !playlist ? null : [
     { slide: 1 },
     { slide: 2, keys: ["Enter"] },             // the hall's card: two of seven known
     { keys: ["Enter"] },                       // the question becomes a request
@@ -145,8 +145,8 @@
   [side, deck].forEach(function (el) { el.addEventListener("mouseleave", function () { window.focus(); }); });
   deck.addEventListener("load", function () { window.focus(); });
   addEventListener("resize", fit);
-  // The walkthrough is the spine of the pitch: it opens first. ?view=1 opens the game instead.
-  open(views[params.get("view")] ? params.get("view") : "4"); window.focus();
+  // The game opens first and plays by itself for the length of the pitch. ?view=4 opens the walkthrough instead.
+  open(views[params.get("view")] ? params.get("view") : "1"); window.focus();
   deck.addEventListener("load", function () { if (playlist) say({ ionGoto: playlist[0] }); });
 })();
 </script>
