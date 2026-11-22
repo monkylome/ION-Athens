@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800&display=swap">
 <style>
-  /* Η Αθήνα στο σούρουπο γεμίζει την οθόνη· το κείμενο κάθε διαφάνειας κάθεται σε πάνελ κάτω αριστερά. */
+  /* Η πραγματική Αθήνα (Μοναστηράκι → Δημαρχείο) γεμίζει την οθόνη· κείμενο σε πάνελ κάτω αριστερά, κινητό κάτω δεξιά. */
   :root {
     --bg: #0d1226;
     --ink: #f3f5ff;
@@ -31,7 +31,7 @@
   }
   body.no3d { background: radial-gradient(circle at 70% 30%, #2a2650, var(--bg)); }
   #scene { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
-  body.no3d #scene { display: none; }
+  body.no3d #scene, body.no3d #phone { display: none; }
 
   .slide {
     position: fixed;
@@ -43,14 +43,24 @@
     border: 1px solid var(--line);
     border-radius: 14px;
     backdrop-filter: blur(6px);
+    transition: opacity 1.2s ease, transform 1.2s ease;
   }
+  .slide.waiting { opacity: 0; transform: translateY(12px); }
   .slide h1, .slide h2 { margin: 0 0 12px; line-height: 1.15; text-wrap: balance; }
   .slide h1 { font-size: clamp(40px, 6vw, 64px); font-weight: 800; letter-spacing: -0.02em; }
   .slide h2 { font-size: clamp(26px, 3.4vw, 36px); font-weight: 800; }
   .slide p { margin: 0 0 10px; }
   .slide .lead { font-size: 22px; }
   .slide .small { font-size: 15px; color: var(--muted); }
-  .slide ul { margin: 0 0 10px; padding-left: 20px; display: grid; gap: 6px; }
+  .slide ul, .slide ol { margin: 0 0 10px; padding-left: 20px; display: grid; gap: 6px; }
+  .slide .stats { display: grid; gap: 4px; margin: 4px 0 12px; }
+  .slide .stats p { margin: 0; }
+  .slide .num { display: block; font-size: 40px; font-weight: 800; color: var(--gold); line-height: 1.1; }
+  .slide.wide { width: min(980px, calc(100% - 48px)); }
+  .slide .cols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+  .slide .cols h3 { margin: 0 0 6px; font-size: 18px; color: var(--route); }
+  .slide .cols p { font-size: 15px; margin: 0; }
+  @media (max-width: 820px) { .slide .cols { grid-template-columns: 1fr; } }
   .eyebrow { font-size: 13px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--route); margin-bottom: 8px; }
   .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; }
 
@@ -68,6 +78,58 @@
     font-weight: 600;
     text-align: center;
   }
+
+  /* Το κινητό του χρήστη, όπως θα έμοιαζε η εφαρμογή ION: λίγα, μεγάλα στοιχεία. */
+  #phone {
+    position: fixed;
+    right: max(28px, env(safe-area-inset-right, 0px));
+    bottom: calc(92px + env(safe-area-inset-bottom, 0px));
+    width: 210px;
+    aspect-ratio: 9 / 18.5;
+    padding: 14px 12px;
+    border-radius: 30px;
+    background: #05070f;
+    border: 3px solid #2b3148;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55);
+    display: flex; flex-direction: column; gap: 10px;
+    font-size: 14px;
+  }
+  #phone .bar { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); padding: 0 6px; }
+  #phone .brand { font-weight: 800; letter-spacing: 0.08em; color: var(--route); font-size: 16px; padding: 0 4px; }
+  #phone .dest { font-size: 12px; color: var(--muted); padding: 0 4px; }
+  #phone .dest b { color: var(--ink); font-size: 14px; display: block; }
+  #phone .instr {
+    flex: 1;
+    display: flex; flex-direction: column; justify-content: center; gap: 6px;
+    background: #0f1a2e;
+    border: 2px solid var(--route);
+    border-radius: 18px;
+    padding: 12px;
+    font-size: 19px; font-weight: 800; line-height: 1.2;
+  }
+  #phone .instr.alert { border-color: var(--danger); }
+  #phone .instr small { font-size: 12px; font-weight: 600; color: var(--muted); }
+  #phone .btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  #phone .btns span {
+    display: flex; align-items: center; justify-content: center;
+    min-height: 44px; border-radius: 14px; background: #1a2340; font-weight: 700; font-size: 12px; text-align: center;
+  }
+  #phone .sos { background: #5a1a1a !important; grid-column: 1 / -1; }
+  #phone .btns span[hidden] { display: none; }
+  #phone .btns span.chosen { background: var(--route); color: #05070f; }
+
+  /* Επίπεδος χάρτης για τις διαδρομές του Δήμου, με χρώματα χάρτη δρόμων. */
+  #map2d { position: fixed; inset: 0; background: #f1efe9; }
+  #map2d canvas { display: block; width: 100%; height: 100%; }
+  #map-legend {
+    position: fixed; right: max(24px, env(safe-area-inset-right, 0px)); top: calc(44px + env(safe-area-inset-top, 0px));
+    background: #ffffff; color: #202124; border-radius: 10px; padding: 12px 16px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18); font-size: 14px; display: grid; gap: 6px;
+  }
+  #map-legend b { font-size: 13px; letter-spacing: 0.04em; color: #5f6368; }
+  #map-legend span { display: flex; align-items: center; gap: 8px; }
+  #map-legend i { display: inline-block; width: 22px; height: 5px; border-radius: 3px; }
+  #credit { position: fixed; right: 12px; top: calc(8px + env(safe-area-inset-top, 0px)); font-size: 11px; color: var(--muted); opacity: 0.8; }
 
   nav {
     position: fixed;
@@ -90,56 +152,133 @@
   button[aria-pressed="true"] { border-color: var(--route); color: var(--route); }
   #counter { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 15px; min-width: 52px; text-align: center; }
 
+  @media (max-width: 820px) { #phone { display: none; } }
   @media (max-width: 640px) {
     body { font-size: 16px; }
     .slide { padding: 20px; bottom: calc(76px + env(safe-area-inset-bottom, 0px)); }
     .slide .lead { font-size: 18px; }
   }
+  @media (prefers-reduced-motion: reduce) { .slide { transition: none; } }
 </style>
 </head>
 <body>
 <canvas id="scene" aria-hidden="true"></canvas>
 
 <div id="caption" role="status" aria-live="polite" hidden></div>
+<div id="credit">Χάρτης: © OpenStreetMap contributors</div>
+
+<aside id="phone" hidden aria-label="Η οθόνη της εφαρμογής ION στο κινητό του χρήστη">
+  <div class="bar"><span>19:42</span><span>ακουστικά ✓</span></div>
+  <div class="brand">ION</div>
+  <div class="dest">Προορισμός<b>Δημαρχείο Αθηνών</b></div>
+  <div class="instr" id="phone-instr"><span id="phone-text">Συνέχισε ευθεία</span><small id="phone-dist"></small></div>
+  <div class="btns"><span>Ξανά η οδηγία</span><span>Πού είμαι;</span><span class="sos">Κλήση 112</span></div>
+</aside>
+
+<div id="map2d" hidden role="img" aria-label="Χάρτης του κέντρου της Αθήνας με τις τέσσερις Προσβάσιμες Διαδρομές του Δήμου: Ιστορικό Κέντρο, Ακρόπολη, Ομόνοια, Εθνικός Κήπος.">
+  <canvas></canvas>
+  <div id="map-legend"><b>ΠΡΟΣΒΑΣΙΜΕΣ ΔΙΑΔΡΟΜΕΣ ΤΟΥ ΔΗΜΟΥ</b></div>
+</div>
 
 <main id="deck">
-  <section class="slide" aria-label="Διαφάνεια 1 από 5">
+  <section class="slide" aria-label="Διαφάνεια 1 από 10">
     <div class="eyebrow">Apps4Athens 3.0 Gov Hackathon</div>
     <h1>ION Athens</h1>
     <p class="lead">Μια πόλη που βλέπει τον δρόμο για όσους δεν βλέπουν.</p>
-    <p class="small">Στα αρχαία, «ἰών» σημαίνει αυτός που περπατάει. Το ION περπατάει μαζί σου στην Αθήνα και βλέπει τον δρόμο πριν από σένα.</p>
   </section>
 
-  <section class="slide" aria-label="Διαφάνεια 2 από 5" hidden>
+  <section class="slide" aria-label="Διαφάνεια 2 από 10" hidden>
     <div class="eyebrow">Το πρόβλημα</div>
-    <h2>Το εμπόδιο το μαθαίνεις όταν το βρεις</h2>
-    <p>Ένας άνθρωπος που δεν βλέπει καταλαβαίνει ότι υπάρχει σκαλωσιά μόνο όταν τη βρει με το μπαστούνι. Τότε πρέπει να γυρίσει πίσω και να βρει άλλο δρόμο, χωρίς να βλέπει.</p>
-    <p class="small">Οι εφαρμογές πλοήγησης ξέρουν τους δρόμους. Δεν ξέρουν τι υπάρχει πάνω τους σήμερα.</p>
+    <h2>Το εμπόδιο το μαθαίνεις όταν φτάσεις πάνω του</h2>
+    <div class="stats">
+      <p><span class="num">1 στα 3</span> κομμάτια πεζοδρομίου στην Αθήνα έχουν σπασμένες πλάκες ή ανωμαλίες.</p>
+      <p><span class="num">1 στα 4</span> έχουν δέντρα που στενεύουν το πέρασμα.</p>
+    </div>
+    <p>Ο Δήμος το έχει ήδη μετρήσει, πεζοδρόμιο προς πεζοδρόμιο, και έχει σχέδιο για να τα φτιάξει. Αυτό θέλει χρόνια, και στο μεταξύ προστίθενται κάθε μέρα σκαλωσιές, έργα, τραπεζάκια. Η πληροφορία υπάρχει. Δεν φτάνει στον πεζό την ώρα που περπατάει.</p>
+    <p class="small">Πηγή: Walkable Athens, Δήμος Αθηναίων και ΕΜΠ, όπως στο Σχέδιο Αστικής Προσβασιμότητας του Δήμου (2026). Περίπου 27.000 κομμάτια πεζοδρομίου.</p>
   </section>
 
-  <section class="slide" aria-label="Διαφάνεια 3 από 5" hidden>
+  <section class="slide" aria-label="Διαφάνεια 3 από 10" hidden>
     <div class="eyebrow">Η λύση</div>
     <h2>Η διαδρομή αλλάζει πριν φτάσεις</h2>
-    <p>Το ION ξέρει το εμπόδιο από πριν. Αλλάζει τη διαδρομή στην τελευταία γωνία πριν από αυτό και το λέει εγκαίρως στα ακουστικά οστεο-αγωγής, ώστε τα αυτιά να μένουν ελεύθερα για την κίνηση.</p>
-    <p class="small">Πληροφορεί, δεν διατάζει. Δεν λέει ποτέ «πέρνα». Και η φωνή μιλάει λίγο.</p>
+    <p>Το ION ξέρει το εμπόδιο από πριν. Αλλάζει τη διαδρομή στην τελευταία γωνία και το λέει εγκαίρως στα ακουστικά οστεο-αγωγής, με τα αυτιά ελεύθερα για την κίνηση.</p>
+    <p class="small">Πραγματική διαδρομή στον χάρτη του κέντρου: Μοναστηράκι, Αθηνάς, Δημαρχείο. Η εφαρμογή πληροφορεί, δεν διατάζει.</p>
   </section>
 
-  <section class="slide" aria-label="Διαφάνεια 4 από 5" hidden>
-    <div class="eyebrow">Από πού το ξέρει</div>
-    <h2>Η πόλη ξέρει ήδη πολλά</h2>
+  <section class="slide" aria-label="Διαφάνεια 4 από 10" hidden>
+    <div class="eyebrow">Ξεκινάμε από τη δουλειά του Δήμου</div>
+    <h2>Οι τέσσερις Προσβάσιμες Διαδρομές, ζωντανές</h2>
+    <p>Ο Δήμος, με το «Με Άλλα Μάτια» και το This is Athens, έχει ήδη περπατήσει και περιγράψει τέσσερις διαδρομές για άτομα με αναπηρία όρασης: Ιστορικό Κέντρο, Ακρόπολη, Ομόνοια, Εθνικός Κήπος.</p>
+    <p>Το ION τις κάνει ζωντανές: τα εμπόδια που περιγράφει ο οδηγός μπαίνουν στον χάρτη, και κάθε νέο εμπόδιο αλλάζει τη διαδρομή εκείνη τη στιγμή.</p>
+    <p class="small">Οι γραμμές ακολουθούν τα σημεία του οδηγού (accessibleroutes.thisisathens.org, 2021), υπολογισμένες στον χάρτη OpenStreetMap. Ο οδηγός δεν δίνει την ακριβή γραμμή.</p>
+  </section>
+
+  <section class="slide" aria-label="Διαφάνεια 5 από 10" hidden>
+    <div class="eyebrow">Από πού το ξέρει η πόλη</div>
+    <h2>Τρεις πηγές, ένας χάρτης</h2>
     <ul>
-      <li><span class="dot" style="background: var(--danger)"></span>Έργα του Δήμου, από το AthensGov Sandbox.</li>
-      <li><span class="dot" style="background: var(--route)"></span>Αναφορές πολιτών: «εμπόδιο εδώ», χωρίς όνομα.</li>
-      <li><span class="dot" style="background: var(--gold)"></span>Προορισμοί του Δήμου: Δημαρχείο, ΚΕΠ, κέντρα υγείας.</li>
+      <li><span class="dot" style="background: var(--danger)"></span>Έργα και αναφορές του Δήμου, από το AthensGov.</li>
+      <li><span class="dot" style="background: var(--muted)"></span>Τα μόνιμα εμπόδια των πεζοδρομίων, από το Walkable Athens.</li>
+      <li><span class="dot" style="background: var(--gold)"></span>Οι ίδιοι οι πολίτες, μέσα από το ION Play, το παιχνίδι της πόλης.</li>
     </ul>
-    <p class="small">Οι κάμερες της πόλης περιγράφουν την πόλη, όχι τον άνθρωπο. Και από κοντά, το MK IV δείχνει στα δάχτυλα ό,τι υπάρχει στο επόμενο βήμα.</p>
+    <p>Από την πρώτη αναφορά πολίτη, η διαδρομή αποφεύγει το εμπόδιο όπου υπάρχει εναλλακτική. Με δεύτερη επιβεβαίωση, ο δρόμος κλείνει για όλους.</p>
+    <p class="small">Ο Δήμος δεν χρειάζεται νέες κάμερες: οι πολίτες κουβαλούν ήδη μία στην τσέπη τους.</p>
   </section>
 
-  <section class="slide" aria-label="Διαφάνεια 5 από 5" hidden>
-    <div class="eyebrow">Γιατί τώρα</div>
-    <h2>Ο Δήμος έχει τα κομμάτια. Το ION τα ενώνει.</h2>
-    <p>Walkable Athens, Προσβάσιμες Διαδρομές, Σχέδιο Αστικής Προσβασιμότητας, AthensGov. Το ION τα κάνει ζωντανά, ώστε να αλλάζουν όταν αλλάζει η πόλη.</p>
-    <p class="small">Δωρεάν, για κατοίκους και επισκέπτες. Επόμενο βήμα: πιλοτική εφαρμογή με τον Δήμο.</p>
+  <section class="slide" aria-label="Διαφάνεια 6 από 10" hidden>
+    <div class="eyebrow">ION Play · Το παιχνίδι της πόλης</div>
+    <h2>Πώς παίζεται</h2>
+    <ol>
+      <li>Ο χάρτης δείχνει αποστολές γύρω σου, πάνω στα πεζοδρόμια.</li>
+      <li>Πας κοντά και ανοίγεις την κάμερα: η αποστολή εμφανίζεται πάνω στον δρόμο.</li>
+      <li>Απαντάς σε μία ερώτηση: «Είναι ελεύθερο το πεζοδρόμιο;», «Έχει ήχο το φανάρι;».</li>
+      <li>Παίρνεις σφραγίδα για το άλμπουμ σου. Από την πρώτη απάντηση η διαδρομή αποφεύγει το εμπόδιο, και με δεύτερη ο δρόμος κλείνει για όλους.</li>
+    </ol>
+    <p class="small">Χωρίς κατάταξη παικτών και χωρίς πόντους για τον χρόνο ή τη θέση σου. Παίζεται και χωρίς να βλέπεις τον χάρτη, με κουμπιά και φωνή.</p>
+  </section>
+
+  <section class="slide" aria-label="Διαφάνεια 7 από 10" hidden>
+    <div class="eyebrow">ION Play · Η κάμερα βλέπει μαζί σου</div>
+    <h2>Το μοντέλο προτείνει, ο άνθρωπος αποφασίζει</h2>
+    <p>Ένα μοντέλο AI κοιτάζει την εικόνα και προτείνει τι βλέπει: σκαλιά, ράμπα, εμπόδιο, το κείμενο μιας πινακίδας. Ο παίκτης επιβεβαιώνει με ένα πάτημα, και η εικόνα δεν κρατιέται.</p>
+    <p class="small">Το μοντέλο κάνει ακόμα λάθη και μερικές φορές βλέπει εμπόδια που δεν υπάρχουν. Γι' αυτό αποφασίζει πάντα ο άνθρωπος.</p>
+  </section>
+
+  <section class="slide" aria-label="Διαφάνεια 8 από 10" hidden>
+    <div class="eyebrow">Η πόλη κερδίζει · ION Athens Card</div>
+    <h2>Πολιτισμός και τουρισμός, περπατώντας</h2>
+    <ul>
+      <li><span class="dot" style="background: var(--gold)"></span>Με το ION Play μαζεύεις πόντους στην ION Athens Card, μια ψηφιακή κάρτα στο κινητό, με ψευδώνυμο και προσωπική βαθμολογία. Τους εξαργυρώνεις σε θέατρα, παραστάσεις και αγώνες του Δήμου.</li>
+      <li><span class="dot" style="background: var(--route)"></span>Συλλογικοί στόχοι αντί για κατάταξη: «η γειτονιά σου χαρτογράφησε το 80% των πεζοδρομίων της». Δημότες και τουρίστες παίζουν μαζί, όχι ο ένας εναντίον του άλλου.</li>
+      <li><span class="dot" style="background: var(--ink)"></span>Το επόμενο βήμα: ο Θησέας στο Θησείο, ο Σωκράτης στην Αγορά. Η ιστορία της πόλης εκεί όπου έγινε.</li>
+    </ul>
+    <p class="small">Η ION Athens Card είναι πρόταση προς τον Δήμο και μπορεί να ενωθεί με όποιο πρόγραμμα έχει. Στο demo οι πόντοι δουλεύουν με το δοκιμαστικό Athens Card του AthensGov Sandbox. Οι αρχαίοι Αθηναίοι είναι ακόμα σχέδιο.</p>
+  </section>
+
+  <section class="slide wide" aria-label="Διαφάνεια 9 από 10" hidden>
+    <div class="eyebrow">Σήμερα, με ειλικρίνεια</div>
+    <h2>Τι υπάρχει, τι λείπει, τι ζητάμε</h2>
+    <div class="cols">
+      <div>
+        <h3>Δουλεύει</h3>
+        <p>Πραγματικός χάρτης πεζών 369 χλμ. (OpenStreetMap). Αλλαγή διαδρομής πριν από το εμπόδιο, από την πρώτη αναφορά. Το ION Play με σφραγίδες και επιβεβαίωση. Σύνδεση με το AthensGov Sandbox, με δοκιμαστικά δεδομένα.</p>
+      </div>
+      <div>
+        <h3>Λείπει</h3>
+        <p>Ζωντανά δεδομένα του Δήμου. Δοκιμή με άτομα με αναπηρία όρασης. Κάμερες της πόλης. Η ION Athens Card και οι αρχαίοι Αθηναίοι είναι ακόμα σχέδιο.</p>
+      </div>
+      <div>
+        <h3>Ζητάμε</h3>
+        <p>Στάδιο 1: τα δεδομένα του Δήμου (Walkable Athens, έργα, αναφορές) για τις τέσσερις Προσβάσιμες Διαδρομές. Στάδιο 2: δοκιμές μαζί με οργανώσεις ατόμων με αναπηρία, πριν φτάσει σε πολίτες.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide" aria-label="Διαφάνεια 10 από 10" hidden>
+    <div class="eyebrow">Ἰών: αυτός που περπατάει</div>
+    <h2>Το ION μένει δωρεάν, για κατοίκους και επισκέπτες.</h2>
+    <p>Το επόμενο βήμα μας είναι το MK IV: μια συσκευή που δείχνει στα δάχτυλα ό,τι υπάρχει στο επόμενο βήμα. Αυτό είναι το εμπορικό μας κομμάτι.</p>
+    <p class="lead">Μια πόλη που βλέπει τον δρόμο για όσους δεν βλέπουν.</p>
   </section>
 </main>
 
@@ -150,7 +289,7 @@
   </div>
   <div class="group">
     <button id="prev" type="button" aria-label="Προηγούμενη διαφάνεια">←</button>
-    <span id="counter">1 / 5</span>
+    <span id="counter">1 / 10</span>
     <button id="next" type="button" aria-label="Επόμενη διαφάνεια">→</button>
   </div>
 </nav>
@@ -165,10 +304,10 @@
   var current = 0;
   var voiceOn = false;
 
-  window.ionSay = function (text) {
+  window.ionSay = function (text, speak) {
     caption.textContent = text;
     caption.hidden = false;
-    if (!voiceOn || !("speechSynthesis" in window)) return;
+    if (speak === false || !voiceOn || !("speechSynthesis" in window)) return;
     speechSynthesis.cancel();
     var u = new SpeechSynthesisUtterance(text);
     u.lang = "el-GR";
@@ -178,12 +317,14 @@
 
   function show(i) {
     current = Math.max(0, Math.min(slides.length - 1, i));
-    slides.forEach(function (s, k) { s.hidden = k !== current; });
+    slides.forEach(function (s, k) { s.hidden = k !== current; s.classList.remove("waiting"); });
     counter.textContent = (current + 1) + " / " + slides.length;
     try { history.replaceState(null, "", "#s" + (current + 1)); } catch (e) {}
     caption.hidden = true;
     if ("speechSynthesis" in window) speechSynthesis.cancel();
-    if (window.ionStage) window.ionStage.enter(current);
+    window.ionCurrent = current;
+    if (window.ionMap) window.ionMap.toggle(current === 3);
+    if (window.ionStage) window.ionStage.enter(current, slides[current]);
   }
   window.ionShowCurrent = function () { show(current); };
 
@@ -204,8 +345,114 @@
 
   var m = location.hash.match(/^#s(\d)$/);
   show(m ? parseInt(m[1], 10) - 1 : 0);
-  // Αν το 3D δεν ξεκινήσει σε λίγα δευτερόλεπτα, μένουμε στις διαφάνειες χωρίς αυτό.
-  setTimeout(function () { if (!window.ionStage) document.body.classList.add("no3d"); }, 8000);
+  setTimeout(function () { if (!window.ionStage) document.body.classList.add("no3d"); }, 10000);
+})();
+</script>
+
+<!-- Η πραγματική γειτονιά, από τα δεδομένα OpenStreetMap της ομάδας (presentation/tools/build-scene.py). -->
+<script src="athens-scene.js"></script>
+
+<!-- Ο επίπεδος χάρτης των τεσσάρων διαδρομών. Απλό script, δουλεύει και χωρίς το 3D. -->
+<script>
+(function () {
+  var D = window.ATHENS_SCENE, wrap = document.getElementById("map2d");
+  if (!D || !D.cityRoutes) return;
+  var cv = wrap.querySelector("canvas"), legend = document.getElementById("map-legend");
+  var COLORS = ["#d93025", "#1a73e8", "#188038", "#9334e6"];
+  D.cityRoutes.forEach(function (r, k) {
+    var s = document.createElement("span");
+    s.innerHTML = '<i style="background:' + COLORS[k] + '"></i>';
+    s.appendChild(document.createTextNode(r.name + " · " + (r.lengthM / 1000).toFixed(1).replace(".", ",") + " χλμ."));
+    legend.appendChild(s);
+  });
+  var cosLat = Math.cos(D.origin[0] * Math.PI / 180);
+  function xz(lat, lng) { return [(lng - D.origin[1]) * 111320 * cosLat, -(lat - D.origin[0]) * 110540]; }
+  var places = [
+    ["Ακρόπολη", D.landmarks.acropolis], ["Σύνταγμα", xz(37.9755, 23.7349)], ["Ομόνοια", xz(37.9841, 23.7280)],
+    ["Μοναστηράκι", xz(37.9761, 23.7256)], ["Θησείο", xz(37.9768, 23.7196)], ["Ζάππειο", xz(37.9716, 23.7368)],
+  ];
+  var minX = 1e9, maxX = -1e9, minZ = 1e9, maxZ = -1e9;
+  D.cityRoutes.forEach(function (r) { r.pts.forEach(function (p) {
+    minX = Math.min(minX, p[0]); maxX = Math.max(maxX, p[0]); minZ = Math.min(minZ, p[1]); maxZ = Math.max(maxZ, p[1]);
+  }); });
+  minX -= 150; maxX += 150; minZ -= 150; maxZ += 150;
+  var base = null, view = null, start = 0, raf = null;
+
+  function layout() {
+    var W = innerWidth, H = innerHeight;
+    var left = W > 1000 ? Math.min(640, W * 0.43) : 16, top = 60, right = W - 24, bottom = H - 80;
+    var s = Math.min((right - left) / (maxX - minX), (bottom - top) / (maxZ - minZ));
+    return { W: W, H: H, s: s, ox: left + ((right - left) - (maxX - minX) * s) / 2, oz: top + ((bottom - top) - (maxZ - minZ) * s) / 2 };
+  }
+  function P(v, x, z) { return [v.ox + (x - minX) * v.s, v.oz + (z - minZ) * v.s]; }
+  function path(g, v, flat, close) {
+    g.beginPath();
+    for (var i = 0; i < flat.length; i += 2) { var p = P(v, flat[i], flat[i + 1]); if (i) g.lineTo(p[0], p[1]); else g.moveTo(p[0], p[1]); }
+    if (close) g.closePath();
+  }
+  function drawBase(v, dpr) {
+    var c = document.createElement("canvas");
+    c.width = v.W * dpr; c.height = v.H * dpr;
+    var g = c.getContext("2d");
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    g.fillStyle = "#f1efe9"; g.fillRect(0, 0, v.W, v.H);
+    g.fillStyle = "#cfe8c4";
+    D.areas.forEach(function (a) { if (a[0] === "green") { path(g, v, a[1], true); g.fill(); } });
+    g.fillStyle = "#e2ddd3";
+    D.footprints.forEach(function (f) { path(g, v, f, true); g.fill(); });
+    D.buildings.forEach(function (b) { path(g, v, b[2], true); g.fill(); });
+    g.lineCap = "round"; g.lineJoin = "round";
+    [["path", Math.max(0.6, 1.5 * v.s), "#ffffff"], ["minor", Math.max(1.2, 6 * v.s), "#ffffff"], ["major", Math.max(2.4, 11 * v.s), "#fde293"]].forEach(function (k) {
+      g.strokeStyle = k[2]; g.lineWidth = k[1];
+      D.wideRoads.forEach(function (r) { if (r[0] === k[0]) { path(g, v, r[1]); g.stroke(); } });
+    });
+    g.font = "italic 600 13px Manrope, sans-serif"; g.fillStyle = "#5f6368"; g.textAlign = "center";
+    places.forEach(function (pl) { var p = P(v, pl[1][0], pl[1][1]); g.fillText(pl[0], p[0], p[1] - 14); });
+    return c;
+  }
+  function label(g, x, y, text, color) {
+    g.font = "700 14px Manrope, sans-serif";
+    var w = g.measureText(text).width + 16;
+    g.fillStyle = "#ffffff"; g.shadowColor = "rgba(0,0,0,0.25)"; g.shadowBlur = 6;
+    g.fillRect(x - w / 2, y - 26, w, 22); g.shadowBlur = 0;
+    g.fillStyle = color; g.textAlign = "center"; g.fillText(text, x, y - 10);
+  }
+  function frame(now) {
+    var dpr = Math.min(devicePixelRatio || 1, 2), v = layout();
+    if (!base || !view || view.W !== v.W || view.H !== v.H) { view = v; base = drawBase(v, dpr); cv.width = v.W * dpr; cv.height = v.H * dpr; }
+    var g = cv.getContext("2d");
+    g.setTransform(1, 0, 0, 1, 0, 0); g.drawImage(base, 0, 0);
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    var reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    var t = reduce ? 1 : Math.min(1, (now - start) / 3200);
+    g.lineCap = "round"; g.lineJoin = "round";
+    D.cityRoutes.forEach(function (r, k) {
+      var part = Math.max(0, Math.min(1, t * 4 - k));
+      if (part <= 0) return;
+      var n = Math.max(2, Math.floor(r.pts.length * part));
+      var flat = []; for (var i = 0; i < n; i++) flat.push(r.pts[i][0], r.pts[i][1]);
+      g.strokeStyle = "#ffffff"; g.lineWidth = 9; path(g, view, flat); g.stroke();
+      g.strokeStyle = COLORS[k]; g.lineWidth = 5.5; path(g, view, flat); g.stroke();
+      if (part >= 1) {
+        var a = P(view, r.pts[0][0], r.pts[0][1]), b = P(view, r.pts[r.pts.length - 1][0], r.pts[r.pts.length - 1][1]);
+        g.lineWidth = 3; g.strokeStyle = COLORS[k];
+        g.fillStyle = "#ffffff"; g.beginPath(); g.arc(a[0], a[1], 7, 0, Math.PI * 2); g.fill(); g.stroke();
+        g.fillStyle = COLORS[k]; g.beginPath(); g.arc(b[0], b[1], 7, 0, Math.PI * 2); g.fill();
+        var m = r.pts[Math.floor(r.pts.length * 0.4)], mp = P(view, m[0], m[1]);
+        label(g, mp[0], mp[1], r.name, COLORS[k]);
+      }
+    });
+    if (t < 1) raf = requestAnimationFrame(frame);
+  }
+  window.ionMap = {
+    toggle: function (on) {
+      wrap.hidden = !on;
+      if (raf) cancelAnimationFrame(raf);
+      if (on) { start = performance.now(); raf = requestAnimationFrame(frame); }
+    },
+  };
+  addEventListener("resize", function () { if (!wrap.hidden) { base = null; raf = requestAnimationFrame(frame); } });
+  window.ionMap.toggle(window.ionCurrent === 3);
 })();
 </script>
 
@@ -225,9 +472,10 @@ import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js"
 import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 
 const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
-const say = (t) => window.ionSay && window.ionSay(t);
+const DATA = window.ATHENS_SCENE;
 
 try {
+  if (!DATA) throw new Error("athens-scene.js missing");
   window.ionStage = buildStage();
   window.ionShowCurrent();
 } catch (err) {
@@ -236,65 +484,153 @@ try {
 }
 
 function buildStage() {
-  // ---------- Renderer, ουρανός, φως σούρουπου ----------
+  // =====================================================================
+  // Renderer, ουρανός, ώρα της μέρας
+  // =====================================================================
   const canvas = document.getElementById("scene");
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: "high-performance" });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75));
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.05;
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
   const scene = new THREE.Scene();
-  const sky = document.createElement("canvas");
-  sky.width = 2; sky.height = 256;
-  const sg = sky.getContext("2d");
-  const grad = sg.createLinearGradient(0, 0, 0, 256);
-  grad.addColorStop(0, "#0c1638");
-  grad.addColorStop(0.55, "#3b3566");
-  grad.addColorStop(0.8, "#b0607a");
-  grad.addColorStop(1, "#f3a76a");
-  sg.fillStyle = grad; sg.fillRect(0, 0, 2, 256);
-  const skyTex = new THREE.CanvasTexture(sky);
+  const camera = new THREE.PerspectiveCamera(45, 1, 0.3, 6000);
+
+  const skyCanvas = document.createElement("canvas");
+  skyCanvas.width = 2; skyCanvas.height = 256;
+  const skyTex = new THREE.CanvasTexture(skyCanvas);
   skyTex.colorSpace = THREE.SRGBColorSpace;
   scene.background = skyTex;
-  scene.fog = new THREE.Fog(0x4a3a62, 90, 280);
+  scene.fog = new THREE.Fog(0x4a3a62, 350, 2600);
 
-  const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 600);
-
-  scene.add(new THREE.HemisphereLight(0x9db7ff, 0x2a2230, 0.7));
-  const sun = new THREE.DirectionalLight(0xffb27a, 2.2);
-  sun.position.set(-60, 45, -25);
+  const hemi = new THREE.HemisphereLight(0x9db7ff, 0x2a2230, 0.7);
+  scene.add(hemi);
+  const sun = new THREE.DirectionalLight(0xffb27a, 2.4);
   sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048);
-  Object.assign(sun.shadow.camera, { left: -80, right: 80, top: 80, bottom: -80, near: 1, far: 240 });
-  sun.shadow.bias = -0.0005;
-  scene.add(sun);
+  Object.assign(sun.shadow.camera, { left: -90, right: 90, top: 90, bottom: -90, near: 1, far: 500 });
+  sun.shadow.bias = -0.0004;
+  scene.add(sun, sun.target);
 
   const std = (color, extra = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.85, ...extra });
+  const col = (h) => new THREE.Color(h);
 
-  // ---------- Το πλέγμα της πόλης ----------
-  // Δρόμοι κάθε 16 μέτρα, πλάτους 3 μέτρων. Κάθε τετράγωνο έχει πεζοδρόμιο 13x13 και κτίρια μέσα σε 8.8x8.8,
-  // άρα μένει πεζοδρόμιο περίπου 2 μέτρων γύρω γύρω. Ο πεζός περπατάει 3 μέτρα από τον άξονα του δρόμου.
-  const BLOCK = 16, RANGE = 4, PAVE = 13, CURB = 0.18;
-  const ground = new THREE.Mesh(new THREE.PlaneGeometry(600, 600), std(0x2a2d36, { roughness: 0.95 }));
-  ground.rotation.x = -Math.PI / 2;
-  ground.receiveShadow = true;
-  scene.add(ground);
+  // Σούρουπο (0) ως νύχτα (1).
+  const TOD = {
+    top: [col(0x1a2a5c), col(0x050a1a)],
+    mid: [col(0x6b4c7a), col(0x121638)],
+    low: [col(0xf2a36b), col(0x2b2446)],
+    sun: [col(0xffb27a), col(0x7f9cff)],
+  };
+  let tod = 0.2, todTarget = 0.2;
+  const nightMats = { windows: [], lamps: [], glass: [] };
+  function applyTod(t) {
+    const mix = (pair) => pair[0].clone().lerp(pair[1], t);
+    const g = skyCanvas.getContext("2d");
+    const grad = g.createLinearGradient(0, 0, 0, 256);
+    grad.addColorStop(0, "#" + mix(TOD.top).getHexString());
+    grad.addColorStop(0.55, "#" + mix(TOD.mid).getHexString());
+    grad.addColorStop(1, "#" + mix(TOD.low).getHexString());
+    g.fillStyle = grad; g.fillRect(0, 0, 2, 256);
+    skyTex.needsUpdate = true;
+    scene.fog.color.copy(mix(TOD.low).lerp(mix(TOD.mid), 0.5));
+    sun.color.copy(mix(TOD.sun));
+    sun.intensity = THREE.MathUtils.lerp(2.4, 0.25, t);
+    hemi.intensity = THREE.MathUtils.lerp(0.75, 0.32, t);
+    renderer.toneMappingExposure = THREE.MathUtils.lerp(1.0, 1.25, t);
+    nightMats.windows.forEach((m) => (m.emissiveIntensity = THREE.MathUtils.lerp(0.45, 1.7, t)));
+    nightMats.lamps.forEach((m) => (m.emissiveIntensity = THREE.MathUtils.lerp(1.5, 6, t)));
+    nightMats.glass.forEach((m) => (m.emissiveIntensity = THREE.MathUtils.lerp(0.7, 2.2, t)));
+  }
 
   let seed = 11;
   const rand = () => { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; };
   const M = (x, y, z, ry = 0, sx = 1, sy = 1, sz = 1, rx = 0) =>
-    new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, 0)), new THREE.Vector3(sx, sy, sz));
-  function instanced(geo, mat, matrices, shadows = true) {
+    new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromEuler(new THREE.Euler(rx, ry, 0, "YXZ")), new THREE.Vector3(sx, sy, sz));
+  function instanced(geo, mat, matrices, { shadow = true, colors = null } = {}) {
+    if (!matrices.length) return null;
     const mesh = new THREE.InstancedMesh(geo, mat, matrices.length);
     matrices.forEach((mx, i) => mesh.setMatrixAt(i, mx));
-    mesh.castShadow = shadows; mesh.receiveShadow = true;
+    if (colors) colors.forEach((c, i) => mesh.setColorAt(i, c));
+    mesh.castShadow = shadow; mesh.receiveShadow = true;
     scene.add(mesh);
     return mesh;
   }
+  function meshFrom(pos, nrm, uv, mat, { shadow = true } = {}) {
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
+    geo.setAttribute("normal", new THREE.Float32BufferAttribute(nrm, 3));
+    if (uv) geo.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2));
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.castShadow = shadow; mesh.receiveShadow = true;
+    scene.add(mesh);
+    return mesh;
+  }
+  const pairs = (flat) => { const p = []; for (let i = 0; i < flat.length; i += 2) p.push([flat[i], flat[i + 1]]); return p; };
 
-  // Προσόψεις: παράθυρα με μπαλκόνια, και μερικά παράθυρα αναμμένα.
+  // =====================================================================
+  // Έδαφος, δρόμοι, πλατείες
+  // =====================================================================
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(9000, 9000), std(0xa8a092, { roughness: 0.95 }));
+  ground.rotation.x = -Math.PI / 2;
+  ground.receiveShadow = true;
+  scene.add(ground);
+
+  function polygonFill(points, y, out) {
+    // Το triangulateShape μπορεί να αντιστρέψει τη σειρά του contour, οπότε οι δείκτες αφορούν το contour.
+    const contour = points.map(([x, z]) => new THREE.Vector2(x, z));
+    const tris = THREE.ShapeUtils.triangulateShape(contour, []);
+    for (const t of tris) for (const k of t) { out.pos.push(contour[k].x, y, contour[k].y); out.nrm.push(0, 1, 0); }
+  }
+  function ribbon(points, w, y, out) {
+    for (let i = 0; i < points.length - 1; i++) {
+      const [ax, az] = points[i], [bx, bz] = points[i + 1];
+      const dx = bx - ax, dz = bz - az, L = Math.hypot(dx, dz) || 1;
+      const ux = dx / L, uz = dz / L, nx = -uz * w / 2, nz = ux * w / 2;
+      const e = w / 2; // επέκταση στις άκρες για να κλείνουν οι γωνίες
+      const a0 = [ax - ux * e + nx, az - uz * e + nz], a1 = [ax - ux * e - nx, az - uz * e - nz];
+      const b0 = [bx + ux * e + nx, bz + uz * e + nz], b1 = [bx + ux * e - nx, bz + uz * e - nz];
+      for (const [x, z] of [a0, a1, b1, a0, b1, b0]) { out.pos.push(x, y, z); out.nrm.push(0, 1, 0); }
+    }
+  }
+  const CAR_ROADS = new Set(["trunk", "primary", "primary_link", "secondary", "secondary_link", "tertiary", "tertiary_link", "unclassified", "residential", "living_street", "service"]);
+  const asphalt = { pos: [], nrm: [] }, marble = { pos: [], nrm: [] }, green = { pos: [], nrm: [] };
+  const roads = DATA.roads.map(([cls, w, flat, name]) => ({ cls, w, pts: pairs(flat), name }));
+  for (const [kind, flat] of DATA.areas) polygonFill(pairs(flat), kind === "green" ? 0.03 : 0.015, kind === "green" ? green : marble);
+  for (const r of roads) {
+    if (CAR_ROADS.has(r.cls)) ribbon(r.pts, r.w, 0.02, asphalt);
+    else if (r.cls === "pedestrian") ribbon(r.pts, r.w, 0.018, marble);
+  }
+  const groundSide = { side: THREE.DoubleSide };
+  meshFrom(asphalt.pos, asphalt.nrm, null, std(0x2d3039, { roughness: 0.9, ...groundSide }), { shadow: false });
+  meshFrom(marble.pos, marble.nrm, null, std(0xd9d1c2, { roughness: 0.6, ...groundSide }), { shadow: false });
+  meshFrom(green.pos, green.nrm, null, std(0x3d5a37, groundSide), { shadow: false });
+
+  // Διαγραμμίσεις στους μεγάλους δρόμους και διαβάσεις στις πραγματικές θέσεις τους.
+  const paint = std(0xeeeeee, { roughness: 0.6 });
+  const dashes = [];
+  for (const r of roads) {
+    if (!["primary", "secondary", "tertiary", "trunk"].includes(r.cls)) continue;
+    let carry = 0;
+    for (let i = 0; i < r.pts.length - 1; i++) {
+      const [ax, az] = r.pts[i], [bx, bz] = r.pts[i + 1];
+      const L = Math.hypot(bx - ax, bz - az), ang = Math.atan2(bx - ax, bz - az);
+      for (let d = carry; d < L; d += 6) dashes.push(M(ax + (bx - ax) * d / L, 0.03, az + (bz - az) * d / L, ang));
+      carry = (carry - L) % 6; if (carry < 0) carry += 6;
+    }
+  }
+  instanced(new THREE.BoxGeometry(0.15, 0.01, 2.2), paint, dashes, { shadow: false });
+  const zebra = [];
+  for (const [x, z, ang, w] of DATA.crossings) {
+    const nx = Math.cos(ang), nz = -Math.sin(ang);
+    for (let o = -w / 2 + 0.5; o <= w / 2 - 0.4; o += 0.9) zebra.push(M(x + nx * o, 0.032, z + nz * o, ang));
+  }
+  instanced(new THREE.BoxGeometry(0.5, 0.012, 3), paint, zebra, { shadow: false });
+
+  // =====================================================================
+  // Πραγματικά κτίρια: τοίχοι με παράθυρα και μπαλκόνια, ταράτσες με θερμοσίφωνες
+  // =====================================================================
   function facadeTextures() {
     const size = 512, bay = 128;
     const c = document.createElement("canvas"); c.width = c.height = size;
@@ -309,10 +645,7 @@ function buildStage() {
       g.fillStyle = "#8f8a80"; g.fillRect(x + 6, y + 98, bay - 12, 8);
       g.fillStyle = "#6b675f";
       for (let k = x + 10; k < x + bay - 8; k += 10) g.fillRect(k, y + 84, 2, 14);
-      if (rand() < 0.32) {
-        gl.fillStyle = rand() < 0.5 ? "#ffcf8a" : "#ffe3b8";
-        gl.fillRect(x + 36, y + 24, 56, 68);
-      }
+      if (rand() < 0.34) { gl.fillStyle = rand() < 0.5 ? "#ffcf8a" : "#ffe3b8"; gl.fillRect(x + 36, y + 24, 56, 68); }
     }
     const make = (cv) => {
       const t = new THREE.CanvasTexture(cv);
@@ -325,517 +658,1025 @@ function buildStage() {
   }
   const tex = facadeTextures();
   const palette = [0xe8dcc4, 0xdcc9a2, 0xd3ab8a, 0xf1ece2, 0xcdbcab, 0xe6d1a8, 0xbfc6c9];
-  const facadeMats = palette.map((col) => std(col, { map: tex.map, emissiveMap: tex.lit, emissive: 0xffb15a, emissiveIntensity: 1.1 }));
-  const roofMat = std(0x8d8a86);
-  function facadeGeo(w, h, d) {
-    const geo = new THREE.BoxGeometry(w, h, d);
-    const uv = geo.attributes.uv, T = 12;
-    const dims = [[d, h], [d, h], [w, d], [w, d], [w, h], [w, h]];
-    for (let f = 0; f < 6; f++) for (let k = 0; k < 4; k++) {
-      const i = f * 4 + k;
-      uv.setXY(i, uv.getX(i) * dims[f][0] / T, uv.getY(i) * dims[f][1] / T);
+  const facadeMats = palette.map((c) => {
+    const m = std(c, { map: tex.map, emissiveMap: tex.lit, emissive: 0xffb15a, emissiveIntensity: 0.6, side: THREE.DoubleSide });
+    nightMats.windows.push(m);
+    return m;
+  });
+  const churchMat = std(0xe9d6b8, { side: THREE.DoubleSide });
+  const roofMat = std(0x8d8a86, { side: THREE.DoubleSide });
+  const wallBuckets = facadeMats.map(() => ({ pos: [], nrm: [], uv: [] }));
+  const churchWalls = { pos: [], nrm: [], uv: [] };
+  const roofs = { pos: [], nrm: [] };
+  const roofTops = [];
+
+  function addWalls(ring, h, out) {
+    let area = 0;
+    for (let i = 0; i < ring.length; i++) { const [x1, z1] = ring[i], [x2, z2] = ring[(i + 1) % ring.length]; area += x1 * z2 - x2 * z1; }
+    const s = area > 0 ? 1 : -1;
+    let u = 0;
+    for (let i = 0; i < ring.length; i++) {
+      const [ax, az] = ring[i], [bx, bz] = ring[(i + 1) % ring.length];
+      const L = Math.hypot(bx - ax, bz - az) || 0.01;
+      const nx = (bz - az) / L * s, nz = -(bx - ax) / L * s;
+      const u0 = u / 12, u1 = (u + L) / 12, v1 = h / 12;
+      const quad = [[ax, 0, az, u0, 0], [bx, 0, bz, u1, 0], [bx, h, bz, u1, v1], [ax, 0, az, u0, 0], [bx, h, bz, u1, v1], [ax, h, az, u0, v1]];
+      for (const [x, y, z, uu, vv] of quad) { out.pos.push(x, y, z); out.nrm.push(nx, 0, nz); out.uv.push(uu, vv); }
+      u += L;
     }
-    return geo;
+  }
+  for (const [h, kind, flat] of DATA.buildings) {
+    const ring = pairs(flat);
+    if (kind === "church") addWalls(ring, h, churchWalls);
+    else addWalls(ring, h, wallBuckets[Math.floor(rand() * wallBuckets.length)]);
+    polygonFill(ring, h, roofs);
+    if (kind !== "church" && rand() < 0.35) {
+      const cx = ring.reduce((a, p) => a + p[0], 0) / ring.length, cz = ring.reduce((a, p) => a + p[1], 0) / ring.length;
+      roofTops.push([cx, h, cz]);
+    }
+  }
+  wallBuckets.forEach((b, i) => meshFrom(b.pos, b.nrm, b.uv, facadeMats[i]));
+  meshFrom(churchWalls.pos, churchWalls.nrm, churchWalls.uv, churchMat);
+  meshFrom(roofs.pos, roofs.nrm, null, roofMat);
+
+  // Ηλιακοί θερμοσίφωνες: το πιο αθηναϊκό στοιχείο της ταράτσας.
+  instanced(new THREE.BoxGeometry(1.5, 0.06, 1), std(0x1d2a4a, { metalness: 0.4, roughness: 0.4 }), roofTops.map(([x, h, z]) => M(x, h + 0.5, z, 0, 1, 1, 1, -0.6)));
+  instanced(new THREE.CylinderGeometry(0.24, 0.24, 1.6, 10), std(0xe9e9e9), roofTops.map(([x, h, z]) => M(x, h + 0.9, z + 0.4, Math.PI / 2, 1, 1, 1, Math.PI / 2)));
+
+  // Ισόγεια μαγαζιά: φωτισμένες βιτρίνες και τέντες εκεί όπου ο τοίχος βλέπει δρόμο.
+  const glassMat = new THREE.MeshStandardMaterial({ color: 0x223044, emissive: 0xffc98a, emissiveIntensity: 0.7, roughness: 0.3 });
+  nightMats.glass.push(glassMat);
+  const shopM = [], shopC = [], awnM = [], awnC = [];
+  const awnPalette = [0x2f6b4a, 0x9b2a2a, 0x23395d, 0xd9c7a0, 0x7a4f2a, 0x3d6f8f];
+  const glassTints = [0xffc98a, 0xfff0d6, 0xffd9a8, 0xcfe6ff];
+  for (const [ax, az, bx, bz, nx, nz] of DATA.fronts) {
+    const L = Math.hypot(bx - ax, bz - az), ang = Math.atan2(bx - ax, bz - az);
+    const mx = (ax + bx) / 2, mz = (az + bz) / 2;
+    shopM.push(M(mx + nx * 0.06, 1.55, mz + nz * 0.06, ang, 1, 1, Math.max(0.5, L - 0.8)));
+    shopC.push(col(glassTints[Math.floor(rand() * glassTints.length)]));
+    if (rand() < 0.5) {
+      awnM.push(M(mx + nx * 0.7, 3.25, mz + nz * 0.7, ang, 1, 1, Math.max(0.5, L - 0.5), 0));
+      awnC.push(col(awnPalette[Math.floor(rand() * awnPalette.length)]));
+    }
+  }
+  instanced(new THREE.BoxGeometry(0.08, 2.6, 1), glassMat, shopM, { shadow: false, colors: shopC });
+  const awnGeo = new THREE.BoxGeometry(1.4, 0.08, 1);
+  awnGeo.rotateZ(0.25);
+  instanced(awnGeo, std(0xffffff), awnM, { colors: awnC });
+
+  // =====================================================================
+  // Βοηθητικά: πόσο κοντά είναι ένα σημείο στη διαδρομή μας
+  // =====================================================================
+  const R = DATA.route;
+  const routeHash = new Map();
+  for (const line of [R.A1, R.A2, R.B]) for (let i = 0; i < line.length - 1; i++) {
+    const [ax, az] = line[i], [bx, bz] = line[i + 1];
+    const L = Math.hypot(bx - ax, bz - az);
+    for (let d = 0; d <= L; d += 1.5) {
+      const x = ax + (bx - ax) * d / L, z = az + (bz - az) * d / L;
+      const k = Math.floor(x / 4) + "," + Math.floor(z / 4);
+      if (!routeHash.has(k)) routeHash.set(k, []);
+      routeHash.get(k).push([x, z]);
+    }
+  }
+  function nearRoute(x, z, r) {
+    for (let i = -1; i <= 1; i++) for (let j = -1; j <= 1; j++) {
+      const pts = routeHash.get((Math.floor(x / 4) + i) + "," + (Math.floor(z / 4) + j));
+      if (pts) for (const [px, pz] of pts) if (Math.hypot(px - x, pz - z) < r) return true;
+    }
+    return false;
   }
 
-  const HALL = { x: 24, z: 40 };
-  const pavementMats = [];
-  const paveMat = std(0xb8b0a0, { roughness: 0.9 });
-  const panelMat = std(0x1d2a4a, { metalness: 0.4, roughness: 0.4 });
-  const tankMat = std(0xe9e9e9);
-  const treeSpots = [], lampSpots = [];
-
-  for (let ix = -RANGE; ix < RANGE; ix++) {
-    for (let iz = -RANGE; iz < RANGE; iz++) {
-      const cx = ix * BLOCK + BLOCK / 2, cz = iz * BLOCK + BLOCK / 2;
-      pavementMats.push(M(cx, CURB / 2, cz));
-      // Δέντρα κοντά στο κράσπεδο, φανοστάτες στις γωνίες: το κέντρο του πεζοδρομίου μένει ελεύθερο.
-      for (const o of [-3, 3]) {
-        treeSpots.push([cx + o, cz - 6.0], [cx + o, cz + 6.0], [cx - 6.0, cz + o], [cx + 6.0, cz + o]);
-      }
-      for (const sx of [-1, 1]) for (const sz of [-1, 1]) lampSpots.push([cx + sx * 6.15, cz + sz * 6.15]);
-      if (cx === HALL.x && cz === HALL.z) continue;
-
-      // Πολυκατοικίες: ένα τετράγωνο έχει είτε ένα μεγάλο κτίριο είτε τέσσερα μικρότερα.
-      const lots = rand() < 0.3 ? [[0, 0, 8.8]] : [[-2.2, -2.2, 4.3], [2.2, -2.2, 4.3], [-2.2, 2.2, 4.3], [2.2, 2.2, 4.3]];
-      for (const [ox, oz, w] of lots) {
-        const h = 6 + Math.floor(rand() * 5) * 3 + (rand() < 0.15 ? 6 : 0);
-        const mat = facadeMats[Math.floor(rand() * facadeMats.length)];
-        const b = new THREE.Mesh(facadeGeo(w, h, w), [mat, mat, roofMat, roofMat, mat, mat]);
-        b.position.set(cx + ox, CURB + h / 2, cz + oz);
-        b.castShadow = b.receiveShadow = true;
-        scene.add(b);
-        // Ηλιακός θερμοσίφωνας στην ταράτσα, το πιο αθηναϊκό στοιχείο της στέγης.
-        if (rand() < 0.55) {
-          const top = CURB + h;
-          const panel = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.06, 0.9), panelMat);
-          panel.position.set(cx + ox, top + 0.45, cz + oz);
-          panel.rotation.x = -0.6;
-          const tank = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 1.5, 12), tankMat);
-          tank.rotation.z = Math.PI / 2;
-          tank.position.set(cx + ox, top + 0.85, cz + oz + 0.35);
-          panel.castShadow = tank.castShadow = true;
-          scene.add(panel, tank);
+  // =====================================================================
+  // Ζωή του δρόμου: δέντρα, φανοστάτες, περίπτερα, καφέ, μηχανάκια
+  // =====================================================================
+  const trees = DATA.trees.map(([x, z]) => [x, z]);
+  const lamps = [], bikes = [];
+  for (const r of roads) {
+    if (!CAR_ROADS.has(r.cls)) continue;
+    let walked = 0, side = 1;
+    for (let i = 0; i < r.pts.length - 1; i++) {
+      const [ax, az] = r.pts[i], [bx, bz] = r.pts[i + 1];
+      const L = Math.hypot(bx - ax, bz - az), ux = (bx - ax) / L, uz = (bz - az) / L;
+      for (let d = 0; d < L; d += 4) {
+        walked += 4;
+        const x = ax + ux * d, z = az + uz * d, off = r.w / 2 + 0.6;
+        if (walked % 28 < 4) {
+          side = -side;
+          const lx = x - uz * off * side, lz = z + ux * off * side;
+          if (!nearRoute(lx, lz, 1.2)) lamps.push([lx, lz]);
+        }
+        if (["residential", "tertiary", "living_street"].includes(r.cls) && rand() < 0.05) {
+          const s = rand() < 0.5 ? 1 : -1, tx = x - uz * (off + 0.4) * s, tz = z + ux * (off + 0.4) * s;
+          if (!nearRoute(tx, tz, 1.6)) trees.push([tx, tz]);
+        }
+        if (rand() < 0.035) {
+          const s = rand() < 0.5 ? 1 : -1, bx2 = x - uz * (r.w / 2 + 0.7) * s, bz2 = z + ux * (r.w / 2 + 0.7) * s;
+          if (!nearRoute(bx2, bz2, 1.3)) bikes.push([bx2, bz2, Math.atan2(ux, uz) + (rand() - 0.5) * 0.4]);
         }
       }
     }
   }
-  instanced(new THREE.BoxGeometry(PAVE, CURB, PAVE), paveMat, pavementMats, false);
+  instanced(new THREE.CylinderGeometry(0.08, 0.11, 1.8, 6), std(0x5a4030), trees.map(([x, z]) => M(x, 0.9, z)));
+  instanced(new THREE.IcosahedronGeometry(1.1, 1), std(0x2f5a34, { flatShading: true }), trees.map(([x, z]) => { const s = 0.75 + rand() * 0.5; return M(x, 2.5, z, rand() * 3, s, s * 0.9, s); }));
+  instanced(new THREE.SphereGeometry(0.07, 6, 4), std(0xff8c1a, { emissive: 0x6a2a00 }), trees.flatMap(([x, z]) => [0, 1, 2, 3].map(() => M(x + (rand() - 0.5) * 1.6, 2.1 + rand() * 0.9, z + (rand() - 0.5) * 1.6))), { shadow: false });
+  instanced(new THREE.CylinderGeometry(0.05, 0.07, 4.5, 6), std(0x2b2e36, { metalness: 0.6, roughness: 0.4 }), lamps.map(([x, z]) => M(x, 2.25, z)));
+  const lampMat = new THREE.MeshStandardMaterial({ color: 0xffe2b0, emissive: 0xffc27a, emissiveIntensity: 3 });
+  nightMats.lamps.push(lampMat);
+  instanced(new THREE.SphereGeometry(0.22, 12, 8), lampMat, lamps.map(([x, z]) => M(x, 4.6, z)), { shadow: false });
 
-  // Νεραντζιές στα πεζοδρόμια και φανοστάτες στις γωνίες.
-  const trunkGeo = new THREE.CylinderGeometry(0.07, 0.1, 1.6, 6);
-  const crownGeo = new THREE.IcosahedronGeometry(0.85, 1);
-  instanced(trunkGeo, std(0x5a4030), treeSpots.map(([x, z]) => M(x, 0.98, z)));
-  instanced(crownGeo, std(0x2f5a34, { flatShading: true }), treeSpots.map(([x, z]) => {
-    const s = 0.8 + rand() * 0.45;
-    return M(x, 2.2, z, rand() * 3, s, s * 0.9, s);
-  }));
-  instanced(new THREE.CylinderGeometry(0.05, 0.06, 4, 6), std(0x2b2e36, { metalness: 0.6, roughness: 0.4 }), lampSpots.map(([x, z]) => M(x, 2.18, z)));
-  instanced(new THREE.SphereGeometry(0.2, 12, 8), new THREE.MeshStandardMaterial({ color: 0xffe2b0, emissive: 0xffc27a, emissiveIntensity: 4 }), lampSpots.map(([x, z]) => M(x, 4.25, z)), false);
+  const kioskBody = std(0x2c5f3f), kioskTop = std(0xd9c7a0);
+  const kioskGlow = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xfff2c8, emissiveIntensity: 1.2 });
+  nightMats.glass.push(kioskGlow);
+  const kiosks = DATA.kiosks.filter(([x, z]) => !nearRoute(x, z, 2.2));
+  instanced(new THREE.BoxGeometry(1.7, 2.3, 1.7), kioskBody, kiosks.map(([x, z]) => M(x, 1.15, z)));
+  instanced(new THREE.BoxGeometry(2.4, 0.15, 2.4), kioskTop, kiosks.map(([x, z]) => M(x, 2.4, z)));
+  instanced(new THREE.BoxGeometry(1.74, 0.9, 1.74), kioskGlow, kiosks.map(([x, z]) => M(x, 1.5, z)), { shadow: false });
 
-  // Διαγραμμίσεις και διαβάσεις πεζών.
-  const dashes = [], zebra = [];
-  for (let s = -RANGE * BLOCK; s <= RANGE * BLOCK; s += BLOCK) {
-    for (let t = -RANGE * BLOCK; t < RANGE * BLOCK; t += 3) {
-      const m = ((t % BLOCK) + BLOCK) % BLOCK;
-      if (m < 5 || m > BLOCK - 5) continue;
-      dashes.push(M(s, 0.012, t + 1.5), M(t + 1.5, 0.012, s, Math.PI / 2));
-    }
-    // Διαβάσεις εκεί όπου τα πεζοδρόμια συναντούν τον δρόμο, στη γραμμή που περπατάνε οι πεζοί (±3 m).
-    for (let s2 = -RANGE * BLOCK; s2 <= RANGE * BLOCK; s2 += BLOCK) {
-      for (let k = -1.2; k <= 1.21; k += 0.48) {
-        for (const side of [-1, 1]) {
-          zebra.push(M(s + k, 0.014, s2 + side * 3), M(s2 + side * 3, 0.014, s + k, Math.PI / 2));
-        }
-      }
+  const tableM = [], chairM = [], umbM = [], umbC = [];
+  for (const [x, z, ang] of DATA.cafes) {
+    const ux = Math.sin(ang), uz = Math.cos(ang);
+    for (const o of [-1.4, 1.4]) {
+      const tx = x + ux * o, tz = z + uz * o;
+      if (nearRoute(tx, tz, 1.4)) continue;
+      tableM.push(M(tx, 0.72, tz));
+      chairM.push(M(tx + 0.55, 0.45, tz, ang), M(tx - 0.55, 0.45, tz, ang));
+      if (rand() < 0.35) { umbM.push(M(tx, 2.3, tz)); umbC.push(col([0xf2efe6, 0x2f6b4a, 0x9b2a2a][Math.floor(rand() * 3)])); }
     }
   }
-  const paint = std(0xe8e8e8, { roughness: 0.6 });
-  instanced(new THREE.BoxGeometry(0.1, 0.01, 1.3), paint, dashes, false);
-  instanced(new THREE.BoxGeometry(0.26, 0.012, 1.6), paint, zebra, false);
+  instanced(new THREE.CylinderGeometry(0.38, 0.38, 0.05, 14), std(0xd8d4cc), tableM);
+  instanced(new THREE.CylinderGeometry(0.04, 0.04, 0.72, 6), std(0x333333), tableM.map((m) => m.clone().multiply(new THREE.Matrix4().makeTranslation(0, -0.36, 0))), { shadow: false });
+  instanced(new THREE.BoxGeometry(0.42, 0.9, 0.42), std(0x6b4a2e), chairM);
+  instanced(new THREE.ConeGeometry(1.3, 0.5, 10, 1, true), std(0xffffff, { side: THREE.DoubleSide }), umbM, { colors: umbC });
 
-  // ---------- Η Ακρόπολη, φωτισμένη στο βάθος ----------
-  const acro = new THREE.Group();
-  const hill = new THREE.Mesh(new THREE.CylinderGeometry(34, 60, 22, 11), std(0x6b5a4a, { flatShading: true }));
-  hill.position.y = 11;
-  hill.scale.z = 0.6;
-  acro.add(hill);
-  const marble = std(0xf2e2c4, { emissive: 0x6a4418, emissiveIntensity: 0.6 });
-  const stylobate = new THREE.Mesh(new THREE.BoxGeometry(31, 1.6, 14), marble);
-  stylobate.position.y = 22.8;
-  acro.add(stylobate);
+  const bikeBody = std(0x8a1f1f, { metalness: 0.5, roughness: 0.4 }), tyre = std(0x111111);
+  instanced(new THREE.BoxGeometry(0.35, 0.5, 1.5), bikeBody, bikes.map(([x, z, a]) => M(x, 0.55, z, a)));
+  const wheelGeo = new THREE.CylinderGeometry(0.28, 0.28, 0.1, 12); wheelGeo.rotateZ(Math.PI / 2);
+  instanced(wheelGeo, tyre, bikes.flatMap(([x, z, a]) => [-0.6, 0.6].map((o) => M(x + Math.sin(a) * o, 0.28, z + Math.cos(a) * o, a))), { shadow: false });
+
+  // =====================================================================
+  // Ορόσημα: η Ακρόπολη και ο Λυκαβηττός, στις πραγματικές τους θέσεις
+  // =====================================================================
+  const marbleMat = std(0xf2e2c4, { emissive: 0x6a4418, emissiveIntensity: 0.7 });
+  nightMats.glass.push(marbleMat);
+  const [acX, acZ] = DATA.landmarks.acropolis;
+  const rock = new THREE.Mesh(new THREE.CylinderGeometry(120, 200, 70, 14), std(0x7a6654, { flatShading: true }));
+  rock.position.set(acX, 35, acZ); rock.scale.z = 0.55;
+  scene.add(rock);
+  const parth = new THREE.Group();
+  const base = new THREE.Mesh(new THREE.BoxGeometry(72, 3, 33), marbleMat); base.position.y = 1.5; parth.add(base);
   const colPos = [];
-  for (let i = 0; i < 8; i++) { const x = -13.5 + i * (27 / 7); colPos.push([x, -6], [x, 6]); }
-  for (let j = 1; j < 6; j++) { const z = -6 + j * 2; colPos.push([-13.5, z], [13.5, z]); }
-  const cols = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.75, 0.85, 9, 10), marble, colPos.length);
-  colPos.forEach(([x, z], i) => cols.setMatrixAt(i, M(x, 28.1, z)));
-  acro.add(cols);
-  const entab = new THREE.Mesh(new THREE.BoxGeometry(30, 1.8, 13.4), marble);
-  entab.position.y = 33.5;
-  acro.add(entab);
-  const pedShape = new THREE.Shape();
-  pedShape.moveTo(-15, 0); pedShape.lineTo(15, 0); pedShape.lineTo(0, 3.2); pedShape.closePath();
-  const roof = new THREE.Mesh(new THREE.ExtrudeGeometry(pedShape, { depth: 13.4, bevelEnabled: false }), marble);
-  roof.position.set(0, 34.4, -6.7);
-  acro.add(roof);
-  acro.position.set(14, 0, 170);
-  scene.add(acro);
-  const flood = new THREE.PointLight(0xffc27a, 1200, 90, 2);
-  flood.position.set(14, 40, 140);
-  scene.add(flood);
+  for (let i = 0; i < 17; i++) { const x = -33 + i * (66 / 16); colPos.push([x, -14], [x, 14]); }
+  for (let j = 1; j < 7; j++) { const z = -14 + j * 4; colPos.push([-33, z], [33, z]); }
+  const cols = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.9, 1.0, 10.4, 12), marbleMat, colPos.length);
+  colPos.forEach(([x, z], i) => cols.setMatrixAt(i, M(x, 8.2, z)));
+  parth.add(cols);
+  const entab = new THREE.Mesh(new THREE.BoxGeometry(70, 2.6, 31), marbleMat); entab.position.y = 14.7; parth.add(entab);
+  const ped = new THREE.Shape(); ped.moveTo(-15.5, 0); ped.lineTo(15.5, 0); ped.lineTo(0, 4); ped.closePath();
+  const roofP = new THREE.Mesh(new THREE.ExtrudeGeometry(ped, { depth: 70, bevelEnabled: false }), marbleMat);
+  roofP.rotation.y = Math.PI / 2; roofP.position.set(-35, 16, 0); parth.add(roofP);
+  parth.position.set(acX, 70, acZ - 10);
+  parth.rotation.y = 0.12;
+  scene.add(parth);
+  const [lyX, lyZ] = DATA.landmarks.lycabettus;
+  const lyc = new THREE.Mesh(new THREE.ConeGeometry(320, 230, 14), std(0x4a5440, { flatShading: true }));
+  lyc.position.set(lyX, 115, lyZ); scene.add(lyc);
+  const chapel = new THREE.Mesh(new THREE.BoxGeometry(10, 8, 14), new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xfff4dc, emissiveIntensity: 1.4 }));
+  chapel.position.set(lyX, 232, lyZ); scene.add(chapel);
+  nightMats.glass.push(chapel.material);
 
-  // ---------- Δημαρχείο: νεοκλασικό, με κολόνες και αέτωμα ----------
-  const hall = new THREE.Group();
-  const hallMat = std(0xe0c48e, { emissive: 0x000000 });
-  const hallBody = new THREE.Mesh(new THREE.BoxGeometry(8.4, 6, 6), hallMat);
-  hallBody.position.y = 3.18;
-  hall.add(hallBody);
-  for (let k = -3.4; k <= 3.41; k += 1.36) {
-    const col = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.24, 5.4, 12), std(0xfff1d6));
-    col.position.set(k, 2.9, -3.4);
-    col.castShadow = true;
-    hall.add(col);
+  // =====================================================================
+  // Δημαρχείο: το πραγματικό περίγραμμα, με κολόνες στην πρόσοψη της Αθηνάς
+  // =====================================================================
+  const hallMat = std(0xe0c48e, { emissive: 0x000000, side: THREE.DoubleSide });
+  const hallRing = DATA.hall.pts;
+  const hb = { pos: [], nrm: [], uv: [] }, hr = { pos: [], nrm: [] };
+  addWalls(hallRing, DATA.hall.h, hb);
+  polygonFill(hallRing, DATA.hall.h, hr);
+  meshFrom(hb.pos, hb.nrm, hb.uv, hallMat);
+  meshFrom(hr.pos, hr.nrm, null, hallMat);
+  const END = R.A2[R.A2.length - 1];
+  let bestEdge = null;
+  for (let i = 0; i < hallRing.length; i++) {
+    const a = hallRing[i], b = hallRing[(i + 1) % hallRing.length];
+    const mx = (a[0] + b[0]) / 2, mz = (a[1] + b[1]) / 2, d = Math.hypot(mx - END[0], mz - END[1]);
+    if (Math.hypot(b[0] - a[0], b[1] - a[1]) > 10 && (!bestEdge || d < bestEdge.d)) bestEdge = { a, b, d };
   }
-  const hp = new THREE.Shape();
-  hp.moveTo(-4.4, 0); hp.lineTo(4.4, 0); hp.lineTo(0, 1.5); hp.closePath();
-  const hallPed = new THREE.Mesh(new THREE.ExtrudeGeometry(hp, { depth: 6.8, bevelEnabled: false }), std(0xfff1d6));
-  hallPed.position.set(0, 6.18, -3.8);
-  hall.add(hallPed);
-  hall.traverse((o) => { if (o.isMesh) { o.castShadow = o.receiveShadow = true; } });
-  hall.position.set(HALL.x, 0, HALL.z + 1.2);
-  scene.add(hall);
-  const hallLight = new THREE.PointLight(0xffd27a, 0, 30, 2);
-  hallLight.position.set(HALL.x, 5, HALL.z - 8);
+  if (bestEdge) {
+    const { a, b } = bestEdge, L = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    const ux = (b[0] - a[0]) / L, uz = (b[1] - a[1]) / L;
+    let nx = -uz, nz = ux;
+    if ((END[0] - a[0]) * nx + (END[1] - a[1]) * nz < 0) { nx = -nx; nz = -nz; }
+    const colMat = std(0xfff1d6);
+    for (let d = L * 0.2; d <= L * 0.8; d += 2.4) {
+      const c = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.38, 8, 12), colMat);
+      c.position.set(a[0] + ux * d + nx * 1.4, 4, a[1] + uz * d + nz * 1.4);
+      c.castShadow = true;
+      scene.add(c);
+    }
+  }
+  const hallLight = new THREE.PointLight(0xffd27a, 0, 60, 2);
+  hallLight.position.set(END[0], 7, END[1]);
   scene.add(hallLight);
 
-  // ---------- Διαδρομές: φωτεινές λωρίδες πάνω στο πεζοδρόμιο ----------
-  // Ο πεζός περπατάει στη γραμμή x ή z = 16k ± 3 και περνάει απέναντι από τις διαβάσεις.
-  const v = (x, z) => new THREE.Vector3(x, 0, z);
-  const S = v(3, -40), DP = v(3, 13), D = v(HALL.x, 35);
-  const pathA1 = [S, DP];
-  const pathA2 = [DP, v(3, 35), D];
-  const pathB = [DP, v(19, 13), v(19, 35), D];
+  // =====================================================================
+  // Διαδρομές
+  // =====================================================================
   const ROUTE = new THREE.Color(0x6ff2cf).multiplyScalar(2.2);
   const OLD = new THREE.Color(0x4a5368);
   function makeRoute(points) {
-    const g = new THREE.Group();
-    const mat = new THREE.MeshBasicMaterial({ color: ROUTE.clone(), transparent: true });
-    for (let i = 0; i < points.length - 1; i++) {
-      const a = points[i], b = points[i + 1];
-      const strip = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.03, a.distanceTo(b) + 0.7), mat);
-      strip.position.set((a.x + b.x) / 2, CURB + 0.03, (a.z + b.z) / 2);
-      strip.rotation.y = Math.atan2(b.x - a.x, b.z - a.z);
-      g.add(strip);
-    }
-    g.userData.mat = mat;
-    scene.add(g);
-    return g;
+    const out = { pos: [], nrm: [] };
+    ribbon(points, 0.8, 0.08, out);
+    const mat = new THREE.MeshBasicMaterial({ color: ROUTE.clone(), transparent: true, side: THREE.DoubleSide });
+    const mesh = meshFrom(out.pos, out.nrm, null, mat, { shadow: false });
+    mesh.userData.mat = mat;
+    return mesh;
   }
-  const routeA1 = makeRoute(pathA1), routeA2 = makeRoute(pathA2), routeB = makeRoute(pathB);
+  const V = ([x, z]) => new THREE.Vector3(x, 0, z);
+  const A1 = R.A1.map(V), A2 = R.A2.map(V), B = R.B.map(V);
+  const routeA1 = makeRoute(R.A1), routeA2 = makeRoute(R.A2), routeB = makeRoute(R.B);
 
-  // ---------- Εμπόδιο: σκαλωσιά με κόκκινες-λευκές μπάρες ----------
-  const obstacle = new THREE.Group();
-  const pole = std(0x9aa0a8, { metalness: 0.7, roughness: 0.35 });
-  for (const x of [-1.4, 1.4]) for (const z of [0, 1.4]) {
-    const p = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 4, 6), pole);
-    p.position.set(x, 2, z);
-    obstacle.add(p);
-  }
-  for (const y of [1.3, 2.6, 3.9]) {
-    const deck = new THREE.Mesh(new THREE.BoxGeometry(3, 0.08, 1.6), std(0x8a6a44));
-    deck.position.set(0, y, 0.7);
-    obstacle.add(deck);
-  }
-  const net = new THREE.Mesh(new THREE.PlaneGeometry(3, 4), std(0xff7a3a, { transparent: true, opacity: 0.35, side: THREE.DoubleSide, emissive: 0x401000 }));
-  net.position.set(0, 2, 1.45);
-  obstacle.add(net);
-  const red = std(0xff3b30, { emissive: 0xff2010, emissiveIntensity: 0.8 });
-  const white = std(0xf4f4f4);
-  for (let i = 0; i < 6; i++) {
-    const seg = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.22, 0.1), i % 2 ? white : red);
-    seg.position.set(-1.25 + i * 0.5, 0.9, -0.45);
-    obstacle.add(seg);
-  }
-  obstacle.traverse((o) => { if (o.isMesh) o.castShadow = true; });
-  // Η σκαλωσιά κλείνει όλο το πλάτος του πεζοδρομίου, ακουμπώντας στην πρόσοψη.
-  obstacle.position.set(3.1, CURB, 24);
-  scene.add(obstacle);
-
-  // ---------- Δείκτες για τη διαφάνεια 4 ----------
-  function makePin(hex) {
-    const color = new THREE.Color(hex).multiplyScalar(1.8);
-    const g = new THREE.Group();
-    const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 4, 8), new THREE.MeshBasicMaterial({ color }));
-    stem.position.y = 2;
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.55, 20, 14), new THREE.MeshBasicMaterial({ color }));
-    head.position.y = 4.3;
-    const ring = new THREE.Mesh(new THREE.RingGeometry(0.8, 1.05, 40), new THREE.MeshBasicMaterial({ color, transparent: true, side: THREE.DoubleSide }));
-    ring.rotation.x = -Math.PI / 2;
-    ring.position.y = 0.08;
-    g.add(stem, head, ring);
-    g.userData.ring = ring;
-    scene.add(g);
-    return g;
-  }
-  const pinProject = makePin(0xff5b4f); pinProject.position.set(3.1, 4.4, 24);
-  const pinReport = makePin(0x6ff2cf); pinReport.position.set(-13, CURB, -20);
-  const pinPlace = makePin(0xffd27a); pinPlace.position.set(HALL.x, 7.9, HALL.z + 1.2);
-  const pins = [pinProject, pinReport, pinPlace];
-
-  // ---------- Ο πεζός: τουρίστας με σακίδιο, ακουστικά οστεο-αγωγής και λευκό μπαστούνι ----------
-  const person = makePerson();
-  const walker = person.root;
-  scene.add(walker);
-
-  function makePerson() {
-    const root = new THREE.Group();
-    const skin = std(0xd9a67e), shirt = std(0x2f6fd6), pants = std(0x2b3142), shoe = std(0x1b1b1f), hair = std(0x2a1c14);
-    const capsule = (r, len, mat) => {
-      const m = new THREE.Mesh(new THREE.CapsuleGeometry(r, len, 6, 12), mat);
-      m.castShadow = true;
-      return m;
-    };
-    function limb(upperLen, lowerLen, r, upperMat, lowerMat) {
-      const top = new THREE.Group();
-      const upper = capsule(r, upperLen, upperMat);
-      upper.position.y = -upperLen / 2;
-      const joint = new THREE.Group();
-      joint.position.y = -upperLen - r * 0.5;
-      const lower = capsule(r * 0.9, lowerLen, lowerMat);
-      lower.position.y = -lowerLen / 2;
-      joint.add(lower);
-      top.add(upper, joint);
-      return { top, joint, end: lowerLen };
-    }
-
-    const hips = new THREE.Group();
-    hips.position.y = 0.98;
-    root.add(hips);
-
-    const torso = capsule(0.19, 0.42, shirt);
-    torso.position.y = 0.36;
-    torso.scale.set(1.2, 1, 0.75);
-    hips.add(torso);
-    const pelvis = capsule(0.16, 0.08, pants);
-    pelvis.scale.set(1.3, 1, 0.8);
-    hips.add(pelvis);
-
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.13, 20, 16), skin);
-    head.position.y = 0.86;
-    const neck = capsule(0.05, 0.06, skin);
-    neck.position.y = 0.7;
-    const hairCap = new THREE.Mesh(new THREE.SphereGeometry(0.137, 20, 12, 0, Math.PI * 2, 0, Math.PI * 0.55), hair);
-    hairCap.position.y = 0.875;
-    hairCap.rotation.x = -0.25;
-    // Ακουστικά οστεο-αγωγής: λεπτή στεφάνη πίσω από το κεφάλι, με μαξιλαράκια μπροστά από τα αυτιά.
-    const band = new THREE.Mesh(new THREE.TorusGeometry(0.135, 0.012, 6, 24, Math.PI), std(0x111318, { metalness: 0.5 }));
-    band.position.set(0, 0.84, -0.02);
-    band.rotation.set(-1.75, 0, 0);
-    const pads = [-1, 1].map((s) => {
-      const p = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.05, 0.035), std(0x6ff2cf, { emissive: 0x6ff2cf, emissiveIntensity: 0.8 }));
-      p.position.set(s * 0.13, 0.84, 0.04);
-      return p;
-    });
-    hips.add(head, neck, hairCap, band, ...pads);
-
-    const pack = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.38, 0.15), std(0xc9772f));
-    pack.position.set(0, 0.4, -0.2);
-    pack.castShadow = true;
-    hips.add(pack);
-
-    const legL = limb(0.4, 0.4, 0.075, pants, pants);
-    const legR = limb(0.4, 0.4, 0.075, pants, pants);
-    legL.top.position.set(-0.1, -0.02, 0);
-    legR.top.position.set(0.1, -0.02, 0);
-    for (const leg of [legL, legR]) {
-      const foot = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.07, 0.26), shoe);
-      foot.position.set(0, -leg.end - 0.06, 0.06);
-      foot.castShadow = true;
-      leg.joint.add(foot);
-      hips.add(leg.top);
-    }
-
-    const armL = limb(0.27, 0.25, 0.055, shirt, skin);
-    const armR = limb(0.27, 0.25, 0.055, shirt, skin);
-    armL.top.position.set(-0.27, 0.58, 0);
-    armR.top.position.set(0.27, 0.58, 0);
-    hips.add(armL.top, armR.top);
-
-    // Το μπαστούνι: λευκό, με κόκκινη ζώνη και μύτη, χτισμένο κατά μήκος του -y και μετά στραμμένο.
-    const cane = new THREE.Group();
-    const stick = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 1.2, 8), std(0xffffff, { emissive: 0x555555 }));
-    stick.position.y = -0.6;
-    const band2 = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.22, 8), std(0xff3b30));
-    band2.position.y = -1.0;
-    const tip = new THREE.Mesh(new THREE.SphereGeometry(0.025, 8, 6), std(0x222222));
-    tip.position.y = -1.2;
-    const grip = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.14, 8), std(0x15161a));
-    grip.position.y = -0.04;
-    cane.add(stick, band2, tip, grip);
-    cane.traverse((o) => { if (o.isMesh) o.castShadow = true; });
-    root.add(cane);
-
-    const hand = new THREE.Vector3(0.24, 0.86, 0.36);
-    const down = new THREE.Vector3(0, -1, 0);
-    function setCane(sweep) {
-      const tipPos = new THREE.Vector3(sweep, 0.03, 1.2);
-      const dir = tipPos.clone().sub(hand);
-      cane.position.copy(hand);
-      cane.scale.y = dir.length() / 1.2;
-      cane.quaternion.setFromUnitVectors(down, dir.normalize());
-    }
-
-    let phase = 0, amount = 0;
-    function animate(dt, moving) {
-      amount += ((moving ? 1 : 0) - amount) * Math.min(1, dt * 6);
-      if (moving) phase += dt * 7.5;
-      const s = Math.sin(phase) * amount;
-      legL.top.rotation.x = s * 0.55;
-      legR.top.rotation.x = -s * 0.55;
-      legL.joint.rotation.x = Math.max(0, Math.sin(phase + 1.4)) * 0.7 * amount;
-      legR.joint.rotation.x = Math.max(0, Math.sin(phase + 1.4 + Math.PI)) * 0.7 * amount;
-      armL.top.rotation.x = -s * 0.45;
-      armL.joint.rotation.x = -0.25;
-      armR.top.rotation.x = -0.75;
-      armR.joint.rotation.x = -0.35;
-      armR.top.rotation.z = 0.12;
-      hips.position.y = 0.98 + Math.abs(Math.cos(phase)) * 0.035 * amount;
-      torso.rotation.y = s * 0.08;
-      setCane(Math.sin(phase * 0.5) * 0.38 * amount);
-    }
-    animate(0, false);
-    return { root, animate };
-  }
-
-  // ---------- Περπάτημα πάνω σε πολυγραμμή ----------
-  let walk = null;
   function pathLength(p) { let L = 0; for (let i = 0; i < p.length - 1; i++) L += p[i].distanceTo(p[i + 1]); return L; }
   function pointAt(p, d) {
     for (let i = 0; i < p.length - 1; i++) {
       const seg = p[i].distanceTo(p[i + 1]);
       if (d <= seg || i === p.length - 2) {
-        const t = Math.min(1, d / seg);
+        const t = seg > 0 ? Math.min(1, d / seg) : 0;
         return { pos: p[i].clone().lerp(p[i + 1], t), dir: p[i + 1].clone().sub(p[i]).normalize() };
       }
       d -= seg;
     }
+    return { pos: p[p.length - 1].clone(), dir: new THREE.Vector3(0, 0, -1) };
   }
-  function walkAlong(points, speed, onDone, triggers = []) {
-    walk = { points, d: 0, len: pathLength(points), speed, onDone, triggers };
+  function slice(p, from, to) {
+    const out = [pointAt(p, from).pos];
+    let acc = 0;
+    for (let i = 0; i < p.length - 1; i++) {
+      acc += p[i].distanceTo(p[i + 1]);
+      if (acc > from && acc < to) out.push(p[i + 1].clone());
+    }
+    out.push(pointAt(p, to).pos);
+    return out;
   }
+  const lenA1 = pathLength(A1);
+
+  // =====================================================================
+  // Σκαλωσιά πάνω στο πεζοδρόμιο της Αθηνάς
+  // =====================================================================
+  const obstacle = new THREE.Group();
+  const pole = std(0x9aa0a8, { metalness: 0.7, roughness: 0.35 });
+  for (const x of [-1.5, 1.5]) for (const z of [-0.6, 0.9]) {
+    const p = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 6, 6), pole);
+    p.position.set(x, 3, z); obstacle.add(p);
+  }
+  for (const y of [1.3, 2.7, 4.1, 5.5]) {
+    const deck = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.08, 1.6), std(0x8a6a44));
+    deck.position.set(0, y, 0.15); obstacle.add(deck);
+  }
+  const net = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 6), std(0xff7a3a, { transparent: true, opacity: 0.4, side: THREE.DoubleSide, emissive: 0x401000 }));
+  net.position.set(0, 3, -0.7); obstacle.add(net);
+  const red = std(0xff3b30, { emissive: 0xff2010, emissiveIntensity: 0.9 }), white = std(0xf4f4f4);
+  for (let i = 0; i < 6; i++) {
+    const seg = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.22, 0.1), i % 2 ? white : red);
+    seg.position.set(-1.25 + i * 0.5, 0.95, -1.2); obstacle.add(seg);
+  }
+  obstacle.traverse((o) => { if (o.isMesh) o.castShadow = true; });
+  const obstAt = pointAt(A2, R.obstacleAt);
+  obstacle.position.copy(obstAt.pos);
+  obstacle.rotation.y = Math.atan2(obstAt.dir.x, obstAt.dir.z);
+  scene.add(obstacle);
+
+  // =====================================================================
+  // Φανάρια πεζών εκεί όπου η διαδρομή περνάει απέναντι από δρόμο
+  // =====================================================================
+  const roadSegs = [];
+  for (const r of roads) if (CAR_ROADS.has(r.cls) && r.cls !== "service") for (let i = 0; i < r.pts.length - 1; i++) roadSegs.push([r.pts[i], r.pts[i + 1], r.w]);
+  function segHit(p1, p2, q1, q2) {
+    const d1x = p2.x - p1.x, d1z = p2.z - p1.z, d2x = q2[0] - q1[0], d2z = q2[1] - q1[1];
+    const den = d1x * d2z - d1z * d2x;
+    if (Math.abs(den) < 1e-9) return null;
+    const tx = q1[0] - p1.x, tz = q1[1] - p1.z;
+    const t = (tx * d2z - tz * d2x) / den, u = (tx * d1z - tz * d1x) / den;
+    return t >= 0 && t <= 1 && u >= 0 && u <= 1 ? t : null;
+  }
+  function crossingsOn(path) {
+    const out = [];
+    let acc = 0;
+    for (let i = 0; i < path.length - 1; i++) {
+      const a = path[i], b = path[i + 1], L = a.distanceTo(b);
+      for (const [q1, q2, w] of roadSegs) {
+        const t = segHit(a, b, q1, q2);
+        if (t === null) continue;
+        const d = acc + t * L;
+        if (!out.some((c) => Math.abs(c.d - d) < 8)) out.push({ d, w, pos: a.clone().lerp(b, t), dir: b.clone().sub(a).normalize() });
+      }
+      acc += L;
+    }
+    return out.sort((x, y) => x.d - y.d);
+  }
+  const lights = [];
+  const lightPole = std(0x2b2e36, { metalness: 0.6, roughness: 0.4 }), lightBox = std(0x1a1c22);
+  const RED_ON = new THREE.Color(0xff2a20).multiplyScalar(3), RED_OFF = new THREE.Color(0x330000);
+  const GREEN_ON = new THREE.Color(0x2bff7a).multiplyScalar(3), GREEN_OFF = new THREE.Color(0x002a10);
+  function makeLight(c) {
+    const near = lights.find((l) => l.at.distanceTo(c.pos) < 5);
+    if (near) return near;
+    const g = new THREE.Group();
+    const side = new THREE.Vector3(-c.dir.z, 0, c.dir.x);
+    const stand = c.pos.clone().addScaledVector(c.dir, -(c.w / 2 + 0.9)).addScaledVector(side, 1.1);
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.07, 3.2, 8), lightPole); pole.position.y = 1.6;
+    const box = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.74, 0.22), lightBox); box.position.y = 3.0;
+    const redM = new THREE.MeshBasicMaterial({ color: RED_OFF.clone() }), greenM = new THREE.MeshBasicMaterial({ color: GREEN_ON.clone() });
+    const red = new THREE.Mesh(new THREE.CircleGeometry(0.12, 18), redM); red.position.set(0, 3.17, 0.115);
+    const green = new THREE.Mesh(new THREE.CircleGeometry(0.12, 18), greenM); green.position.set(0, 2.83, 0.115);
+    // Το κουτί με το ηχητικό σήμα, στο ύψος του χεριού.
+    const button = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.22, 0.1), std(0xe0b23c)); button.position.set(0, 1.15, 0.08);
+    pole.castShadow = box.castShadow = true;
+    g.add(pole, box, red, green, button);
+    g.position.copy(stand);
+    g.rotation.y = Math.atan2(-c.dir.x, -c.dir.z);
+    scene.add(g);
+    const l = { at: c.pos.clone(), set(state) { redM.color.copy(state === "red" ? RED_ON : RED_OFF); greenM.color.copy(state === "green" ? GREEN_ON : GREEN_OFF); } };
+    lights.push(l);
+    return l;
+  }
+  // Τα φανάρια στήνονται μία φορά, για τις διαδρομές του προβλήματος και της λύσης.
+  const pathProblem = [...A1, ...A2.slice(1)], pathSolution = [...A1, ...B.slice(1)];
+  [pathProblem, pathSolution].forEach((p) => crossingsOn(p).forEach(makeLight));
+  // Στάσεις στα φανάρια: κόκκινο όσο πλησιάζει ο πεζός, πράσινο λίγο μετά.
+  function lightTriggers(path, { voice = false, short = () => false } = {}) {
+    let spoken = false;
+    return crossingsOn(path).map((c) => {
+      const light = makeLight(c);
+      return { at: Math.max(0.5, c.d - (c.w / 2 + 1.3)), fn: () => {
+        light.set("red");
+        const quick = short(c.d);
+        walk.pause = quick ? 1.1 : 2.8;
+        if (voice && !spoken && !quick) {
+          spoken = true;
+          say("Διάβαση με φανάρι και ηχητικό σήμα. Το πράσινο ανάβει σε περίπου 3 δευτερόλεπτα.");
+        }
+        walk.resume = () => light.set("green");
+      } };
+    });
+  }
+
+  // =====================================================================
+  // Άνθρωποι: ο χρήστης με το λευκό μπαστούνι, οι περαστικοί, ο παίκτης, ο Θησέας
+  // =====================================================================
+  function makePerson(opts = {}) {
+    const o = { shirt: 0x2f6fd6, pants: 0x2b3142, hair: 0x2a1c14, skin: 0xd9a67e, cane: false, pack: false, ears: false, phone: false, statue: false, shadow: true, ...opts };
+    const root = new THREE.Group();
+    const marbleS = std(0xf3ead8, { emissive: 0xffb84a, emissiveIntensity: 0.35, roughness: 0.5 });
+    const pick = (c) => (o.statue ? marbleS : std(c));
+    const skin = pick(o.skin), shirt = pick(o.shirt), pants = pick(o.pants), shoe = pick(0x1b1b1f), hair = pick(o.hair);
+    const capsule = (r, len, mat) => { const m = new THREE.Mesh(new THREE.CapsuleGeometry(r, len, 5, 10), mat); m.castShadow = o.shadow; return m; };
+    function limb(upperLen, lowerLen, r, upperMat, lowerMat) {
+      const top = new THREE.Group();
+      const upper = capsule(r, upperLen, upperMat); upper.position.y = -upperLen / 2;
+      const joint = new THREE.Group(); joint.position.y = -upperLen - r * 0.5;
+      const lower = capsule(r * 0.9, lowerLen, lowerMat); lower.position.y = -lowerLen / 2;
+      joint.add(lower); top.add(upper, joint);
+      return { top, joint, end: lowerLen };
+    }
+    const hips = new THREE.Group(); hips.position.y = 0.98; root.add(hips);
+    const torso = capsule(0.19, 0.42, shirt); torso.position.y = 0.36; torso.scale.set(1.2, 1, 0.75); hips.add(torso);
+    const pelvis = capsule(0.16, 0.08, pants); pelvis.scale.set(1.3, 1, 0.8); hips.add(pelvis);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.13, 18, 14), skin); head.position.y = 0.86; head.castShadow = o.shadow;
+    const neck = capsule(0.05, 0.06, skin); neck.position.y = 0.7;
+    const hairCap = new THREE.Mesh(new THREE.SphereGeometry(0.137, 18, 10, 0, Math.PI * 2, 0, Math.PI * 0.55), hair);
+    hairCap.position.y = 0.875; hairCap.rotation.x = -0.25;
+    hips.add(head, neck, hairCap);
+    if (o.statue) {
+      // Ο Θησέας: χλαμύδα στους ώμους και κράνος, σαν άγαλμα που ζωντανεύει.
+      const cape = new THREE.Mesh(new THREE.ConeGeometry(0.36, 0.9, 12, 1, true), marbleS);
+      cape.position.set(0, 0.32, -0.08); hips.add(cape);
+      const crest = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.12, 0.3), marbleS);
+      crest.position.set(0, 1.03, -0.02); hips.add(crest);
+    }
+    if (o.ears) {
+      const band = new THREE.Mesh(new THREE.TorusGeometry(0.135, 0.012, 6, 24, Math.PI), std(0x111318, { metalness: 0.5 }));
+      band.position.set(0, 0.84, -0.02); band.rotation.set(-1.75, 0, 0);
+      hips.add(band);
+      for (const s of [-1, 1]) {
+        const p = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.05, 0.035), new THREE.MeshBasicMaterial({ color: new THREE.Color(0x6ff2cf).multiplyScalar(2) }));
+        p.position.set(s * 0.13, 0.84, 0.04); hips.add(p);
+      }
+    }
+    if (o.pack) {
+      const pack = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.38, 0.15), std(0xc9772f));
+      pack.position.set(0, 0.4, -0.2); pack.castShadow = o.shadow; hips.add(pack);
+    }
+    const legL = limb(0.4, 0.4, 0.075, pants, pants), legR = limb(0.4, 0.4, 0.075, pants, pants);
+    legL.top.position.set(-0.1, -0.02, 0); legR.top.position.set(0.1, -0.02, 0);
+    for (const leg of [legL, legR]) {
+      const foot = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.07, 0.26), shoe);
+      foot.position.set(0, -leg.end - 0.06, 0.06); leg.joint.add(foot); hips.add(leg.top);
+    }
+    const armL = limb(0.27, 0.25, 0.055, shirt, skin), armR = limb(0.27, 0.25, 0.055, shirt, skin);
+    armL.top.position.set(-0.27, 0.58, 0); armR.top.position.set(0.27, 0.58, 0);
+    hips.add(armL.top, armR.top);
+    let phoneMesh = null;
+    if (o.phone) {
+      phoneMesh = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.15, 0.012), new THREE.MeshBasicMaterial({ color: new THREE.Color(0xbfe9ff).multiplyScalar(1.6) }));
+      phoneMesh.position.set(0, -0.27, 0.05);
+      armR.joint.add(phoneMesh);
+    }
+    let cane = null, setCane = () => {};
+    if (o.cane) {
+      cane = new THREE.Group();
+      const stick = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 1.2, 8), std(0xffffff, { emissive: 0x555555 })); stick.position.y = -0.6;
+      const band2 = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.22, 8), std(0xff3b30)); band2.position.y = -1.0;
+      const tip = new THREE.Mesh(new THREE.SphereGeometry(0.025, 8, 6), std(0x222222)); tip.position.y = -1.2;
+      const grip = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.14, 8), std(0x15161a)); grip.position.y = -0.04;
+      cane.add(stick, band2, tip, grip);
+      cane.traverse((m) => { if (m.isMesh) m.castShadow = true; });
+      root.add(cane);
+      const hand = new THREE.Vector3(0.24, 0.86, 0.36), down = new THREE.Vector3(0, -1, 0);
+      setCane = (sweep) => {
+        const dir = new THREE.Vector3(sweep, 0.03, 1.2).sub(hand);
+        cane.position.copy(hand); cane.scale.y = dir.length() / 1.2;
+        cane.quaternion.setFromUnitVectors(down, dir.normalize());
+      };
+    }
+    let phase = rand() * 6, amount = 0;
+    function animate(dt, moving, rate = 1) {
+      amount += ((moving ? 1 : 0) - amount) * Math.min(1, dt * 6);
+      if (moving) phase += dt * 7.5 * rate;
+      const s = Math.sin(phase) * amount;
+      legL.top.rotation.x = s * 0.55; legR.top.rotation.x = -s * 0.55;
+      legL.joint.rotation.x = Math.max(0, Math.sin(phase + 1.4)) * 0.7 * amount;
+      legR.joint.rotation.x = Math.max(0, Math.sin(phase + 1.4 + Math.PI)) * 0.7 * amount;
+      armL.top.rotation.x = -s * 0.45; armL.joint.rotation.x = -0.25;
+      if (o.cane) { armR.top.rotation.x = -0.75; armR.joint.rotation.x = -0.35; armR.top.rotation.z = 0.12; }
+      else if (o.phone) { armR.top.rotation.x = -0.9; armR.joint.rotation.x = -1.2; }
+      else { armR.top.rotation.x = s * 0.45; armR.joint.rotation.x = -0.25; }
+      hips.position.y = 0.98 + Math.abs(Math.cos(phase)) * 0.035 * amount;
+      torso.rotation.y = s * 0.08;
+      setCane(Math.sin(phase * 0.5) * 0.38 * amount);
+    }
+    animate(0, false);
+    return { root, animate, phoneMesh };
+  }
+
+  const user = makePerson({ cane: true, pack: true, ears: true });
+  const walker = user.root;
+  scene.add(walker);
+
+  // Περαστικοί στους πεζόδρομους και στα πεζοδρόμια γύρω από τη διαδρομή.
+  const shirts = [0xc23b3b, 0x3b8c5a, 0xe0b23c, 0x6a4fb3, 0xf2efe6, 0x2d2d2d, 0x3f88c5, 0xd77a4a];
+  const crowdLines = roads.filter((r) => ["pedestrian", "residential", "tertiary", "living_street"].includes(r.cls) && r.pts.length >= 2)
+    .map((r) => {
+      const off = r.cls === "pedestrian" ? (rand() - 0.5) * 3 : (r.w / 2 + 1.0) * (rand() < 0.5 ? 1 : -1);
+      const pts = r.pts.map(([x, z], i, arr) => {
+        const a = arr[Math.max(0, i - 1)], b = arr[Math.min(arr.length - 1, i + 1)];
+        const dx = b[0] - a[0], dz = b[1] - a[1], L = Math.hypot(dx, dz) || 1;
+        return new THREE.Vector3(x - dz / L * off, 0, z + dx / L * off);
+      });
+      return { pts, len: pathLength(pts) };
+    })
+    .filter((l) => l.len > 40 && Math.hypot(l.pts[0].x - 20, l.pts[0].z + 20) < 330);
+  const crowd = [];
+  for (let i = 0; i < 26 && crowdLines.length; i++) {
+    const line = crowdLines[Math.floor(rand() * crowdLines.length)];
+    const p = makePerson({ shirt: shirts[i % shirts.length], pants: [0x2b3142, 0x4a3a2a, 0x22262f, 0x6b6f7a][i % 4], hair: [0x2a1c14, 0x5a3a20, 0x111111, 0x8a7a6a][i % 4], skin: [0xd9a67e, 0xb98a62, 0xf0c7a0, 0x8a5a3a][i % 4], shadow: false, pack: rand() < 0.3 });
+    scene.add(p.root);
+    crowd.push({ p, line, d: rand() * line.len, dir: rand() < 0.5 ? 1 : -1, speed: 1.1 + rand() * 0.5 });
+  }
+
+  // Αυτοκίνητα στους μεγάλους δρόμους.
+  const carLines = roads.filter((r) => ["primary", "secondary", "tertiary"].includes(r.cls)).map((r) => {
+    const pts = r.pts.map(([x, z]) => new THREE.Vector3(x, 0, z));
+    return { pts, len: pathLength(pts), w: r.w };
+  }).filter((l) => l.len > 90);
+  const carColors = [0xf2f2f2, 0x1d1d22, 0xb02a2a, 0x2a4fa0, 0x9aa0a8, 0xe3c33a, 0xf2f2f2];
+  const cars = [];
+  for (let i = 0; i < 26 && carLines.length; i++) {
+    const g = new THREE.Group();
+    const paintC = carColors[i % carColors.length];
+    const taxi = i % 5 === 0;
+    const body = new THREE.Mesh(new THREE.BoxGeometry(1.75, 0.7, 4.2), std(taxi ? 0xf2d23c : paintC, { metalness: 0.5, roughness: 0.35 }));
+    body.position.y = 0.6; body.castShadow = true;
+    const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.55, 0.55, 2.2), std(0x1a2230, { metalness: 0.6, roughness: 0.2 }));
+    cabin.position.set(0, 1.2, -0.2);
+    const head = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.15, 0.05), new THREE.MeshBasicMaterial({ color: new THREE.Color(0xfff2d0).multiplyScalar(2.5) }));
+    head.position.set(0, 0.65, 2.11);
+    const tail = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.15, 0.05), new THREE.MeshBasicMaterial({ color: new THREE.Color(0xff2a20).multiplyScalar(2) }));
+    tail.position.set(0, 0.7, -2.11);
+    g.add(body, cabin, head, tail);
+    if (taxi) { const sign = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.18, 0.2), new THREE.MeshBasicMaterial({ color: new THREE.Color(0xffe08a).multiplyScalar(1.6) })); sign.position.y = 1.56; g.add(sign); }
+    scene.add(g);
+    const line = carLines[Math.floor(rand() * carLines.length)];
+    cars.push({ g, line, d: rand() * line.len, dir: rand() < 0.5 ? 1 : -1, speed: 6 + rand() * 4 });
+  }
+
+  // Περιστέρια στην πλατεία Μοναστηρακίου.
+  const [sx0, sz0] = R.A1[0];
+  const pigeons = [];
+  for (let i = 0; i < 36; i++) {
+    const a = rand() * Math.PI * 2, r = 4 + rand() * 12;
+    const x = sx0 - 8 + Math.cos(a) * r, z = sz0 - 6 + Math.sin(a) * r;
+    if (!nearRoute(x, z, 1.2)) pigeons.push({ x, z, ph: rand() * 10, ang: rand() * 6.3 });
+  }
+  const pigeonMesh = new THREE.InstancedMesh(new THREE.SphereGeometry(0.13, 8, 6), std(0x8a8fa0), pigeons.length);
+  pigeonMesh.castShadow = true;
+  scene.add(pigeonMesh);
+
+  // Ο παίκτης του παιχνιδιού και ο Θησέας.
+  const player = makePerson({ phone: true, shirt: 0xe0b23c, pants: 0x22262f, hair: 0x5a3a20, skin: 0xf0c7a0 });
+  scene.add(player.root);
+  const theseus = new THREE.Group();
+  const statue = makePerson({ statue: true, shadow: true });
+  statue.root.scale.setScalar(1.25);
+  statue.root.position.y = 0.5;
+  const pedestal = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.5, 1.1), std(0xe8dcc4));
+  pedestal.position.y = 0.25;
+  theseus.add(pedestal, statue.root);
+  const labelCanvas = document.createElement("canvas");
+  labelCanvas.width = 256; labelCanvas.height = 64;
+  const lg = labelCanvas.getContext("2d");
+  lg.fillStyle = "rgba(12,16,34,0.85)"; lg.fillRect(0, 0, 256, 64);
+  lg.fillStyle = "#ffd27a"; lg.font = "bold 34px Manrope, sans-serif"; lg.textAlign = "center"; lg.fillText("Θησέας", 128, 44);
+  const labelTex = new THREE.CanvasTexture(labelCanvas); labelTex.colorSpace = THREE.SRGBColorSpace;
+  const label = new THREE.Sprite(new THREE.SpriteMaterial({ map: labelTex, transparent: true }));
+  label.scale.set(1.6, 0.4, 1); label.position.y = 3.3;
+  theseus.add(label);
+  scene.add(theseus);
+  const scanCone = new THREE.Mesh(new THREE.ConeGeometry(1.6, 5, 24, 1, true), new THREE.MeshBasicMaterial({ color: new THREE.Color(0x6ff2cf).multiplyScalar(1.5), transparent: true, opacity: 0.18, side: THREE.DoubleSide, depthWrite: false }));
+  scene.add(scanCone);
+  const spark = new THREE.Mesh(new THREE.SphereGeometry(0.35, 16, 12), new THREE.MeshBasicMaterial({ color: new THREE.Color(0xffd27a).multiplyScalar(3) }));
+  scene.add(spark);
+
+  // Ετικέτες, ήρωες του παιχνιδιού και το σημάδι μιας αποστολής.
+  function makeLabel(text, color = "#ffd27a", w = 4, h = 0.75) {
+    const c = document.createElement("canvas");
+    c.width = 1024; c.height = 192;
+    const g = c.getContext("2d");
+    g.fillStyle = "rgba(12,16,34,0.88)"; g.fillRect(0, 0, 1024, 192);
+    g.strokeStyle = color; g.lineWidth = 6; g.strokeRect(3, 3, 1018, 186);
+    g.fillStyle = color; g.font = "bold 64px Manrope, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle";
+    g.fillText(text, 512, 98, 980);
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, transparent: true, depthTest: false }));
+    s.scale.set(w, h * (w / 4), 1); s.renderOrder = 10;
+    scene.add(s);
+    return s;
+  }
+  const latLngToXZ = (lat, lng) => [(lng - DATA.origin[1]) * 111320 * Math.cos(DATA.origin[0] * Math.PI / 180), -(lat - DATA.origin[0]) * 110540];
+  function makeHero(name, lat, lng) {
+    const g = new THREE.Group(), inner = new THREE.Group();
+    const st = makePerson({ statue: true });
+    st.root.scale.setScalar(1.25); st.root.position.y = 0.5;
+    const ped = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.5, 1.1), std(0xe8dcc4)); ped.position.y = 0.25;
+    inner.add(ped, st.root); g.add(inner);
+    const [x, z] = latLngToXZ(lat, lng);
+    g.position.set(x, 0, z); g.scale.setScalar(6);
+    scene.add(g);
+    const label = makeLabel(name, "#ffd27a", 34);
+    label.position.set(x, 26, z);
+    return { g, inner, label };
+  }
+  const heroes = [
+    makeHero("Θησέας · Θησείο", 37.9757, 23.7217),
+    makeHero("Σωκράτης · Αρχαία Αγορά", 37.9752, 23.7232),
+  ];
+  const athenaLabel = makeLabel("Αθηνά · Ακρόπολη", "#ffd27a", 40);
+  athenaLabel.position.set(acX, 112, acZ);
+  const marker = new THREE.Group();
+  const gem = new THREE.Mesh(new THREE.OctahedronGeometry(0.45), new THREE.MeshBasicMaterial({ color: new THREE.Color(0xffd27a).multiplyScalar(2.2) }));
+  const halo = new THREE.Mesh(new THREE.RingGeometry(0.7, 0.85, 40), new THREE.MeshBasicMaterial({ color: new THREE.Color(0xffd27a).multiplyScalar(1.8), transparent: true, side: THREE.DoubleSide }));
+  halo.rotation.x = -Math.PI / 2; halo.position.y = -1.4;
+  marker.add(gem, halo); scene.add(marker);
+  const aiAsk = makeLabel("Πρόταση: σκαλωσιά στο πεζοδρόμιο", "#6ff2cf", 4.4);
+  const aiYes = makeLabel("Σωστό ✓ · η εικόνα δεν κρατήθηκε", "#6ff2cf", 4.4);
+
+  // Τα κτίρια του ευρύτερου κέντρου, ως επίπεδο αποτύπωμα, και οι τέσσερις Προσβάσιμες Διαδρομές του Δήμου.
+  const fp = { pos: [], nrm: [] };
+  for (const flat of DATA.footprints || []) polygonFill(pairs(flat), 0.05, fp);
+  meshFrom(fp.pos, fp.nrm, null, std(0x7d7466, { side: THREE.DoubleSide }), { shadow: false });
+  const cityColors = [0xffd27a, 0x6ff2cf, 0xff9a5b, 0xa9b8ff];
+  const cityCentre = new THREE.Vector3();
+  let cityCount = 0;
+  const cityRoutes = (DATA.cityRoutes || []).map((c, k) => {
+    const out = { pos: [], nrm: [] };
+    ribbon(c.pts, 7, 0.3 + k * 0.02, out);
+    const mat = new THREE.MeshBasicMaterial({ color: new THREE.Color(cityColors[k]).multiplyScalar(2), transparent: true, opacity: 0.95, side: THREE.DoubleSide, depthWrite: false });
+    const mesh = meshFrom(out.pos, out.nrm, null, mat, { shadow: false });
+    const mid = c.pts[Math.floor(c.pts.length / 2)];
+    const label = makeLabel(`${c.name} · ${(c.lengthM / 1000).toFixed(1).replace(".", ",")} χλμ.`, "#" + new THREE.Color(cityColors[k]).getHexString(), 160);
+    label.position.set(mid[0], 80, mid[1]);
+    for (const [x, z] of c.pts) { cityCentre.x += x; cityCentre.z += z; cityCount++; }
+    mesh.visible = false; label.visible = false;
+    return { mesh, label };
+  });
+  if (cityCount) cityCentre.divideScalar(cityCount);
+
+  // Δείκτες: έργο (κόκκινο), αναφορά πολίτη (τιρκουάζ), προορισμός (χρυσό).
+  function makePin(hex) {
+    const color = new THREE.Color(hex).multiplyScalar(1.8);
+    const g = new THREE.Group();
+    const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 6, 8), new THREE.MeshBasicMaterial({ color })); stem.position.y = 3;
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.9, 20, 14), new THREE.MeshBasicMaterial({ color })); head.position.y = 6.5;
+    const ring = new THREE.Mesh(new THREE.RingGeometry(1.2, 1.6, 40), new THREE.MeshBasicMaterial({ color, transparent: true, side: THREE.DoubleSide }));
+    ring.rotation.x = -Math.PI / 2; ring.position.y = 0.12;
+    g.add(stem, head, ring); g.userData.ring = ring;
+    scene.add(g);
+    return g;
+  }
+  const pinProject = makePin(0xff5b4f); pinProject.position.copy(obstacle.position).setY(6.2);
+  const pinReport = makePin(0x6ff2cf);
+  const reportAt = pointAt(B, pathLength(B) * 0.55).pos;
+  pinReport.position.set(reportAt.x + 3, 0, reportAt.z + 3);
+  const pinPlace = makePin(0xffd27a); pinPlace.position.set(DATA.hallCentre[0], DATA.hall.h, DATA.hallCentre[1]);
+  const pins = [pinProject, pinReport, pinPlace];
+
+  // Κύκλοι ήχου γύρω από το κεφάλι όταν μιλάει η φωνή στα ακουστικά.
+  const rings = [];
+  function soundRings(target) {
+    for (let k = 0; k < 3; k++) {
+      const m = new THREE.Mesh(new THREE.RingGeometry(0.2, 0.24, 40), new THREE.MeshBasicMaterial({ color: new THREE.Color(0x6ff2cf).multiplyScalar(2), transparent: true, side: THREE.DoubleSide, depthWrite: false }));
+      m.rotation.x = -Math.PI / 2;
+      scene.add(m);
+      rings.push({ m, target, t: -k * 0.35 });
+    }
+  }
+  const say = (text, opts = {}) => {
+    window.ionSay && window.ionSay(text, opts.speak);
+    if (opts.rings !== false && walker.visible) soundRings(walker);
+  };
+
+  // Το κινητό στη γωνία της οθόνης.
+  const phoneEl = document.getElementById("phone");
+  const phoneText = document.getElementById("phone-text"), phoneDist = document.getElementById("phone-dist"), phoneBox = document.getElementById("phone-instr");
+  const phoneBrand = phoneEl.querySelector(".brand"), phoneDest = phoneEl.querySelector(".dest"), phoneBtns = [...phoneEl.querySelectorAll(".btns span")];
+  function setPhone({ brand = "ION", destLabel = "Προορισμός", dest = "Δημαρχείο Αθηνών", text = "", small = "", alert = false, btns = ["Ξανά η οδηγία", "Πού είμαι;", "Κλήση 112"], chosen = -1 } = {}) {
+    phoneBrand.textContent = brand;
+    const b = document.createElement("b"); b.textContent = dest;
+    phoneDest.replaceChildren(document.createTextNode(destLabel), b);
+    phoneText.textContent = text; phoneDist.textContent = small;
+    phoneBox.classList.toggle("alert", alert);
+    phoneBtns.forEach((el, k) => {
+      el.textContent = btns[k] || ""; el.hidden = !btns[k];
+      el.classList.toggle("sos", btns[k] === "Κλήση 112");
+      el.classList.toggle("chosen", k === chosen);
+    });
+  }
+  function phone(text, dist, alert = false) { setPhone({ text, small: dist, alert }); }
+
+  // =====================================================================
+  // Περπάτημα, κάμερα, σκηνές
+  // =====================================================================
+  let walk = null;
+  function walkAlong(points, speedFn, onDone, triggers = []) {
+    walk = { points, d: 0, len: pathLength(points), speedFn: typeof speedFn === "number" ? () => speedFn : speedFn, onDone, triggers, pause: 0, resume: null };
+  }
+  let playerWalk = null;
   let targetYaw = 0;
-  function place(p, dir, snap = false) {
-    walker.position.set(p.x, CURB, p.z);
-    if (dir) targetYaw = Math.atan2(dir.x, dir.z);
-    if (snap) walker.rotation.y = targetYaw;
+  function place(obj, p, dir, snap = false) {
+    obj.position.set(p.x, 0, p.z);
+    if (obj === walker) { if (dir) targetYaw = Math.atan2(dir.x, dir.z); if (snap) walker.rotation.y = targetYaw; }
+    else if (dir) obj.rotation.y = Math.atan2(dir.x, dir.z);
   }
 
-  // ---------- Κάμερα ----------
-  const camPos = new THREE.Vector3(70, 80, -70), camLook = new THREE.Vector3();
-  let shot = { pos: new THREE.Vector3(55, 70, -60), look: new THREE.Vector3(0, 0, 0), follow: null, orbit: false };
+  const camPos = new THREE.Vector3(), camLook = new THREE.Vector3();
+  let shot = {};
+  let flight = null;
   const timers = [];
-  const later = (ms, fn) => timers.push(setTimeout(fn, reduceMotion ? Math.min(ms, 300) : ms));
-
+  const later = (ms, fn) => timers.push(setTimeout(fn, reduceMotion ? Math.min(ms, 400) : ms));
   function setRoute(r, visible, color = ROUTE, opacity = 1) {
-    r.visible = visible;
-    r.userData.mat.color.copy(color);
-    r.userData.mat.opacity = opacity;
+    r.visible = visible; r.userData.mat.color.copy(color); r.userData.mat.opacity = opacity;
   }
+  const centre = new THREE.Vector3(20, 0, -20);
+
   function reset() {
     timers.splice(0).forEach(clearTimeout);
-    walk = null;
+    walk = null; flight = null;
     [routeA1, routeA2, routeB].forEach((r) => setRoute(r, false));
-    obstacle.visible = false;
-    obstacle.scale.setScalar(1);
+    obstacle.visible = true; obstacle.scale.setScalar(1);
     pins.forEach((p) => (p.visible = false));
-    hallLight.intensity = 0;
-    hallMat.emissive.setHex(0x000000);
-    place(S, new THREE.Vector3(0, 0, 1), true);
+    hallLight.intensity = 0; hallMat.emissive.setHex(0x000000);
+    walker.visible = true; player.root.visible = false; theseus.visible = false; scanCone.visible = false; spark.visible = false;
+    playerWalk = null; marker.visible = false; aiAsk.visible = false; aiYes.visible = false; athenaLabel.visible = false;
+    heroes.forEach((x) => { x.g.visible = false; x.label.visible = false; });
+    cityRoutes.forEach((c) => { c.mesh.visible = false; c.label.visible = false; });
+    setPhone();
+    rings.splice(0).forEach((r) => scene.remove(r.m));
+    phoneEl.hidden = true;
   }
   function arrive() {
-    hallLight.intensity = 60;
-    hallMat.emissive.setHex(0x3a2a08);
-    say("Έφτασες στην είσοδο του Δημαρχείου.");
+    hallLight.intensity = 400; hallMat.emissive.setHex(0x3a2a08);
+    phone("Έφτασες. Η είσοδος είναι μπροστά σου.", "Δημαρχείο Αθηνών");
+    say("Έφτασες στο Δημαρχείο. Η είσοδος είναι μπροστά σου.");
   }
 
-  function enter(i) {
+  function enter(i, slideEl) {
     reset();
     if (i === 0) {
-      shot = { pos: new THREE.Vector3(78, 70, -78), look: new THREE.Vector3(8, 6, 40), orbit: true };
-      [routeA1, routeB].forEach((r) => setRoute(r, true, ROUTE, 0.6));
-      place(D, new THREE.Vector3(0, 0, 1), true);
-      hallLight.intensity = 40;
+      // Κινηματογραφική αρχή: από τον Παρθενώνα, πάνω από την πόλη, ως το Μοναστηράκι.
+      todTarget = 0.2;
+      [routeA1, routeB].forEach((r) => setRoute(r, true, ROUTE, 0.7));
+      place(walker, B[B.length - 1], new THREE.Vector3(0, 0, -1), true);
+      const ax = acX, az = acZ;
+      const posPts = [
+        new THREE.Vector3(ax + 60, 110, az + 75), new THREE.Vector3(ax - 30, 150, az - 220),
+        new THREE.Vector3(-150, 170, 480), new THREE.Vector3(-260, 150, 300),
+      ];
+      const lookPts = [
+        new THREE.Vector3(ax, 75, az - 10), new THREE.Vector3(ax, 40, az - 450),
+        new THREE.Vector3(-30, 0, 120), centre.clone(),
+      ];
+      flight = { pos: new THREE.CatmullRomCurve3(posPts), look: new THREE.CatmullRomCurve3(lookPts), t: 0, dur: 7 };
+      shot = { orbit: { centre, R: Math.hypot(-260 - centre.x, 300 - centre.z), H: 150, a: Math.atan2(-260 - centre.x, 300 - centre.z) } };
+      if (!reduceMotion) { slideEl.classList.add("waiting"); later(3500, () => slideEl.classList.remove("waiting")); }
     }
     if (i === 1) {
+      todTarget = 0.45;
+      const startD = Math.max(0, lenA1 - 40);
+      const path = [...slice(A1, startD, lenA1), ...slice(A2, 0, R.obstacleAt - 1.6).slice(1)];
+      place(walker, path[0], path[1].clone().sub(path[0]), true);
       shot = { follow: { back: 5, up: 2.4, ahead: 6 } };
-      obstacle.visible = true;
-      walkAlong([S, v(3, 22.5)], 1.6 * 3, () => {
-        say("Τακ. Σκαλωσιά. Το πεζοδρόμιο είναι κλειστό.");
-        later(1600, () => walkAlong([v(3, 22.5), v(3, 16)], 2.6));
-      });
+      walkAlong(path, 3, () => {
+        say("Τακ. Σκαλωσιά. Το πεζοδρόμιο είναι κλειστό.", { rings: false });
+        later(1700, () => {
+          const back = slice(A2, 0, R.obstacleAt - 1.6).reverse();
+          walkAlong(slice(back, 0, 9), 2);
+        });
+      }, lightTriggers(path));
     }
     if (i === 2) {
-      shot = { follow: { back: 8, up: 5, ahead: 14 } };
-      setRoute(routeA1, true);
-      setRoute(routeA2, true);
-      walkAlong([S, DP, ...pathB.slice(1)], 1.6 * 3, arrive, [
-        { at: 30, fn: () => {
-          obstacle.visible = true;
+      todTarget = 0.55;
+      phoneEl.hidden = false;
+      setRoute(routeA1, true); setRoute(routeA2, true);
+      const startD = Math.max(0, lenA1 - 70);
+      const path = [...slice(A1, startD, lenA1), ...B.slice(1)];
+      const lenP = pathLength(path), lenB = pathLength(B), toDP = lenA1 - startD;
+      place(walker, path[0], path[1].clone().sub(path[0]), true);
+      phone(`Συνέχισε ευθεία στην ${R.obstacleStreet}`, `${Math.round(R.lengthA)} μ. ως το Δημαρχείο`);
+      // Κανονικό βάδισμα, μετά «γρήγορη κίνηση» στην παράκαμψη, και ξανά κανονικό στο τέλος.
+      const speedFn = (d) => (d < toDP + 30 || d > lenP - 30 ? 3.2 : 28);
+      shot = { follow: { back: 7, up: 4, ahead: 14 }, followFast: { back: 16, up: 30, ahead: 30 }, fastFrom: toDP + 30, fastTo: lenP - 30 };
+      walkAlong(path, speedFn, arrive, [
+        { at: Math.max(4, toDP - 40), fn: () => {
+          setRoute(routeA2, true, OLD, 0.45); setRoute(routeB, true);
           obstacle.scale.setScalar(0.01);
-          setRoute(routeA2, true, OLD, 0.5);
-          setRoute(routeB, true);
-          say("Στην επόμενη γωνία στρίψε δεξιά. Το πεζοδρόμιο μπροστά είναι κλειστό.");
+          phone(`Στην επόμενη γωνία στρίψε ${R.turn}`, "Το πεζοδρόμιο μπροστά είναι κλειστό", true);
+          say(`Στην ${R.obstacleStreet} το πεζοδρόμιο μπροστά είναι κλειστό. Στην επόμενη γωνία στρίψε ${R.turn}.`);
         } },
+        { at: toDP + 6, fn: () => phone("Συνέχισε ευθεία", `${Math.round(lenB)} μ. ως το Δημαρχείο`) },
+        { at: lenP - 20, fn: () => phone("Ο προορισμός είναι μπροστά σου", "20 μ.") },
+        ...lightTriggers(path, { voice: true, short: (d) => d > toDP + 30 && d < lenP - 30 }),
       ]);
     }
     if (i === 3) {
-      shot = { pos: new THREE.Vector3(-46, 54, -50), look: new THREE.Vector3(8, 0, 10) };
-      obstacle.visible = true;
-      setRoute(routeA1, true, ROUTE, 0.7);
-      setRoute(routeB, true, ROUTE, 0.7);
-      pins.forEach((p) => (p.visible = true));
-      place(D, new THREE.Vector3(0, 0, 1), true);
-      hallLight.intensity = 40;
+      // Οι τέσσερις Προσβάσιμες Διαδρομές του Δήμου φωτίζονται πάνω στην πόλη.
+      todTarget = 0.5;
+      walker.visible = false;
+      cityRoutes.forEach((c, k) => later(300 + k * 700, () => { c.mesh.visible = true; c.label.visible = true; }));
+      shot = { pos: cityCentre.clone().add(new THREE.Vector3(-350, 1550, -1250)), look: cityCentre.clone() };
     }
     if (i === 4) {
-      shot = { pos: new THREE.Vector3(-20, 32, -55), look: new THREE.Vector3(12, 18, 150), orbit: false };
-      setRoute(routeA1, true, ROUTE, 0.8);
-      setRoute(routeB, true, ROUTE, 0.8);
-      place(D, new THREE.Vector3(0, 0, 1), true);
-      hallLight.intensity = 60;
-      hallMat.emissive.setHex(0x3a2a08);
+      // Από πού το ξέρει η πόλη: οι τρεις πηγές πάνω στον χάρτη, και η διαδρομή που άλλαξε.
+      todTarget = 0.6;
+      walker.visible = false;
+      setRoute(routeA1, true, ROUTE, 0.8); setRoute(routeA2, true, OLD, 0.45); setRoute(routeB, true);
+      pins.forEach((p) => (p.visible = true));
+      shot = { pos: new THREE.Vector3(obstacle.position.x - 140, 150, obstacle.position.z + 160), look: new THREE.Vector3(obstacle.position.x + 10, 0, obstacle.position.z - 60) };
     }
-    if (reduceMotion) snapCamera();
+    if (i === 5) {
+      // Πώς παίζεται: ο δημότης πάει ως την αποστολή, απαντάει, παίρνει σφραγίδα, και ο χάρτης αλλάζει.
+      todTarget = 0.62;
+      walker.visible = false;
+      setRoute(routeA1, true, ROUTE, 0.8); setRoute(routeA2, true, ROUTE, 0.8);
+      const stopAt = R.obstacleAt - 7.5;
+      const pts = slice(A2, Math.max(0, R.obstacleAt - 28), stopAt);
+      const end = pointAt(A2, stopAt);
+      player.root.visible = true;
+      place(player.root, pts[0], pts[1].clone().sub(pts[0]));
+      const mAt = pointAt(A2, R.obstacleAt - 5.2).pos;
+      marker.position.set(mAt.x, 1.8, mAt.z); marker.visible = true;
+      const side = new THREE.Vector3(-end.dir.z, 0, end.dir.x);
+      shot = { pos: end.pos.clone().addScaledVector(side, 9).addScaledVector(end.dir, -9).setY(4), look: end.pos.clone().addScaledVector(end.dir, -4).setY(1.4) };
+      phoneEl.hidden = false;
+      setPhone({ brand: "ION Play", destLabel: "Αποστολή κοντά σου", dest: "Πεζοδρόμιο της Αθηνάς", text: "Περπάτα ως την αποστολή", small: "3 αποστολές γύρω σου", btns: ["Κάμερα", "Το άλμπουμ μου"] });
+      playerWalk = { pts, d: 0, len: pathLength(pts), done: () => {
+        scanCone.visible = true;
+        scanCone.position.copy(end.pos).addScaledVector(end.dir, 2.7).setY(1.45);
+        scanCone.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), end.dir.clone().negate());
+        setPhone({ brand: "ION Play", destLabel: "Αποστολή", dest: "Πεζοδρόμιο της Αθηνάς", text: "Είναι ελεύθερο το πεζοδρόμιο εδώ;", small: "Απάντησε με ένα πάτημα", btns: ["Ναι", "Όχι, εμπόδιο"] });
+        later(1700, () => {
+          setPhone({ brand: "ION Play", destLabel: "Αποστολή", dest: "Πεζοδρόμιο της Αθηνάς", text: "Όχι, εμπόδιο", small: "", btns: ["Ναι", "Όχι, εμπόδιο"], chosen: 1 });
+        });
+        later(2600, () => {
+          marker.visible = false;
+          setRoute(routeA2, true, OLD, 0.45); setRoute(routeB, true);
+          setPhone({ brand: "ION Play", destLabel: "Σφραγίδα", dest: "Μπήκε στο άλμπουμ σου", text: "Η διαδρομή ήδη το αποφεύγει", small: "Με δεύτερο δημότη, ο δρόμος κλείνει για όλους", btns: ["Το άλμπουμ μου", "Επόμενη αποστολή"] });
+          window.ionSay && window.ionSay("Σφραγίδα! Από την πρώτη αναφορά, η διαδρομή αποφεύγει το εμπόδιο.", false);
+        });
+        later(5200, () => {
+          pinProject.visible = true;
+          setPhone({ brand: "ION Play", destLabel: "Επιβεβαίωση", dest: "2 δημότες", text: "Ο δρόμος έκλεισε για όλους", small: "Στον χάρτη του ION και στον χάρτη προσβασιμότητας", btns: ["Το άλμπουμ μου", "Επόμενη αποστολή"] });
+          window.ionSay && window.ionSay("Δεύτερος δημότης το επιβεβαίωσε. Ο δρόμος έκλεισε για όλους.", false);
+        });
+      } };
+    }
+    if (i === 6) {
+      // Η κάμερα βλέπει μαζί σου: το μοντέλο προτείνει, ο άνθρωπος αποφασίζει.
+      todTarget = 0.66;
+      walker.visible = false;
+      setRoute(routeA2, true, ROUTE, 0.8);
+      const pAt = pointAt(A2, R.obstacleAt - 6);
+      player.root.visible = true;
+      place(player.root, pAt.pos, pAt.dir);
+      const side = new THREE.Vector3(-pAt.dir.z, 0, pAt.dir.x);
+      shot = { pos: pAt.pos.clone().addScaledVector(pAt.dir, -3.2).addScaledVector(side, 1.1).setY(2.3), look: obstacle.position.clone().setY(2.2) };
+      scanCone.visible = true;
+      scanCone.position.copy(pAt.pos).addScaledVector(pAt.dir, 2.7).setY(1.45);
+      scanCone.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), pAt.dir.clone().negate());
+      aiAsk.position.copy(obstacle.position).setY(6.9);
+      aiYes.position.copy(obstacle.position).setY(6.9);
+      phoneEl.hidden = false;
+      setPhone({ brand: "ION Play · Κάμερα", destLabel: "Κοιτάζει…", dest: "Πεζοδρόμιο της Αθηνάς", text: "Στρέψε την κάμερα στο πεζοδρόμιο", small: "", btns: ["Σαρώστε"] });
+      later(1300, () => {
+        aiAsk.visible = true;
+        setPhone({ brand: "ION Play · Κάμερα", destLabel: "Το μοντέλο προτείνει", dest: "Σκαλωσιά στο πεζοδρόμιο", text: "Σωστό;", small: "Αποφασίζεις εσύ", btns: ["Σωστό", "Λάθος"] });
+      });
+      later(3300, () => {
+        aiAsk.visible = false; aiYes.visible = true;
+        setPhone({ brand: "ION Play · Κάμερα", destLabel: "Το μοντέλο προτείνει", dest: "Σκαλωσιά στο πεζοδρόμιο", text: "Μπήκε στον χάρτη", small: "Η εικόνα δεν κρατήθηκε", btns: ["Σωστό", "Λάθος"], chosen: 0 });
+      });
+    }
+    if (i === 7) {
+      // Η πόλη κερδίζει: ιστορία στον δρόμο και εισιτήρια για τον πολιτισμό.
+      todTarget = 0.75;
+      walker.visible = false;
+      setRoute(routeA1, true, ROUTE, 0.7); setRoute(routeB, true, ROUTE, 0.7);
+      shot = { pos: new THREE.Vector3(170, 270, 40), look: new THREE.Vector3(-250, 0, 520) };
+      phoneEl.hidden = false;
+      setPhone({ brand: "ION Athens Card", destLabel: "Περιπατητής_42 · Επίπεδο 2", dest: "60 πόντοι", text: "Ξεκλείδωσες έκπτωση στο θέατρο", small: "Η γειτονιά σου: 80% χαρτογραφημένη (παράδειγμα)", btns: ["Τα δώρα μου", "Το άλμπουμ μου"] });
+      heroes.forEach((x, k) => later(700 + k * 1300, () => { x.g.visible = true; x.label.visible = true; x.inner.scale.y = 0.01; }));
+      later(3400, () => { athenaLabel.visible = true; });
+    }
+    if (i === 8) {
+      todTarget = 0.85;
+      walker.visible = false;
+      setRoute(routeA1, true, ROUTE, 0.8); setRoute(routeB, true, ROUTE, 0.8);
+      hallLight.intensity = 400; hallMat.emissive.setHex(0x3a2a08);
+      shot = { orbit: { centre: new THREE.Vector3(0, 0, 250), R: 820, H: 330, a: 2.6, speed: 0.025 }, lookAt: new THREE.Vector3(-20, 40, 300) };
+    }
+    if (i === 9) {
+      todTarget = 1;
+      walker.visible = false;
+      setRoute(routeA1, true, ROUTE, 0.9); setRoute(routeB, true, ROUTE, 0.9);
+      hallLight.intensity = 400; hallMat.emissive.setHex(0x3a2a08);
+      shot = { pos: new THREE.Vector3(acX + 160, 120, acZ - 420), look: new THREE.Vector3(acX, 70, acZ) };
+    }
+    if (reduceMotion) { flight = null; todTarget && (tod = todTarget); snapCamera(); }
   }
 
   function targetCamera() {
     if (shot.follow) {
-      const yaw = walker.rotation.y;
-      const fwd = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw));
-      const pos = walker.position.clone().addScaledVector(fwd, -shot.follow.back);
-      pos.y += shot.follow.up;
-      const look = walker.position.clone().addScaledVector(fwd, shot.follow.ahead);
-      look.y += 1.2;
+      const fast = walk && shot.followFast && walk.d > shot.fastFrom && walk.d < shot.fastTo;
+      const f = fast ? shot.followFast : shot.follow;
+      const yaw = walker.rotation.y, fwd = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw));
+      const pos = walker.position.clone().addScaledVector(fwd, -f.back); pos.y += f.up;
+      const look = walker.position.clone().addScaledVector(fwd, f.ahead); look.y += 1.2;
       return { pos, look };
+    }
+    if (shot.orbit) {
+      const o = shot.orbit;
+      return { pos: new THREE.Vector3(o.centre.x + Math.sin(o.a) * o.R, o.H, o.centre.z + Math.cos(o.a) * o.R), look: shot.lookAt || o.centre };
     }
     return { pos: shot.pos, look: shot.look };
   }
-  function snapCamera() { const t = targetCamera(); camPos.copy(t.pos); camLook.copy(t.look); }
+  function snapCamera() {
+    if (flight) return;
+    const t = targetCamera(); camPos.copy(t.pos); camLook.copy(t.look);
+  }
 
-  // ---------- Εφέ λάμψης για τα φώτα και τη διαδρομή ----------
+  // =====================================================================
+  // Λάμψη και βρόχος σχεδίασης
+  // =====================================================================
   const composer = new EffectComposer(renderer);
   composer.addPass(new RenderPass(scene, camera));
-  const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.55, 0.5, 0.9);
-  composer.addPass(bloom);
+  composer.addPass(new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.55, 0.5, 0.88));
   composer.addPass(new OutputPass());
-
   function resize() {
     const w = innerWidth, h = innerHeight;
-    renderer.setSize(w, h, false);
-    composer.setSize(w, h);
-    camera.aspect = w / h;
-    camera.updateProjectionMatrix();
+    renderer.setSize(w, h, false); composer.setSize(w, h);
+    camera.aspect = w / h; camera.updateProjectionMatrix();
   }
   addEventListener("resize", resize);
   resize();
+  applyTod(tod);
 
   const clock = new THREE.Clock();
-  let orbitAngle = 0;
+  const tmp = new THREE.Matrix4(), tmpV = new THREE.Vector3();
   renderer.setAnimationLoop(() => {
-    const dt = Math.min(clock.getDelta(), 0.05);
-    const t = clock.elapsedTime;
+    const dt = Math.min(clock.getDelta(), 0.05), t = clock.elapsedTime;
 
-    if (walk) {
-      walk.d = Math.min(walk.len, walk.d + walk.speed * dt);
+    // Ώρα της μέρας: αλλάζει ομαλά από διαφάνεια σε διαφάνεια.
+    if (Math.abs(todTarget - tod) > 0.002) { tod += (todTarget - tod) * Math.min(1, dt * 0.8); applyTod(tod); }
+
+    // Ο χρήστης.
+    let rate = 1;
+    if (walk && walk.pause > 0) {
+      walk.pause -= dt;
+      if (walk.pause <= 0 && walk.resume) { const r = walk.resume; walk.resume = null; r(); }
+    } else if (walk) {
+      const sp = walk.speedFn(walk.d);
+      rate = Math.min(3, sp / 3);
+      walk.d = Math.min(walk.len, walk.d + sp * dt);
       const { pos, dir } = pointAt(walk.points, walk.d);
-      place(pos, dir);
+      place(walker, pos, dir);
       for (const tr of walk.triggers) if (!tr.done && walk.d >= tr.at) { tr.done = true; tr.fn(); }
       if (walk.d >= walk.len) { const done = walk.onDone; walk = null; if (done) done(); }
     }
-    let dy = targetYaw - walker.rotation.y;
-    dy = Math.atan2(Math.sin(dy), Math.cos(dy));
+    let dy = targetYaw - walker.rotation.y; dy = Math.atan2(Math.sin(dy), Math.cos(dy));
     walker.rotation.y += dy * Math.min(1, dt * 8);
-    person.animate(dt, !!walk);
+    user.animate(dt, !!walk && !(walk.pause > 0), rate);
+    if (playerWalk) {
+      playerWalk.d = Math.min(playerWalk.len, playerWalk.d + 1.4 * dt);
+      const { pos, dir } = pointAt(playerWalk.pts, playerWalk.d);
+      place(player.root, pos, dir);
+      if (playerWalk.d >= playerWalk.len) { const f = playerWalk.done; playerWalk = null; if (f) f(); }
+    }
+    player.animate(dt, !!playerWalk);
+    heroes.forEach((x) => { if (x.g.visible && x.inner.scale.y < 1) x.inner.scale.y = Math.min(1, x.inner.scale.y + dt * 1.2); });
+    if (marker.visible) { gem.rotation.y += dt * 1.6; gem.position.y = Math.sin(t * 2) * 0.12; halo.scale.setScalar(1 + (t % 1) * 0.6); halo.material.opacity = 1 - (t % 1); }
 
-    if (obstacle.visible && obstacle.scale.x < 1) obstacle.scale.setScalar(Math.min(1, obstacle.scale.x + dt * 2.5));
+    // Περαστικοί και αυτοκίνητα.
+    for (const c of crowd) {
+      c.d += c.dir * c.speed * dt;
+      if (c.d > c.line.len) { c.d = c.line.len; c.dir = -1; }
+      if (c.d < 0) { c.d = 0; c.dir = 1; }
+      const { pos, dir } = pointAt(c.line.pts, c.d);
+      c.p.root.position.copy(pos);
+      c.p.root.rotation.y = Math.atan2(dir.x * c.dir, dir.z * c.dir);
+      c.p.animate(dt, true, c.speed / 1.3);
+    }
+    for (const c of cars) {
+      c.d += c.dir * c.speed * dt;
+      if (c.d > c.line.len || c.d < 0) { c.dir = -c.dir; c.d = Math.max(0, Math.min(c.line.len, c.d)); }
+      const { pos, dir } = pointAt(c.line.pts, c.d);
+      const fx = dir.x * c.dir, fz = dir.z * c.dir;
+      const lane = Math.min(1.8, c.line.w / 4);
+      c.g.position.set(pos.x - fz * lane, 0, pos.z + fx * lane);
+      c.g.rotation.y = Math.atan2(fx, fz);
+    }
+    pigeons.forEach((p, k) => {
+      const hop = Math.max(0, Math.sin(t * 3 + p.ph)) * 0.08;
+      tmp.compose(tmpV.set(p.x, 0.14 + hop, p.z), new THREE.Quaternion().setFromEuler(new THREE.Euler(0, p.ang, 0)), new THREE.Vector3(1, 0.8, 1.5));
+      pigeonMesh.setMatrixAt(k, tmp);
+    });
+    pigeonMesh.instanceMatrix.needsUpdate = true;
+
+    // Εφέ: σκαλωσιά που εμφανίζεται, δείκτες, κύκλοι ήχου, σάρωση, «σπίθα» δεδομένων.
+    if (obstacle.scale.x < 1) obstacle.scale.setScalar(Math.min(1, obstacle.scale.x + dt * 2.5));
+    if (theseus.visible && theseus.scale.y < 1) theseus.scale.y = Math.min(1, theseus.scale.y + dt * 1.5);
     pins.forEach((p, k) => {
       if (!p.visible) return;
       const s = 1 + ((t * 0.8 + k / 3) % 1) * 1.8;
-      p.userData.ring.scale.setScalar(s);
-      p.userData.ring.material.opacity = 1 - (s - 1) / 1.8;
+      p.userData.ring.scale.setScalar(s); p.userData.ring.material.opacity = 1 - (s - 1) / 1.8;
     });
-
-    let target = targetCamera();
-    if (shot.orbit && !reduceMotion) {
-      orbitAngle += dt * 0.05;
-      const r = Math.hypot(shot.pos.x, shot.pos.z);
-      target = { pos: new THREE.Vector3(Math.sin(orbitAngle + 2.4) * r, shot.pos.y, Math.cos(orbitAngle + 2.4) * r), look: shot.look };
+    for (let k = rings.length - 1; k >= 0; k--) {
+      const r = rings[k];
+      r.t += dt;
+      r.m.visible = r.t > 0;
+      r.m.position.copy(r.target.position).setY(1.86);
+      const s = 1 + Math.max(0, r.t) * 4;
+      r.m.scale.setScalar(s);
+      r.m.material.opacity = Math.max(0, 1 - r.t / 1.4);
+      if (r.t > 1.4) { scene.remove(r.m); rings.splice(k, 1); }
     }
-    const k = reduceMotion ? 1 : 1 - Math.pow(0.03, dt);
-    camPos.lerp(target.pos, k);
-    camLook.lerp(target.look, k);
+    if (scanCone.visible) scanCone.material.opacity = 0.12 + Math.abs(Math.sin(t * 4)) * 0.18;
+    if (spark.visible && spark.userData.from) {
+      const s = spark.userData;
+      s.t = Math.min(1, s.t + dt / 2.4);
+      spark.position.lerpVectors(s.from, s.to, s.t);
+      spark.position.y += Math.sin(s.t * Math.PI) * 60;
+      if (s.t >= 1) spark.visible = false;
+    }
+
+    // Κάμερα: πτήση, περιστροφή ή ακολουθία.
+    if (flight) {
+      flight.t = Math.min(1, flight.t + dt / flight.dur);
+      const e = flight.t < 0.5 ? 2 * flight.t * flight.t : 1 - Math.pow(-2 * flight.t + 2, 2) / 2;
+      camPos.copy(flight.pos.getPoint(e)); camLook.copy(flight.look.getPoint(e));
+      if (flight.t >= 1) flight = null;
+    } else {
+      if (shot.orbit && !reduceMotion) shot.orbit.a += dt * (shot.orbit.speed || 0.03);
+      const target = targetCamera();
+      const k = reduceMotion ? 1 : 1 - Math.pow(0.04, dt);
+      camPos.lerp(target.pos, k); camLook.lerp(target.look, k);
+    }
     camera.position.copy(camPos);
     camera.lookAt(camLook);
+
+    // Ο ήλιος ακολουθεί ό,τι κοιτάμε, ώστε οι σκιές να είναι πάντα καθαρές εκεί.
+    sun.target.position.copy(camLook).setY(0);
+    sun.position.copy(sun.target.position).add(tmpV.set(-140, 110, 60));
+    sun.target.updateMatrixWorld();
+
     composer.render();
   });
 
