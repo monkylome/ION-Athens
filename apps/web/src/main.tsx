@@ -45,7 +45,10 @@ function Home() {
 // It sends the few keys the stage listens for, and they are replayed here as ordinary key presses.
 window.addEventListener("message", (event) => {
   const key = (event.data as { ionKey?: unknown } | null)?.ionKey;
-  if (typeof key === "string" && ["Enter", "s", "c", "a", "o", "0", "1", "2"].includes(key)) window.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true }));
+  if (typeof key !== "string" || !["Enter", "s", "c", "a", "o", "0", "1", "2", "3"].includes(key)) return;
+  // The stage reads the physical key (event.code), so both are filled in.
+  const code = key === "Enter" ? "Enter" : /\d/.test(key) ? `Digit${key}` : `Key${key.toUpperCase()}`;
+  window.dispatchEvent(new KeyboardEvent("keydown", { key, code, bubbles: true }));
 });
 
 createRoot(document.getElementById("root")!).render(

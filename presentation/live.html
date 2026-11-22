@@ -11,7 +11,9 @@
   Keys (they work whichever frame was clicked last, as soon as the pointer leaves the app):
     Right, Space, PageDown   next slide          Left, PageUp   previous slide        R   replay the slide
     Enter   the app on the right advances (next step of the walkthrough, next act of the stage)
-    The arrows walk a short list of slides (?slides=1,2,6,3,9,11 by default, ?slides=all for every slide).
+    The right arrow runs the next cue of the story: it changes the slide, the screen of the app and presses the app's
+    keys, so the app moves by itself as the slides advance (?cues=off turns that off). Without cues,
+    the arrows walk a short list of slides (?slides=1,2,6,3,9,11 by default, ?slides=all for every slide).
     The page opens on the walkthrough (?view=1 for the game). With ?sync=on the app follows the slides instead.
     1   the game (/play)     2   the stage (/stage)     3   the camera scan (/play/scan)     4   the Serafeio walkthrough (/walkthrough)
     0   reload the app frame F   full screen
@@ -86,7 +88,34 @@
   var wanted = params.get("slides") || "1,2,6,3,9,11";
   var playlist = wanted === "all" ? null : wanted.split(",").map(Number).filter(Boolean);
   var at = 0;
+  // One key tells the whole story: each press of the right arrow runs the next cue, which may change the slide,
+  // change the screen of the app, and press keys inside the app, so the app moves by itself as the slides advance.
+  // ?cues=off gives the arrows back to the slides alone.
+  var cues = params.get("cues") === "off" || !playlist ? null : [
+    { slide: 1 },
+    { slide: 2, keys: ["Enter"] },             // the hall's card: two of seven known
+    { keys: ["Enter"] },                       // the question becomes a request
+    { slide: 6, view: "1" },                   // the game, live
+    { view: "4", keys: ["Enter"] },            // a citizen sees that someone needs the answer
+    { keys: ["Enter"] },                       // two citizens: seven of seven
+    { slide: 3, keys: ["Enter"] },             // the route
+    { keys: ["Enter"] },                       // arrival, the voice reads the card
+    { view: "2", keys: ["Enter"] },            // the stage: the walk starts
+    { keys: ["1"] },                           // a citizen reports an obstacle ahead
+    { keys: ["2"] },                           // a second confirms: the route changes
+    { slide: 9 },
+    { slide: 11 }
+  ];
+  var cue = 0;
+  function send(k) { app.contentWindow.postMessage(current === "4" ? { walkthroughKey: k } : { ionKey: k }, base); }
+  function run(c) {
+    if (c.slide) say({ ionGoto: c.slide });
+    var wait = 0;
+    if (c.view && c.view !== current) { open(c.view); if (c.view !== "4") wait = 3500; }
+    (c.keys || []).forEach(function (k, i) { setTimeout(function () { send(k); }, wait + i * 1500); });
+  }
   function step(by) {
+    if (cues && by > 0) { if (cue < cues.length - 1) run(cues[++cue]); return; }
     if (!playlist) { say(by > 0 ? "ion-next" : "ion-prev"); return; }
     at = Math.max(0, Math.min(playlist.length - 1, at + by));
     say({ ionGoto: playlist[at] });
@@ -94,7 +123,7 @@
 
   addEventListener("keydown", function (e) {
     // Enter advances the app on the right (the walkthrough's next step, the stage's next act); the arrows are always the slides.
-    if (e.key === "Enter") { e.preventDefault(); app.contentWindow.postMessage(current === "4" ? { walkthroughKey: "Enter" } : { ionKey: "Enter" }, base); }
+    if (e.key === "Enter") { e.preventDefault(); send("Enter"); }
     else if (["s", "S", "c", "C"].indexOf(e.key) >= 0 && current === "2") { app.contentWindow.postMessage({ ionKey: e.key.toLowerCase() }, base); }
     else if (["ArrowRight", "PageDown", " "].indexOf(e.key) >= 0) { e.preventDefault(); step(1); }
     else if (["ArrowLeft", "PageUp"].indexOf(e.key) >= 0) { e.preventDefault(); step(-1); }
