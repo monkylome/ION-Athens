@@ -581,6 +581,14 @@ function buildStage() {
     low: [col(0xf2a36b), col(0x2b2446)],
     sun: [col(0xffb27a), col(0x7f9cff)],
   };
+  // In the app's design system (the ion skin) the sky is black and the light neutral, so the city reads as white
+  // and grey on black instead of dusk colours beside a black and yellow app.
+  const ION_SKIN = window.top !== window || /[?&]skin=ion\b/.test(location.search);
+  if (ION_SKIN) {
+    TOD.top = [col(0x000000), col(0x000000)]; TOD.mid = [col(0x000000), col(0x000000)];
+    TOD.low = [col(0x161616), col(0x000000)]; TOD.sun = [col(0xffffff), col(0xffffff)];
+    hemi.color.set(0xffffff); hemi.groundColor.set(0x303030);
+  }
   let tod = 0.2, todTarget = 0.2;
   const nightMats = { windows: [], lamps: [], glass: [] };
   function applyTod(t) {
@@ -630,7 +638,7 @@ function buildStage() {
   // =====================================================================
   // Έδαφος, δρόμοι, πλατείες
   // =====================================================================
-  const ground = new THREE.Mesh(new THREE.PlaneGeometry(9000, 9000), std(0xa8a092, { roughness: 0.95 }));
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(9000, 9000), std(ION_SKIN ? 0x262626 : 0xa8a092, { roughness: 0.95 }));
   ground.rotation.x = -Math.PI / 2;
   ground.receiveShadow = true;
   scene.add(ground);
