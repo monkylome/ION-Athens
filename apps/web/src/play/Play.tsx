@@ -18,6 +18,7 @@ import { motion, useReducedMotion } from "motion/react";
 import { ArrowLeft, ArrowsIn, ArrowsOut, ArrowUp, BookOpen, Camera as CameraIcon, Eye, HandHeart, Info, Lifebuoy, ListBullets, MapPin, Microphone, Path, Scan, SpeakerHigh, SpeakerSlash, Ticket as TicketIcon, X } from "@phosphor-icons/react";
 import type { LngLat } from "@ion/core";
 import { cancelSpeech, speak } from "../voice/speech";
+import { useAutoPlay } from "./auto";
 import { ApiError, participantId, playApi } from "./api";
 import { Board, type Flash } from "./Board";
 import { Camera, cameraObstacle } from "./Camera";
@@ -71,6 +72,7 @@ export function Play() {
   const fakeParam = useMemo(() => parseFake(params.get("fake")), [params]);
   const preset = params.get("loop") ?? "acropolis";
   const demo = params.get("demo") === "1";
+  const auto = demo && params.get("auto") === "1";
   const fov = Number(params.get("fov")) > 10 ? Math.min(120, Number(params.get("fov"))) : CAMERA_FOV_DEG;
   const participant = useMemo(participantId, []);
   const reduced = useReducedMotion();
@@ -84,12 +86,12 @@ export function Play() {
     playApi.demoLoop(preset).then((loop) => {
       if (!current) return;
       if (!loop.start) { setStageFailed(true); return; }
-      const at: LngLat = loop.obstacle?.position ?? [loop.start.lng, loop.start.lat];
+      const at: LngLat = (!auto && loop.obstacle?.position) || [loop.start.lng, loop.start.lat];
       // Face the place the walk ends at, so the landmark is ahead.
       setStage({ at, heading: loop.destination ? bearingDeg(at, [loop.destination.lng, loop.destination.lat]) : 0 });
     }, () => { if (current) setStageFailed(true); });
     return () => { current = false; };
-  }, [demo, fakeParam, preset]);
+  }, [auto, demo, fakeParam, preset]);
   const staged = !!fakeParam || (demo && !stageFailed);
 
   const [voice, setVoice] = useState(() => stored("ion-play-voice") !== "off");
@@ -122,7 +124,7 @@ export function Play() {
   const [shownPoints, setShownPoints] = useState<number | null>(receipt?.before ?? null);
 
   const answered = useMemo(() => new Set(album.map((s) => s.id)), [album]);
-  const walk = useFakeWalk(stage?.at ?? null, stage?.heading ?? 0, !moment && !(sheet && !sheet.camera) && takeovers.length === 0 && panel === null);
+  const walk = useFakeWalk(stage?.at ?? null, stage?.heading ?? 0, !auto && !moment && !(sheet && !sheet.camera) && takeovers.length === 0 && panel === null);
   const real = usePosition(!staged);
   const position: Position = walk ? { point: walk.point, status: "fake", course: null } : real;
   const heading = useHeading(true, walk ? walk.heading : null, real.course);
@@ -403,7 +405,7 @@ export function Play() {
   }
   /** Tapping an object, a tile or the big action. In reach it is an encounter; from afar it is a direction, never a dead end. */
   function approach(n: Nearby, viaCamera: boolean) {
-    wake();
+    if (!auto) wake();
     setPanel(null);
     setAimId(n.mission.id);
     if (!n.reachable || answered.has(n.mission.id)) {
@@ -551,7 +553,11 @@ export function Play() {
   const scanParams = new URLSearchParams(params);
   if (walk && point) scanParams.set("fake", point.join(","));
   const scanUrl = "/play/scan?" + scanParams;
-  const tag = walk && demo ? "ΘΕΣΗ ΚΑΙ ΑΠΑΝΤΗΣΗ ΕΠΙΔΕΙΞΗΣ" : walk ? "ΘΕΣΗ ΕΠΙΔΕΙΞΗΣ" : demo ? "ΑΠΑΝΤΗΣΗ ΕΠΙΔΕΙΞΗΣ" : "";
+  const tag = auto ? "" : walk && demo ? "ΘΕΣΗ ΚΑΙ ΑΠΑΝΤΗΣΗ ΕΠΙΔΕΙΞΗΣ" : walk ? "ΘΕΣΗ ΕΠΙΔΕΙΞΗΣ" : demo ? "ΑΠΑΝΤΗΣΗ ΕΠΙΔΕΙΞΗΣ" : "";
+  useAutoPlay(auto, {
+    point, open, move:walk?.jump, approach:n=>approach(n,false), answer:()=>answer("yes"),
+    close:closeSheet, dismiss:nextTakeover, currentMission:target?.mission.id, takeover:!!takeover,
+  });
   const labels = tag ? <p className="pl-tag">{tag}</p> : null;
   // More questions about the same spot: the encounter offers the next one, unless a level or a ticket is waiting.
   const nextHere = target && moment && takeovers.length === 0
@@ -572,6 +578,7 @@ export function Play() {
         <Hud points={shownPoints ?? 0} rewards={rewards} onMenu={() => { wake(); setPanel("menu"); }} />
         <div className="play__notes">
           {tag && <p className="pl-tag">{tag}</p>}
+          {auto && profile && <p className="pl-plate">Επίπεδο: {profile.level}</p>}
           {offline && <p className="pl-plate">Χωρίς σύνδεση</p>}
           {accuracy !== undefined && accuracy > REACH_M && <p className="pl-plate">Ακρίβεια θέσης: {Math.round(accuracy)} μέτρα</p>}
           {outside && <p className="pl-plate">{outsideLine(nearest, accuracy)}</p>}
