@@ -1,0 +1,31 @@
+#!/bin/sh
+# Serves Greek speech from a local voice model (Piper, el_GR), so that the laptop on stage has a real voice
+# and no sentence leaves the machine. GET http://127.0.0.1:8799/tts?text=...  ->  audio/wav
+# The runtime and the voice live under data-local/tts/ (never committed). Install once:
+#   python3 -m venv data-local/tts/venv && data-local/tts/venv/bin/pip install piper-tts
+#   and download el_GR-rapunzelina-low.onnx with its .json from the rhasspy/piper-voices collection as el.onnx.
+set -e
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"; T="$ROOT/data-local/tts"
+[ -x "$T/venv/bin/python" ] && [ -f "$T/el.onnx" ] || { echo "tts: not installed (see the top of this script)"; exit 1; }
+exec "$T/venv/bin/python" - "$T/el.onnx" "${TTS_PORT:-8799}" <<'PY'
+import io, sys, wave, hashlib, urllib.parse
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from piper import PiperVoice
+voice = PiperVoice.load(sys.argv[1]); cache = {}
+class H(BaseHTTPRequestHandler):
+    def log_message(self, *a): pass
+    def do_GET(self):
+        q = urllib.parse.urlparse(self.path); text = urllib.parse.parse_qs(q.query).get("text", [""])[0].strip()[:600]
+        if q.path != "/tts" or not text:
+            self.send_response(404); self.send_header("Access-Control-Allow-Origin", "*"); self.end_headers(); return
+        key = hashlib.sha1(text.encode()).hexdigest()
+        if key not in cache:
+            buf = io.BytesIO()
+            with wave.open(buf, "wb") as w: voice.synthesize_wav(text, w)
+            cache[key] = buf.getvalue()
+        body = cache[key]
+        self.send_response(200); self.send_header("Content-Type", "audio/wav"); self.send_header("Content-Length", str(len(body)))
+        self.send_header("Access-Control-Allow-Origin", "*"); self.send_header("Cache-Control", "no-store"); self.end_headers(); self.wfile.write(body)
+print("tts: listening on 127.0.0.1:" + sys.argv[2], flush=True)
+ThreadingHTTPServer(("127.0.0.1", int(sys.argv[2])), H).serve_forever()
+PY
