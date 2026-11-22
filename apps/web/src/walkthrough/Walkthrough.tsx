@@ -12,6 +12,14 @@ const lines = [
   "Δύο διαφορετικοί δημότες επιβεβαίωσαν τις απαντήσεις επίδειξης.",
   "Διαδρομή προς το Σεράφειο",
 ];
+function StepIllustration({ step }: { step: number }) {
+  const [loaded, setLoaded] = useState(false);
+  return <figure className="ion-walk-illustration" hidden={!loaded}>
+    <img src={`/walkthrough/step-${step}.webp`} alt="" onLoad={() => setLoaded(true)} />
+    <figcaption>Εικόνα επίδειξης</figcaption>
+  </figure>;
+}
+
 export function Walkthrough() {
   const [state,setState] = useState<State>({step:0});
   const [notice,setNotice] = useState("");
@@ -79,6 +87,7 @@ export function Walkthrough() {
         {state.step===2 && <p>Ζητήστε να χαρτογραφηθεί · Το αίτημα καταχωρίστηκε</p>}
         {state.step===3 && <p>Απάντηση επίδειξης · Αναμονή δεύτερης μαρτυρίας</p>}
         {state.step===5 && state.route && <><p>{Math.round(state.route.lengthM)} μέτρα</p><div className="ion-walk-map"><CompareMap selected="voice" rows={[{profile:"voice",route:state.route,lengthM:state.route.lengthM,facts:null}]}/></div><small>© OpenStreetMap contributors</small></>}
+        {state.step > 0 && <StepIllustration key={state.step} step={state.step} />}
       </section>
       <section aria-label="Καρτέλα προσβασιμότητας">
         <h2>Καρτέλα προσβασιμότητας {total>0 && <span>{known} από {total}</span>}</h2>
