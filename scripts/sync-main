@@ -47,7 +47,8 @@ for attempt in 1 2 3; do
         if command -v timeout >/dev/null 2>&1; then limiter=(timeout "$limit")
         elif command -v gtimeout >/dev/null 2>&1; then limiter=(gtimeout "$limit")
         else limiter=(); fi
-        if ! "${limiter[@]}" ${ION_CHECK_CMD:-scripts/check}; then
+        # ${arr[@]+"${arr[@]}"}: bash 3.2 on macOS treats an empty array as unbound under set -u.
+        if ! ${limiter[@]+"${limiter[@]}"} ${ION_CHECK_CMD:-scripts/check}; then
             echo "Not pushed: scripts/check failed or took over $limit seconds. Your commits are local. Fix, commit, and rerun scripts/sync-main." >&2
             exit 1
         fi
