@@ -10,7 +10,7 @@
 
   Keys (they work whichever frame was clicked last, as soon as the pointer leaves the app):
     Right, Space, PageDown   next slide          Left, PageUp   previous slide        R   replay the slide
-    1   the game (/play)     2   the stage (/stage)     3   the camera scan (/play/scan)
+    1   the game (/play)     2   the stage (/stage)     3   the camera scan (/play/scan)     4   the Serafeio walkthrough (/walkthrough)
     0   reload the app frame F   full screen
   Options in the address: ?app=http://127.0.0.1:5173  (where the app is served)
 -->
@@ -39,7 +39,7 @@
     <div class="where" id="where"></div>
     <div class="phone" id="phone"><iframe id="app" title="ION Athens, η εφαρμογή" allow="camera; microphone; geolocation; autoplay"></iframe></div>
     <p class="down" id="down">Η εφαρμογή δεν απαντά σε αυτή τη διεύθυνση. Ξεκινήστε την με scripts/demo-up και πατήστε 0.</p>
-    <p class="keys"><b>→</b> επόμενη · <b>1</b> παιχνίδι · <b>2</b> σκηνή · <b>3</b> σάρωση · <b>0</b> ξανά</p>
+    <p class="keys"><b>→</b> επόμενη · <b>1</b> παιχνίδι · <b>2</b> σκηνή · <b>3</b> σάρωση · <b>4</b> Σεράφειο · <b>0</b> ξανά</p>
   </aside>
 </div>
 <script>
@@ -49,7 +49,8 @@
   var views = {
     "1": { path: "/play?demo=1&loop=acropolis", label: "Το παιχνίδι · /play", w: 390, h: 800, wide: false },
     "2": { path: "/stage?loop=acropolis&citizen=scripted", label: "Η σκηνή · /stage", w: 1280, h: 720, wide: true },
-    "3": { path: "/play/scan", label: "Η σάρωση · /play/scan", w: 390, h: 800, wide: false }
+    "3": { path: "/play/scan", label: "Η σάρωση · /play/scan", w: 390, h: 800, wide: false },
+    "4": { path: "/walkthrough", label: "Σεράφειο · /walkthrough", w: 1600, h: 900, wide: true }
   };
   var deck = document.getElementById("deck"), app = document.getElementById("app");
   var phone = document.getElementById("phone"), side = document.getElementById("side");
@@ -75,7 +76,8 @@
   function say(what) { deck.contentWindow.postMessage(what, "*"); }
 
   addEventListener("keydown", function (e) {
-    if (["ArrowRight", "PageDown", " "].indexOf(e.key) >= 0) { e.preventDefault(); say("ion-next"); }
+    if (current === "4" && ["ArrowRight", "Enter", "0"].includes(e.key)) { e.preventDefault(); app.contentWindow.postMessage({ walkthroughKey: e.key }, base); }
+    else if (["ArrowRight", "PageDown", " "].indexOf(e.key) >= 0) { e.preventDefault(); say("ion-next"); }
     else if (["ArrowLeft", "PageUp"].indexOf(e.key) >= 0) { e.preventDefault(); say("ion-prev"); }
     else if (e.key === "r" || e.key === "R") say("ion-replay");
     else if (views[e.key]) open(e.key);

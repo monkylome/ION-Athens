@@ -9,7 +9,7 @@ import { caption, comparisonPair, updateQuiet, type Compared } from "./compariso
 const ids: ProfileId[] = ["voice", "wheels", "quiet"];
 const patterns = [[5, 2], [1, 2], [8, 2, 1, 2]];
 
-function CompareMap({ rows, selected }: { rows: Compared[]; selected: ProfileId }) {
+export function CompareMap({ rows, selected }: { rows: Compared[]; selected: ProfileId }) {
   const element = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<LibreMap>();
   const [error, setError] = useState(false);

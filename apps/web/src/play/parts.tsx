@@ -338,10 +338,11 @@ export function NearTiles({ items, answered, heading, accuracyM, onOpen }: {
         return (
           <li key={n.mission.id}>
             <button type="button" data-mission-id={n.mission.id} className={`pl-mitem${n.reachable && !mine ? " pl-mitem--reach" : ""}`} onClick={() => onOpen(n)}
-              aria-label={`${missionLine(n, heading, accuracyM)} ${mine ? "Έχετε ήδη απαντήσει." : n.reachable ? "" : "Πλησιάστε για να απαντήσετε."}`.trim()}>
+              aria-label={`${missionLine(n, heading, accuracyM)} ${n.mission.requested ? "Κάποιος το χρειάζεται." : ""} ${mine ? "Έχετε ήδη απαντήσει." : n.reachable ? "" : "Πλησιάστε για να απαντήσετε."}`.trim()}>
               <span className="pl-mitem__sign">{mine ? <Check weight="bold" aria-hidden="true" /> : <Glyph mission={n.mission} />}</span>
               <span className="pl-mitem__text">
                 <span className="pl-mitem__question">{n.mission.question}</span>
+                {n.mission.requested && <span>Κάποιος το χρειάζεται</span>}
                 <span className="pl-mitem__where">{[n.mission.where, far === "κοντά" ? "κοντά σας" : far, directionWords(n.bearing, heading)].filter(Boolean).join(", ")}</span>
               </span>
               <span className="pl-mitem__state">{mine ? "Έγινε" : n.reachable ? `+${n.mission.points}` : <ArrowUp weight="bold" aria-hidden="true" style={{ transform: `rotate(${heading === null ? n.bearing : n.bearing - heading}deg)` }} />}</span>

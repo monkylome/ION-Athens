@@ -342,6 +342,7 @@ export function Play() {
     for (const name of ["discovery_added", "discovery_confirmed"]) stream.addEventListener(name, onDiscovery as EventListener);
     stream.addEventListener("mission_answered", onAnswered as EventListener);
     stream.addEventListener("map_updated", onUpdated as EventListener);
+    stream.addEventListener("venue_requested", again);
     let subscribed = true;
     const restore = () => {
       again();

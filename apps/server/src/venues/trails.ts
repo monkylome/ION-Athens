@@ -16,11 +16,13 @@ function describe(t: z.infer<typeof input>) {
     " (" + s.steps + (s.steps === 1 ? " βήμα)" : " βήματα)") + (s.note ? ", " + s.note : "") + ".").join(" ");
 }
 type Trail = Omit<z.infer<typeof input>,"participant"> & {id:string;createdAt:string;confirmed:boolean;confirmedAt:string|null;speech:string};
-export function venueApi(observations: () => Observation[], now: () => Date) {
+export function venueApi(observations: () => Observation[], now: () => Date, onRequest: (venueId: string, count: number) => void = () => {}) {
   const app = new Hono();
+  const requests = new Map<string, Set<string>>();
+  const requestCount = (id: string) => requests.get(id)?.size ?? 0;
   const records = new Map<string, {author:string;trail:Trail}[]>();
   const trails = (v: Place) => (records.get(v.id) ?? []).map(r => r.trail);
-  const card = (v: Place) => ({...v, entrances:doors(v), facts:facts(v,observations()), trails:trails(v)});
+  const card = (v: Place) => ({...v, requestCount:requestCount(v.id), entrances:doors(v), facts:facts(v,observations()), trails:trails(v)});
   function arrival(v: Place, door?: Place) {
     const clauses = [v.name.startsWith("Ωδείο ") ? "Φτάσατε στο " + v.name + "." : "Φτάσατε στον προορισμό σας. " + v.name + "."];
     const known = facts(v,observations());
@@ -39,6 +41,18 @@ export function venueApi(observations: () => Observation[], now: () => Date) {
   app.get("/:id",c => {
     const v = venues.find(v => v.id === c.req.param("id"));
     return v ? c.json(card(v)) : c.json({error:"venue_not_found"},404);
+  });
+  app.post("/:id/requests", async c => {
+    const id = c.req.param("id");
+    if (!venues.some(v => v.id === id)) return c.json({error:"venue_not_found"}, 404);
+    const parsed = z.object({participant}).safeParse(await c.req.json().catch(() => null));
+    if (!parsed.success) return c.json({error:"invalid_participant"}, 400);
+    const people = requests.get(id) ?? new Set<string>();
+    const before = people.size;
+    people.add(parsed.data.participant);
+    requests.set(id, people);
+    if (people.size > before) onRequest(id, people.size);
+    return c.json({requestCount:people.size});
   });
   app.post("/:id/trails",async c => {
     const v = venues.find(v => v.id === c.req.param("id"));
@@ -61,5 +75,5 @@ export function venueApi(observations: () => Observation[], now: () => Date) {
     record.trail.confirmedAt ??= now().toISOString();
     return c.json(record.trail);
   });
-  return {app,arrival};
+  return {app,arrival,requestCount};
 }

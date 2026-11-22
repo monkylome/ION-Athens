@@ -1,3 +1,4 @@
+import { Walkthrough } from "./walkthrough/Walkthrough";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Link, Route, Routes, useLocation } from "react-router-dom";
 import "@fontsource-variable/sofia-sans-condensed";
@@ -28,6 +29,7 @@ function Home() {
         Ο χάρτης της Αθήνας που φτιάχνουν οι ίδιοι οι δημότες, για να περπατά ο καθένας όπως του ταιριάζει σήμερα.
       </p>
       <nav aria-label="Οθόνες">
+        <Link to="/walkthrough">Επίδειξη Σεραφείου</Link>
         <Link className="btn" to="/stage">Οθόνη σκηνής, για το κοινό</Link>
         <Link className="btn" to="/phone">Τηλέφωνο, στο χέρι του πεζού</Link>
         <Link className="btn" to="/play">Παιχνίδι: αποστολές στον χάρτη</Link>
@@ -44,6 +46,7 @@ createRoot(document.getElementById("root")!).render(
     <BackupLabel />
     <Routes>
       <Route path="/" element={<Home />} />
+      <Route path="/walkthrough" element={<Walkthrough />} />
       <Route path="/stage" element={<Stage />} />
       <Route path="/play" element={<Play />} />
       <Route path="/missions" element={<Missions />} />

@@ -37,3 +37,15 @@ it("speaks the documented Odeon access and the unmapped entrance", () => {
   const odeon = venues.find(v => v.id === "landmark-odeon-of-herodes-atticus-r13249184")!;
   expect(api.arrival(odeon).speech).toBe("Φτάσατε στο Ωδείο Ηρώδου Αττικού. Ο χώρος είναι προσβάσιμος με αμαξίδιο. Η ακριβής είσοδος δεν έχει χαρτογραφηθεί ακόμα.");
 });
+
+it("counts one mapping request per participant and emits only new requests", async () => {
+  const events: number[] = [];
+  const api = venueApi(() => [], () => new Date(), (_id, count) => events.push(count));
+  const path = "/community_centre-x-w217627849";
+  for (const participant of ["requester-a", "requester-a", "requester-b"]) {
+    const res = await api.app.request(path + "/requests", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({participant})});
+    expect(res.status).toBe(200);
+  }
+  expect(events).toEqual([1,2]);
+  expect(await (await api.app.request(path)).json()).toMatchObject({requestCount:2});
+});

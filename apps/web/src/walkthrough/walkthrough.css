@@ -1,0 +1,14 @@
+.ion-walk { box-sizing:border-box; min-height:100dvh; padding:var(--space-3) var(--space-4); background:var(--bg); color:var(--fg); font-family:var(--font-display); font-weight:var(--weight-secondary); }
+.ion-walk header p { color:var(--accent); margin:0; }
+.ion-walk h1,.ion-walk h2 { margin:0 0 var(--space-2); line-height:1; }
+.ion-walk h1 { font-size:var(--t-instruction); }
+.ion-walk h2 { font-size:var(--t-body); }
+.ion-walk-grid { display:grid; grid-template-columns:2fr 3fr; align-items:start; gap:var(--space-4); }
+.ion-walk-phone { border:var(--border); padding:var(--space-3); min-height:35vh; }
+.ion-walk-phone p { font-size:var(--t-body); margin:var(--space-1) 0; }
+.ion-walk-map { height:27vh; position:relative; }
+.ion-walk-map .compare__map { position:absolute; inset:0; }
+.ion-walk dl { margin:0; }
+.ion-walk dl div { border-top:var(--border); display:flex; justify-content:space-between; gap:var(--space-2); padding:var(--space-1) 0; }
+.ion-walk dd { margin:0; text-align:right; }
+.ion-walk footer { display:flex; justify-content:space-between; margin-top:var(--space-3); }

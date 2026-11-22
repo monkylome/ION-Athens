@@ -97,7 +97,10 @@ export function createApp(deps: AppDeps) {
   const nodesById = new Map(routing.graph.nodes.map(n => [n.id,n]));
   const localVenueIds = new Set(venues.filter(v => nodesById.has(v.nearestNodeId)).map(v => v.id));
   const board = new MissionBoard(routing.graph, deps.missions, now, deps.metroStations, venueMissions().filter(m => localVenueIds.has(m.venueId!)));
-  const venueRoutes = venueApi(() => board.confirmedObservations(), now);
+  const venueRoutes = venueApi(() => board.confirmedObservations(), now, (venueId, requestCount) => {
+    const event = {type:"venue_requested", venueId, requestCount};
+    announce(event);
+  });
   const index = streetIndex(routing.graph);
   let decisions: Placed[] = [];
   let cacheKey = "";
@@ -475,7 +478,7 @@ export function createApp(deps: AppDeps) {
     const summary = board.summary(candidates);
     const missions = Number.isFinite(lng) && Number.isFinite(lat) && c.req.query("lng") ?
       board.near([lng, lat], candidates, radius, limit) : board.all(candidates).slice(0,limit);
-    return c.json({summary,missions:missions.map(m => ({...m,area:area(m.position)}))});
+    return c.json({summary,missions:missions.map(m => ({...m,area:area(m.position), ...(m.venueId && venueRoutes.requestCount(m.venueId) > 0 && {requested:true})}))});
   });
 
   app.get("/api/neighbourhoods",async c => {

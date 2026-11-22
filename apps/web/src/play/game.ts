@@ -25,6 +25,7 @@ export interface Mission {
   /** For a question about a place (a theatre, a library): the place and the fact it fills in. */
   venueId?: string;
   venueReachM?: number;
+  requested?: boolean;
   key?: string;
 }
 export interface Board {
