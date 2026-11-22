@@ -41,7 +41,6 @@
     <div class="where" id="where"></div>
     <div class="phone" id="phone"><iframe id="app" title="ION Athens, η εφαρμογή" allow="camera; microphone; geolocation; autoplay"></iframe></div>
     <p class="down" id="down">Η εφαρμογή δεν απαντά σε αυτή τη διεύθυνση. Ξεκινήστε την με scripts/demo-up και πατήστε 0.</p>
-    <p class="keys"><b>→</b> διαφάνειες · <b>Enter</b> η εφαρμογή προχωρά · <b>1</b> παιχνίδι · <b>2</b> σκηνή · <b>3</b> σάρωση · <b>4</b> Σεράφειο · <b>0</b> ξανά</p>
   </aside>
 </div>
 <script>
@@ -62,7 +61,7 @@
   // The app keeps its own size (a phone, or a stage) and is scaled to fit the column, so it looks as it does on a device.
   function fit() {
     var v = views[current];
-    var room = innerHeight - 150;
+    var room = innerHeight - 110;
     var maxW = v.wide ? Math.round(innerWidth * 0.52) : Math.round(innerWidth * 0.30);
     var scale = Math.min(room / v.h, maxW / v.w, 1);
     app.style.width = v.w + "px"; app.style.height = v.h + "px";

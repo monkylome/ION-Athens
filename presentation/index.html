@@ -178,6 +178,10 @@
   body.ion button { border: 3px solid #FFFFFF; background: #000000; color: #FFFFFF; font-family: "Sofia Sans Condensed", sans-serif; font-weight: 800; }
   /* Beside the real app the drawn phone would be a mock next to the real thing. */
   body.ion.beside-app #phone { display: none; }
+  /* Beside the app the screen carries only the story. The map credit moves to the app's About page and to NOTICE.md
+     (one interaction away, which the OpenStreetMap attribution guidelines accept), and the voice and replay buttons
+     are keys of the live page (R replays). */
+  body.ion.beside-app #credit, body.ion.beside-app #voice, body.ion.beside-app #replay { display: none; }
 </style>
 </head>
 <body>
