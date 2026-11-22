@@ -28,6 +28,7 @@
   .where { font-size: 14px; color: #fff; }
   .phone { border: 4px solid #fff; background: #000; }
   .phone iframe { display: block; border: 0; background: #000; }
+  .phone iframe[hidden] { display: none; }
   .side.wide .phone iframe { width: 100%; height: 100%; }
   .keys { font-size: 13px; color: #fff; text-align: center; max-width: 30ch; line-height: 1.35; }
   .keys b { font-weight: 800; }
@@ -38,7 +39,7 @@
 <div class="wrap">
   <iframe class="deck" id="deck" src="index.html" title="Παρουσίαση" allow="autoplay"></iframe>
   <aside class="side" id="side" aria-label="Η εφαρμογή, ζωντανά">
-    <div class="phone" id="phone"><iframe id="app" title="ION Athens, η εφαρμογή" allow="camera; microphone; geolocation; autoplay"></iframe></div>
+    <div class="phone" id="phone"><iframe id="walk" title="ION Athens, η διαδρομή στο Σεράφειο" allow="autoplay" hidden></iframe><iframe id="app" title="ION Athens, η εφαρμογή" allow="camera; microphone; geolocation; autoplay"></iframe></div>
     <p class="down" id="down">Η εφαρμογή δεν απαντά σε αυτή τη διεύθυνση. Ξεκινήστε την με scripts/demo-up και πατήστε 0.</p>
   </aside>
 </div>
@@ -52,10 +53,13 @@
     "3": { path: "/play/scan", label: "Η σάρωση · /play/scan", w: 390, h: 800, wide: false },
     "4": { path: "/walkthrough", label: "Σεράφειο · /walkthrough", w: 1040, h: 940, wide: true }
   };
-  var deck = document.getElementById("deck"), app = document.getElementById("app");
+  var deck = document.getElementById("deck"), other = document.getElementById("app"), walk = document.getElementById("walk");
+  // The walkthrough lives in its own frame and is never unloaded, so the presenters can show the game or the stage
+  // between its acts and come back to the same step. The other screens share one frame and are loaded when chosen.
+  var app = other, walkLoaded = false;
   var phone = document.getElementById("phone"), side = document.getElementById("side");
   var down = document.getElementById("down");
-  var current = "1";
+  var current = "";
 
   // The app keeps its own size (a phone, or a stage) and is scaled to fit the column, so it looks as it does on a device.
   function fit() {
@@ -68,8 +72,12 @@
     phone.style.width = Math.round(v.w * scale) + "px"; phone.style.height = Math.round(v.h * scale) + "px";
   }
   function open(key) {
-    current = key; var v = views[key];
-    app.src = base + v.path; fit();
+    var again = key === current; current = key; var v = views[key];
+    if (key === "4") {
+      app = walk; other.hidden = true; other.src = "about:blank"; walk.hidden = false;
+      if (!walkLoaded || again) { walk.src = base + v.path; walkLoaded = true; }
+    } else { app = other; walk.hidden = true; other.hidden = false; other.src = base + v.path; }
+    fit();
     fetch(base + "/api/health", { mode: "no-cors" }).then(function () { down.style.display = "none"; })
       .catch(function () { down.style.display = "block"; });
   }
