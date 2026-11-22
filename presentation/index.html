@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sofia+Sans:wght@400;700;800&family=Sofia+Sans+Condensed:wght@800;900&display=swap">
 <style>
   /* Η πραγματική Αθήνα (Μοναστηράκι → Δημαρχείο) γεμίζει την οθόνη· κείμενο σε πάνελ κάτω αριστερά, κινητό κάτω δεξιά. */
   :root {
@@ -164,6 +165,19 @@
     .slide .lead { font-size: 18px; }
   }
   @media (prefers-reduced-motion: reduce) { .slide { transition: none; } }
+  /* The app's design system as a skin (design/tokens.css: black, white, one yellow, heavy condensed type, hard edges).
+     On with ?skin=ion, and always when this deck is shown inside live.html beside the running app, so that the two
+     halves of the screen read as one product. */
+  body.ion { --bg: #000000; --ink: #FFFFFF; --muted: #FFFFFF; --route: #FFD100; --gold: #FFD100; --panel: #000000; --line: #FFFFFF;
+    --font: "Sofia Sans", "Manrope", system-ui, sans-serif; }
+  body.ion, body.ion.no3d { background: #000000; }
+  body.ion * { border-radius: 0 !important; }
+  body.ion .slide { border: 4px solid #FFFFFF; backdrop-filter: none; }
+  body.ion .slide h1, body.ion .slide h2 { font-family: "Sofia Sans Condensed", "Sofia Sans", sans-serif; font-weight: 900; letter-spacing: 0; }
+  body.ion .slide .small { color: #FFFFFF; }
+  body.ion button { border: 3px solid #FFFFFF; background: #000000; color: #FFFFFF; font-family: "Sofia Sans Condensed", sans-serif; font-weight: 800; }
+  /* Beside the real app the drawn phone would be a mock next to the real thing. */
+  body.ion.beside-app #phone { display: none; }
 </style>
 </head>
 <body>
@@ -384,6 +398,9 @@
     else if (e.data === "ion-replay") show(current);
   });
 
+  var embedded = window.top !== window;
+  if (embedded || /[?&]skin=ion\b/.test(location.search)) document.body.classList.add("ion");
+  if (embedded) document.body.classList.add("beside-app");
   var m = location.hash.match(/^#s(\d)$/);
   show(m ? parseInt(m[1], 10) - 1 : 0);
   setTimeout(function () { if (!window.ionStage) document.body.classList.add("no3d"); }, 10000);
