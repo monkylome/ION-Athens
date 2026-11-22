@@ -367,6 +367,8 @@
     current = Math.max(0, Math.min(slides.length - 1, i));
     slides.forEach(function (s, k) { s.hidden = k !== current; s.classList.remove("waiting"); });
     counter.textContent = (current + 1) + " / " + slides.length;
+    // Tell the live page which slide is showing, so that the running app beside the deck follows the story.
+    if (window.top !== window) { try { window.top.postMessage({ ionSlide: current + 1 }, "*"); } catch (e) {} }
     try { history.replaceState(null, "", "#s" + (current + 1)); } catch (e) {}
     caption.hidden = true;
     if ("speechSynthesis" in window) speechSynthesis.cancel();
@@ -547,7 +549,7 @@ function buildStage() {
   // =====================================================================
   const canvas = document.getElementById("scene");
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: "high-performance" });
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 1.75));
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2.5));
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -566,7 +568,7 @@ function buildStage() {
   scene.add(hemi);
   const sun = new THREE.DirectionalLight(0xffb27a, 2.4);
   sun.castShadow = true;
-  sun.shadow.mapSize.set(2048, 2048);
+  sun.shadow.mapSize.set(4096, 4096);
   Object.assign(sun.shadow.camera, { left: -90, right: 90, top: 90, bottom: -90, near: 1, far: 500 });
   sun.shadow.bias = -0.0004;
   scene.add(sun, sun.target);
@@ -592,6 +594,8 @@ function buildStage() {
   let tod = 0.2, todTarget = 0.2;
   const nightMats = { windows: [], lamps: [], glass: [] };
   function applyTod(t) {
+    // On black the city is shown at night: lit windows and lamps carry the picture.
+    if (ION_SKIN) t = Math.max(t, 0.7);
     const mix = (pair) => pair[0].clone().lerp(pair[1], t);
     const g = skyCanvas.getContext("2d");
     const grad = g.createLinearGradient(0, 0, 0, 256);

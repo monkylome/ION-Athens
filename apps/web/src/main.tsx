@@ -41,6 +41,13 @@ function Home() {
   );
 }
 
+// Beside the slides (presentation/live.html) the app runs in a frame and the presenter's keys stay with the outer page.
+// It sends the few keys the stage listens for, and they are replayed here as ordinary key presses.
+window.addEventListener("message", (event) => {
+  const key = (event.data as { ionKey?: unknown } | null)?.ionKey;
+  if (typeof key === "string" && ["Enter", "s", "c", "a", "o", "0", "1", "2"].includes(key)) window.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true }));
+});
+
 createRoot(document.getElementById("root")!).render(
   <BrowserRouter>
     <BackupLabel />

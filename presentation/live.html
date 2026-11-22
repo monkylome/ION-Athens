@@ -10,6 +10,8 @@
 
   Keys (they work whichever frame was clicked last, as soon as the pointer leaves the app):
     Right, Space, PageDown   next slide          Left, PageUp   previous slide        R   replay the slide
+    Enter   the app on the right advances (next step of the walkthrough, next act of the stage)
+    The app follows the slides: 1, 6, 8, 10, 11 the game; 2, 9 the walkthrough; 3, 4, 5 the stage; 7 the scan. ?sync=off stops that.
     1   the game (/play)     2   the stage (/stage)     3   the camera scan (/play/scan)     4   the Serafeio walkthrough (/walkthrough)
     0   reload the app frame F   full screen
   Options in the address: ?app=http://127.0.0.1:5173  (where the app is served)
@@ -39,7 +41,7 @@
     <div class="where" id="where"></div>
     <div class="phone" id="phone"><iframe id="app" title="ION Athens, η εφαρμογή" allow="camera; microphone; geolocation; autoplay"></iframe></div>
     <p class="down" id="down">Η εφαρμογή δεν απαντά σε αυτή τη διεύθυνση. Ξεκινήστε την με scripts/demo-up και πατήστε 0.</p>
-    <p class="keys"><b>→</b> επόμενη · <b>1</b> παιχνίδι · <b>2</b> σκηνή · <b>3</b> σάρωση · <b>4</b> Σεράφειο · <b>0</b> ξανά</p>
+    <p class="keys"><b>→</b> διαφάνειες · <b>Enter</b> η εφαρμογή προχωρά · <b>1</b> παιχνίδι · <b>2</b> σκηνή · <b>3</b> σάρωση · <b>4</b> Σεράφειο · <b>0</b> ξανά</p>
   </aside>
 </div>
 <script>
@@ -76,13 +78,24 @@
   function say(what) { deck.contentWindow.postMessage(what, "*"); }
 
   addEventListener("keydown", function (e) {
-    if (current === "4" && ["ArrowRight", "Enter", "0"].includes(e.key)) { e.preventDefault(); app.contentWindow.postMessage({ walkthroughKey: e.key }, base); }
+    // Enter advances the app on the right (the walkthrough's next step, the stage's next act); the arrows are always the slides.
+    if (e.key === "Enter") { e.preventDefault(); app.contentWindow.postMessage(current === "4" ? { walkthroughKey: "Enter" } : { ionKey: "Enter" }, base); }
+    else if (["s", "S", "c", "C"].indexOf(e.key) >= 0 && current === "2") { app.contentWindow.postMessage({ ionKey: e.key.toLowerCase() }, base); }
     else if (["ArrowRight", "PageDown", " "].indexOf(e.key) >= 0) { e.preventDefault(); say("ion-next"); }
     else if (["ArrowLeft", "PageUp"].indexOf(e.key) >= 0) { e.preventDefault(); say("ion-prev"); }
     else if (e.key === "r" || e.key === "R") say("ion-replay");
     else if (views[e.key]) open(e.key);
     else if (e.key === "0") open(current);
     else if (e.key === "f" || e.key === "F") { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(function () {}); }
+  });
+  // The app follows the slides: each slide of the deck has the screen of the app that shows the same thing for real.
+  // Turn it off with ?sync=off; the number keys still choose a screen by hand.
+  var bySlide = { 1: "1", 2: "4", 3: "2", 4: "2", 5: "2", 6: "1", 7: "3", 8: "1", 9: "4", 10: "1", 11: "1" };
+  addEventListener("message", function (e) {
+    var n = e.data && e.data.ionSlide;
+    if (!n || params.get("sync") === "off") return;
+    var want = bySlide[n];
+    if (want && want !== current) open(want);
   });
   // After a click inside either frame the keys would go to that frame. Take them back when the pointer leaves it.
   [side, deck].forEach(function (el) { el.addEventListener("mouseleave", function () { window.focus(); }); });
