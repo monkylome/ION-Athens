@@ -10,8 +10,23 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"; T="$ROOT/data-local/tts"
 exec "$T/venv/bin/python" - "$T/el.onnx" "${TTS_PORT:-8799}" <<'PY'
 import io, sys, wave, hashlib, urllib.parse
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+import os, re, glob
 from piper import PiperVoice
+try:
+    from piper import SynthesisConfig
+    CALM = SynthesisConfig(length_scale=1.12, noise_scale=0.5, noise_w_scale=0.7)  # slower and steadier: a calm guide voice
+except Exception:
+    CALM = None
 voice = PiperVoice.load(sys.argv[1]); cache = {}
+# A recorded human voice wins over the model: put NAME.wav beside NAME.txt (the exact sentence) in data-local/tts/human/.
+HUMAN = os.path.join(os.path.dirname(sys.argv[1]), "human")
+norm = lambda t: re.sub(r"[^\w]+", " ", t.lower()).strip()
+def recorded(text):
+    for txt in glob.glob(os.path.join(HUMAN, "*.txt")):
+        if norm(open(txt, encoding="utf-8").read()) == norm(text):
+            wav = txt[:-4] + ".wav"
+            if os.path.exists(wav): return open(wav, "rb").read()
+    return None
 class H(BaseHTTPRequestHandler):
     def log_message(self, *a): pass
     def do_GET(self):
@@ -19,11 +34,15 @@ class H(BaseHTTPRequestHandler):
         if q.path != "/tts" or not text:
             self.send_response(404); self.send_header("Access-Control-Allow-Origin", "*"); self.end_headers(); return
         key = hashlib.sha1(text.encode()).hexdigest()
-        if key not in cache:
-            buf = io.BytesIO()
-            with wave.open(buf, "wb") as w: voice.synthesize_wav(text, w)
-            cache[key] = buf.getvalue()
-        body = cache[key]
+        body = recorded(text)
+        if body is None:
+            if key not in cache:
+                buf = io.BytesIO()
+                with wave.open(buf, "wb") as w:
+                    if CALM is not None: voice.synthesize_wav(text, w, syn_config=CALM)
+                    else: voice.synthesize_wav(text, w)
+                cache[key] = buf.getvalue()
+            body = cache[key]
         self.send_response(200); self.send_header("Content-Type", "audio/wav"); self.send_header("Content-Length", str(len(body)))
         self.send_header("Access-Control-Allow-Origin", "*"); self.send_header("Cache-Control", "no-store"); self.end_headers(); self.wfile.write(body)
 print("tts: listening on 127.0.0.1:" + sys.argv[2], flush=True)
