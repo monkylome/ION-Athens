@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="el">
+<head>
+<meta charset="utf-8">
+<title>ION Athens: παρουσίαση</title>
+<style>
+@font-face { font-family: "Sofia Sans Condensed Variable"; font-style: normal; font-weight: 1 1000; font-display: block;
+  src: url("../../node_modules/@fontsource-variable/sofia-sans-condensed/files/sofia-sans-condensed-greek-wght-normal.woff2") format("woff2-variations");
+  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF; }
+@font-face { font-family: "Sofia Sans Condensed Variable"; font-style: normal; font-weight: 1 1000; font-display: block;
+  src: url("../../node_modules/@fontsource-variable/sofia-sans-condensed/files/sofia-sans-condensed-latin-ext-wght-normal.woff2") format("woff2-variations");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+@font-face { font-family: "Sofia Sans Condensed Variable"; font-style: normal; font-weight: 1 1000; font-display: block;
+  src: url("../../node_modules/@fontsource-variable/sofia-sans-condensed/files/sofia-sans-condensed-latin-wght-normal.woff2") format("woff2-variations");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: "Sofia Sans Variable"; font-style: normal; font-weight: 1 1000; font-display: block;
+  src: url("../../node_modules/@fontsource-variable/sofia-sans/files/sofia-sans-greek-wght-normal.woff2") format("woff2-variations");
+  unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF; }
+@font-face { font-family: "Sofia Sans Variable"; font-style: normal; font-weight: 1 1000; font-display: block;
+  src: url("../../node_modules/@fontsource-variable/sofia-sans/files/sofia-sans-latin-ext-wght-normal.woff2") format("woff2-variations");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+@font-face { font-family: "Sofia Sans Variable"; font-style: normal; font-weight: 1 1000; font-display: block;
+  src: url("../../node_modules/@fontsource-variable/sofia-sans/files/sofia-sans-latin-wght-normal.woff2") format("woff2-variations");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+
+/* Values copied from design/tokens.css so the file stands alone */
+:root {
+  --bg: #000000;
+  --fg: #FFFFFF;
+  --accent: #FFD100;
+  --font-display: "Sofia Sans Condensed Variable", "Sofia Sans Condensed", sans-serif;
+  --font-body: "Sofia Sans Variable", "Sofia Sans", sans-serif;
+  --weight-instruction: 900;
+  --weight-secondary: 800;
+  --weight-body: 700;
+  --space-1: 8px; --space-2: 16px; --space-3: 24px; --space-4: 48px;
+  --border: 4px solid var(--fg);
+  --t-small: 28px;
+  --t-body: 30px;
+  --t-lead: 40px;
+  --t-h: 92px;
+  --pad-x: 80px;
+  --pad-y: 56px;
+}
+@page { size: 1600px 900px; margin: 0; }
+* { box-sizing: border-box; margin: 0; padding: 0; border-radius: 0; }
+html, body { background: var(--bg); }
+body {
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-weight: var(--weight-body);
+  font-size: var(--t-body);
+  line-height: 1.25;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+section {
+  position: relative;
+  width: 1600px; height: 900px;
+  padding: var(--pad-y) var(--pad-x);
+  background: var(--bg);
+  overflow: hidden;
+  display: flex; flex-direction: column;
+  page-break-after: always; break-after: page;
+}
+section:last-child { page-break-after: auto; break-after: auto; }
+h1, h2, h3, .num, .closing {
+  font-family: var(--font-display);
+  font-weight: var(--weight-instruction);
+  line-height: 1.04;
+  text-wrap: balance;
+}
+h2 { font-size: var(--t-h); margin-bottom: var(--space-3); }
+.y { color: var(--accent); }
+.pageno {
+  position: absolute; right: var(--pad-x); bottom: 36px;
+  font-family: var(--font-display); font-weight: var(--weight-secondary);
+  font-size: var(--t-small); line-height: 1;
+}
+.links {
+  display: flex; gap: var(--space-4);
+  font-family: var(--font-display); font-weight: var(--weight-secondary);
+  font-size: 32px; line-height: 1;
+}
+.panel { border: var(--border); padding: var(--space-3); }
+ul { list-style: none; }
+li { position: relative; padding-left: 36px; }
+li::before {
+  content: ""; position: absolute; left: 0; top: 0.42em;
+  width: 16px; height: 16px; background: var(--fg);
+}
+li + li { margin-top: 14px; }
+.cap { font-size: var(--t-small); line-height: 1.2; }
+b { font-weight: 900; }
+
+/* 1 */
+.s1 { justify-content: space-between; }
+.s1 h1 { font-size: 260px; line-height: 0.95; margin-top: 40px; }
+.s1 .tag {
+  font-family: var(--font-display); font-weight: var(--weight-secondary);
+  font-size: 76px; line-height: 1.08; max-width: 1250px; margin-top: var(--space-3);
+}
+.s1 .event { font-size: var(--t-lead); margin-bottom: var(--space-2); }
+
+/* 2 */
+.s2 .row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4); flex: 1; min-height: 0; }
+.s2 .num { font-size: 150px; line-height: 0.95; margin-bottom: var(--space-2); }
+.s2 .panel p { font-size: 34px; line-height: 1.22; }
+.s2 .lead { font-size: var(--t-lead); line-height: 1.15; margin-top: var(--space-3); font-weight: 900; }
+.s2 .src { font-size: var(--t-small); line-height: 1.2; margin-top: var(--space-2); max-width: 1250px; }
+
+/* 3 */
+.s3 .row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; flex: 1; min-height: 0; margin-bottom: 44px; }
+.s3 .panel { padding: 0; display: flex; flex-direction: column; }
+.s3 img { display: block; width: 100%; height: 270px; object-fit: cover; border-bottom: var(--border); }
+.s3 .txt { padding: 18px 22px 20px; }
+.s3 h3 { font-size: 52px; margin-bottom: 10px; }
+.s3 p { font-size: 30px; line-height: 1.22; }
+.s3 .cap { margin-top: var(--space-2); }
+
+/* 4 */
+.s4 .row { display: grid; grid-template-columns: 1fr 600px; gap: var(--space-4); flex: 1; min-height: 0; }
+.s4 li { font-size: 37px; }
+.s4 li + li { margin-top: 26px; }
+.s4 figure img { display: block; width: 100%; aspect-ratio: 1600 / 670; object-fit: cover; object-position: top; border: var(--border); }
+.s4 figcaption { margin-top: 12px; }
+.s4 .sim { margin-top: var(--space-3); margin-right: 130px; padding: 18px var(--space-3); }
+
+/* 5 */
+.s5 ul { display: grid; grid-template-columns: 1fr 1fr; gap: 22px var(--space-4); }
+.s5 li + li { margin-top: 0; }
+.s5 .closing { font-size: 96px; margin-top: auto; margin-bottom: var(--space-3); }
+</style>
+</head>
+<body>
+
+<section class="s1">
+  <div>
+    <h1><span class="y">ION</span> Athens</h1>
+    <p class="tag">Ο χάρτης της Αθήνας που κρατούν αληθινό οι ίδιοι οι δημότες.</p>
+  </div>
+  <div>
+    <p class="event">Apps4Athens 3.0 Gov Hackathon</p>
+    <p class="links"><span>github.com/monkylome/ION-Athens</span><span>@nikolasgkou</span><span>@monkylome</span></p>
+  </div>
+  <div class="pageno">1 / 5</div>
+</section>
+
+<section class="s2">
+  <h2>Το εμπόδιο το μαθαίνεις όταν φτάσεις πάνω του.</h2>
+  <div class="row">
+    <div class="panel">
+      <div class="num"><span class="y">1 στα 3</span></div>
+      <p>κομμάτια πεζοδρομίου στην Αθήνα έχει σπασμένες πλάκες ή ανωμαλίες.</p>
+    </div>
+    <div class="panel">
+      <div class="num"><span class="y">2 από 7</span></div>
+      <p>Στο Σεράφειο, όπου γίνεται ο διαγωνισμός, ο ανοιχτός χάρτης απαντά σε 2 από τις 7 ερωτήσεις προσβασιμότητας. Οι άλλες 5: άγνωστο.</p>
+    </div>
+  </div>
+  <p class="lead">Η πληροφορία υπάρχει. Δεν φτάνει στον άνθρωπο την ώρα που περπατάει.</p>
+  <p class="src">Πηγές: Walkable Athens (Δήμος Αθηναίων και ΕΜΠ, περίπου 27.000 κομμάτια πεζοδρομίου), OpenStreetMap.</p>
+  <div class="pageno">2 / 5</div>
+</section>
+
+<section class="s3">
+  <h2>Η λύση, σε τρεις πράξεις</h2>
+  <div class="row">
+    <div class="panel">
+      <img src="../../apps/web/public/walkthrough/step-2.webp" alt="Ένας άνθρωπος ρωτά αν υπάρχει ανελκυστήρας">
+      <div class="txt">
+        <h3>1. Κάποιος ρωτά.</h3>
+        <p>«Έχει ανελκυστήρα;» Το άγνωστο γίνεται αίτημα προς την πόλη.</p>
+      </div>
+    </div>
+    <div class="panel">
+      <img src="../../apps/web/public/walkthrough/step-4.webp" alt="Δύο δημότες επιβεβαιώνουν μια απάντηση">
+      <div class="txt">
+        <h3>2. Οι δημότες απαντούν.</h3>
+        <p>Το ION Play είναι παιχνίδι στον χάρτη: όποιος περνά από εκεί απαντά, ένας δεύτερος επιβεβαιώνει. Η κάμερα προτείνει, ο δημότης αποφασίζει.</p>
+      </div>
+    </div>
+    <div class="panel">
+      <img src="../../apps/web/public/walkthrough/step-6.webp" alt="Άφιξη στον προορισμό">
+      <div class="txt">
+        <h3>3. <span class="y">Η πόλη ξέρει.</span></h3>
+        <p>Η καρτέλα γεμίζει, η διαδρομή υπολογίζεται πάνω σε ό,τι ισχύει τώρα, και η φωνή διαβάζει την καρτέλα στην άφιξη.</p>
+      </div>
+    </div>
+  </div>
+  <div class="pageno">3 / 5</div>
+</section>
+
+<section class="s4">
+  <h2>Δεν είναι μακέτα. <span class="y">Τρέχει.</span></h2>
+  <div class="row">
+    <ul>
+      <li><b>15 πηγές δεδομένων, 6 ζωντανές:</b> AthensGov, Διαύγεια, ανελκυστήρες ΣΤΑΣΥ, ΟΑΣΑ, καιρός.</li>
+      <li><b>Διαδρομή για τον καθένα:</b> με φωνή, με ρόδες, με ησυχία. Αλλάζει όταν επιβεβαιωθεί εμπόδιο.</li>
+      <li><b>Τοπικό μοντέλο όρασης</b> για την κάμερα: προτείνει, δεν αποφασίζει.</li>
+      <li><b>435 αυτόματοι έλεγχοι.</b> Έλεγχος προσβασιμότητας σε 33 καταστάσεις οθόνης, <span class="y">0 παραβάσεις</span>.</li>
+      <li><b>Ανοιχτός κώδικας,</b> άδεια MIT.</li>
+    </ul>
+    <figure>
+      <img src="../../apps/web/screenshots/walkthrough-4.png" alt="Στιγμιότυπο της εφαρμογής: η καρτέλα προσβασιμότητας του Σεραφείου με 7 από 7 στοιχεία">
+      <figcaption class="cap">Η καρτέλα του Σεραφείου στην εφαρμογή.</figcaption>
+    </figure>
+  </div>
+  <div class="pageno">4 / 5</div>
+</section>
+
+<section class="s5">
+  <h2>Μια πόλη που τη χαρτογραφούν όσοι την περπατούν.</h2>
+  <ul>
+    <li><b>Για όλους:</b> αμαξίδιο, καρότσι, βαλίτσα, τυφλό άτομο. Όχι ειδική κατηγορία.</li>
+    <li><b>Για τον Δήμο:</b> ένας χάρτης που μένει αληθινός κάθε μέρα, με ανταμοιβές που ο Δήμος ήδη έχει.</li>
+    <li><b class="y">Ζητάμε:</b> μια πιλοτική γειτονιά και τις ανταμοιβές της Κάρτας Αθηναίου.</li>
+    <li>Το ION είναι ανοιχτός κώδικας και δωρεάν για τον δημότη. Το επόμενο βήμα μας είναι το MK IV: μια συσκευή IoT, συνδεδεμένη με τον ίδιο χάρτη, που δείχνει στα δάχτυλα ό,τι υπάρχει στο επόμενο βήμα.</li>
+  </ul>
+  <p class="closing"><span class="y">Ἰών:</span> αυτός που περπατάει.</p>
+  <p class="links"><span>github.com/monkylome/ION-Athens</span><span>@nikolasgkou</span><span>@monkylome</span></p>
+  <div class="pageno">5 / 5</div>
+</section>
+
+</body>
+</html>
