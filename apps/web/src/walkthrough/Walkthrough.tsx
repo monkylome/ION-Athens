@@ -9,14 +9,13 @@ const lines = [
   "«Θέλω να πάω στο Σεράφειο.»",
   "Έχει ανελκυστήρα;",
   "Κάποιος το χρειάζεται",
-  "Δύο διαφορετικοί δημότες επιβεβαίωσαν τις απαντήσεις επίδειξης.",
+  "Δύο διαφορετικοί δημότες επιβεβαίωσαν τις απαντήσεις.",
   "Διαδρομή προς το Σεράφειο",
 ];
 function StepIllustration({ step }: { step: number }) {
   const [loaded, setLoaded] = useState(false);
   return <figure className="ion-walk-illustration" hidden={!loaded}>
     <img src={`/walkthrough/step-${step}.webp`} alt="" onLoad={() => setLoaded(true)} />
-    <figcaption>Εικόνα επίδειξης</figcaption>
   </figure>;
 }
 
@@ -78,23 +77,23 @@ export function Walkthrough() {
     return ()=>events.close();
   },[refresh]);
   return <main className="ion-walk" lang="el">
-    <header><p>ΠΡΟΣΟΜΟΙΩΣΗ ΧΡΗΣΤΩΝ · ΠΡΑΓΜΑΤΙΚΑ ΔΕΔΟΜΕΝΑ ΚΑΙ ΚΑΝΟΝΕΣ</p><h1>Σεράφειο</h1></header>
+    <header><h1>Σεράφειο</h1></header>
     <div className="ion-walk-grid">
       <section className="ion-walk-phone" aria-label="Οθόνη κινητού">
-        <h2>{labels[state.step-1] ?? "Επίδειξη"}</h2>
+        <h2>{labels[state.step-1] ?? "Σεράφειο"}</h2>
         {state.step===1 && <p>Πληκτρολογήθηκε</p>}
         {state.step===3 && !state.requested ? <p>Ερώτηση για τον ανελκυστήρα</p> : <p>{state.step===6 ? state.speech : lines[state.step-1]}</p>}
         {state.step===2 && <p>Ζητήστε να χαρτογραφηθεί · Το αίτημα καταχωρίστηκε</p>}
-        {state.step===3 && <p>Απάντηση επίδειξης · Αναμονή δεύτερης μαρτυρίας</p>}
+        {state.step===3 && <p>Μία απάντηση · Αναμονή δεύτερης μαρτυρίας</p>}
         {state.step===5 && state.route && <><p>{Math.round(state.route.lengthM)} μέτρα</p><div className="ion-walk-map"><CompareMap selected="voice" rows={[{profile:"voice",route:state.route,lengthM:state.route.lengthM,facts:null}]}/></div><small>© OpenStreetMap contributors</small></>}
         {state.step > 0 && <StepIllustration key={state.step} step={state.step} />}
       </section>
       <section aria-label="Καρτέλα προσβασιμότητας">
         <h2>Καρτέλα προσβασιμότητας {total>0 && <span>{known} από {total}</span>}</h2>
         <dl>{state.card?.facts.map(f=><div key={f.key+(f.entranceId??"")}>
-          <dt>{f.question}</dt><dd>{f.value===null ? "άγνωστο" : `${f.value==="yes"?"ναι":f.value==="no"?"όχι":f.value} · ${f.source==="openstreetmap"?"ανοιχτός χάρτης":"από δημότες (επίδειξη)"}`}</dd>
+          <dt>{f.question}</dt><dd>{f.value===null ? "άγνωστο" : `${f.value==="yes"?"ναι":f.value==="no"?"όχι":f.value} · ${f.source==="openstreetmap"?"ανοιχτός χάρτης":"από δημότες"}`}</dd>
         </div>)}</dl>
-        <p role="status">{notice || (state.step===2 ? `Αιτήματα χαρτογράφησης: ${state.card?.requestCount}` : state.step===4 ? `${known} από ${total} στοιχεία στην καρτέλα μετά την πρόβα.` : "")}</p>
+        <p role="status">{notice || (state.step===2 ? `Αιτήματα χαρτογράφησης: ${state.card?.requestCount}` : state.step===4 ? `${known} από ${total} στοιχεία στην καρτέλα.` : "")}</p>
       </section>
     </div>
     <footer><button className="btn" onClick={reset} disabled={busy}>0 · Επανεκκίνηση</button><button className="btn btn--primary" data-on="accent" onClick={()=>void next()} disabled={busy||state.step===6}>{busy ? "Αναμονή" : "Enter · Επόμενο"}</button></footer>
