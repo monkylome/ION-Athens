@@ -16,7 +16,7 @@ interface AutoBoard {
   takeover: boolean;
 }
 
-const durationMs = 180_000;
+const durationMs = 240_000;
 
 export function useAutoPlay(enabled: boolean, board: AutoBoard) {
   const current = useRef(board);
@@ -69,16 +69,17 @@ export function useAutoPlay(enabled: boolean, board: AutoBoard) {
         const { mission } = target;
         attempted.add(mission.id);
         const [lng,lat] = mission.position;
-        const remaining = end - performance.now();
-        if (remaining < 14_000) break;
+
+        if (end - performance.now() < 17_000) break;
         try {
           const { route } = await request<{route:Route}>("/route", {
             from:{lng:point[0],lat:point[1]}, to:{lng,lat}, profile:"voice",
           });
           if (stopped) break;
           const path = [point, ...route.geometry, mission.position];
-          const travelMs = Math.max(6000, Math.min(38_000, route.lengthM * 550));
-          await walk(path, Math.min(travelMs, remaining - 9_000));
+          const travelMs = Math.max(8_000, Math.min(70_000, route.lengthM * 900));
+          if (travelMs + 9_000 > end - performance.now()) continue;
+          await walk(path, travelMs);
           if (stopped) break;
           // The mission list refreshes as the position moves. Wait for the ring's real reach rule.
           let arrived = current.current.open.find(m => m.mission.id === mission.id && m.reachable);
