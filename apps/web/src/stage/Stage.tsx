@@ -257,7 +257,6 @@ export function Stage() {
         <p className="stage__brand">ION Athens</p>
         <ul className="provenance" aria-label="Τι είναι πραγματικό και τι όχι">
           {/* Only what keeps the screen honest stays here. Where the data comes from is in the sources panel (key S) and on the About page. */}
-          <li className="plate"><span className="plate__name">Περιπατητής</span><span className="plate__state">ΠΡΟΣΟΜΟΙΩΣΗ{state.route ? ` ×${scale}` : ""}</span></li>
         </ul>
       </header>
 
