@@ -57,6 +57,11 @@
   .slide .stats p { margin: 0; }
   .slide .num { display: block; font-size: 40px; font-weight: 800; color: var(--gold); line-height: 1.1; }
   .slide.wide { width: min(980px, calc(100% - 48px)); }
+  .slide .eco { width: 100%; max-width: 620px; height: auto; display: block; margin: 6px auto 4px; }
+  .slide .eco text { font-family: var(--font); fill: var(--ink); }
+  .slide .eco .name { font-size: 19px; font-weight: 800; }
+  .slide .eco .what { font-size: 13px; fill: var(--muted); }
+  .slide .eco .big { font-size: 28px; fill: var(--gold); }
   .slide .cols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
   .slide .cols h3 { margin: 0 0 6px; font-size: 18px; color: var(--route); }
   .slide .cols p { font-size: 15px; margin: 0; }
@@ -181,13 +186,13 @@
 </div>
 
 <main id="deck">
-  <section class="slide" aria-label="Διαφάνεια 1 από 10">
+  <section class="slide" aria-label="Διαφάνεια 1 από 11">
     <div class="eyebrow">Apps4Athens 3.0 Gov Hackathon</div>
     <h1>ION Athens</h1>
     <p class="lead">Μια πόλη που βλέπει τον δρόμο για όσους δεν βλέπουν.</p>
   </section>
 
-  <section class="slide" aria-label="Διαφάνεια 2 από 10" hidden>
+  <section class="slide" aria-label="Διαφάνεια 2 από 11" hidden>
     <div class="eyebrow">Το πρόβλημα</div>
     <h2>Το εμπόδιο το μαθαίνεις όταν φτάσεις πάνω του</h2>
     <div class="stats">
@@ -198,14 +203,14 @@
     <p class="small">Πηγή: Walkable Athens, Δήμος Αθηναίων και ΕΜΠ, όπως στο Σχέδιο Αστικής Προσβασιμότητας του Δήμου (2026). Περίπου 27.000 κομμάτια πεζοδρομίου.</p>
   </section>
 
-  <section class="slide" aria-label="Διαφάνεια 3 από 10" hidden>
+  <section class="slide" aria-label="Διαφάνεια 3 από 11" hidden>
     <div class="eyebrow">Η λύση</div>
     <h2>Η διαδρομή αλλάζει πριν φτάσεις</h2>
     <p>Το ION ξέρει το εμπόδιο από πριν. Αλλάζει τη διαδρομή στην τελευταία γωνία και το λέει εγκαίρως στα ακουστικά οστεο-αγωγής, με τα αυτιά ελεύθερα για την κίνηση.</p>
     <p class="small">Πραγματική διαδρομή στον χάρτη του κέντρου: Μοναστηράκι, Αθηνάς, Δημαρχείο. Η εφαρμογή πληροφορεί, δεν διατάζει.</p>
   </section>
 
-  <section class="slide" aria-label="Διαφάνεια 4 από 10" hidden>
+  <section class="slide" aria-label="Διαφάνεια 4 από 11" hidden>
     <div class="eyebrow">Ξεκινάμε από τη δουλειά του Δήμου</div>
     <h2>Οι τέσσερις Προσβάσιμες Διαδρομές, ζωντανές</h2>
     <p>Ο Δήμος, με το «Με Άλλα Μάτια» και το This is Athens, έχει ήδη περπατήσει και περιγράψει τέσσερις διαδρομές για άτομα με αναπηρία όρασης: Ιστορικό Κέντρο, Ακρόπολη, Ομόνοια, Εθνικός Κήπος.</p>
@@ -213,7 +218,7 @@
     <p class="small">Οι γραμμές ακολουθούν τα σημεία του οδηγού (accessibleroutes.thisisathens.org, 2021), υπολογισμένες στον χάρτη OpenStreetMap. Ο οδηγός δεν δίνει την ακριβή γραμμή.</p>
   </section>
 
-  <section class="slide" aria-label="Διαφάνεια 5 από 10" hidden>
+  <section class="slide" aria-label="Διαφάνεια 5 από 11" hidden>
     <div class="eyebrow">Από πού το ξέρει η πόλη</div>
     <h2>Τρεις πηγές, ένας χάρτης</h2>
     <ul>
@@ -225,7 +230,7 @@
     <p class="small">Ο Δήμος δεν χρειάζεται νέες κάμερες: οι πολίτες κουβαλούν ήδη μία στην τσέπη τους.</p>
   </section>
 
-  <section class="slide" aria-label="Διαφάνεια 6 από 10" hidden>
+  <section class="slide" aria-label="Διαφάνεια 6 από 11" hidden>
     <div class="eyebrow">ION Play · Το παιχνίδι της πόλης</div>
     <h2>Πώς παίζεται</h2>
     <ol>
@@ -237,25 +242,25 @@
     <p class="small">Χωρίς κατάταξη παικτών και χωρίς πόντους για τον χρόνο ή τη θέση σου. Παίζεται και χωρίς να βλέπεις τον χάρτη, με κουμπιά και φωνή.</p>
   </section>
 
-  <section class="slide" aria-label="Διαφάνεια 7 από 10" hidden>
+  <section class="slide" aria-label="Διαφάνεια 7 από 11" hidden>
     <div class="eyebrow">ION Play · Η κάμερα βλέπει μαζί σου</div>
     <h2>Το μοντέλο προτείνει, ο άνθρωπος αποφασίζει</h2>
     <p>Ένα μοντέλο AI κοιτάζει την εικόνα και προτείνει τι βλέπει: σκαλιά, ράμπα, εμπόδιο, το κείμενο μιας πινακίδας. Ο παίκτης επιβεβαιώνει με ένα πάτημα, και η εικόνα δεν κρατιέται.</p>
     <p class="small">Το μοντέλο κάνει ακόμα λάθη και μερικές φορές βλέπει εμπόδια που δεν υπάρχουν. Γι' αυτό αποφασίζει πάντα ο άνθρωπος.</p>
   </section>
 
-  <section class="slide" aria-label="Διαφάνεια 8 από 10" hidden>
-    <div class="eyebrow">Η πόλη κερδίζει · ION Athens Card</div>
+  <section class="slide" aria-label="Διαφάνεια 8 από 11" hidden>
+    <div class="eyebrow">Η πόλη κερδίζει · ION Card</div>
     <h2>Πολιτισμός και τουρισμός, περπατώντας</h2>
     <ul>
-      <li><span class="dot" style="background: var(--gold)"></span>Με το ION Play μαζεύεις πόντους στην ION Athens Card, μια ψηφιακή κάρτα στο κινητό, με ψευδώνυμο και προσωπική βαθμολογία. Τους εξαργυρώνεις σε θέατρα, παραστάσεις και αγώνες του Δήμου.</li>
+      <li><span class="dot" style="background: var(--gold)"></span>Με το ION Play μαζεύεις πόντους στην ION Card, μια ψηφιακή κάρτα στο κινητό, με ψευδώνυμο και προσωπική βαθμολογία. Τους εξαργυρώνεις σε θέατρα, παραστάσεις και αγώνες του Δήμου.</li>
       <li><span class="dot" style="background: var(--route)"></span>Συλλογικοί στόχοι αντί για κατάταξη: «η γειτονιά σου χαρτογράφησε το 80% των πεζοδρομίων της». Δημότες και τουρίστες παίζουν μαζί, όχι ο ένας εναντίον του άλλου.</li>
       <li><span class="dot" style="background: var(--ink)"></span>Το επόμενο βήμα: ο Θησέας στο Θησείο, ο Σωκράτης στην Αγορά. Η ιστορία της πόλης εκεί όπου έγινε.</li>
     </ul>
-    <p class="small">Η ION Athens Card είναι πρόταση προς τον Δήμο και μπορεί να ενωθεί με όποιο πρόγραμμα έχει. Στο demo οι πόντοι δουλεύουν με το δοκιμαστικό Athens Card του AthensGov Sandbox. Οι αρχαίοι Αθηναίοι είναι ακόμα σχέδιο.</p>
+    <p class="small">Η ION Card είναι πρόταση προς τον Δήμο και μπορεί να ενωθεί με όποιο πρόγραμμα έχει. Στο demo οι πόντοι δουλεύουν με το δοκιμαστικό Athens Card του AthensGov Sandbox. Οι αρχαίοι Αθηναίοι είναι ακόμα σχέδιο.</p>
   </section>
 
-  <section class="slide wide" aria-label="Διαφάνεια 9 από 10" hidden>
+  <section class="slide wide" aria-label="Διαφάνεια 9 από 11" hidden>
     <div class="eyebrow">Σήμερα, με ειλικρίνεια</div>
     <h2>Τι υπάρχει, τι λείπει, τι ζητάμε</h2>
     <div class="cols">
@@ -265,7 +270,7 @@
       </div>
       <div>
         <h3>Λείπει</h3>
-        <p>Ζωντανά δεδομένα του Δήμου. Δοκιμή με άτομα με αναπηρία όρασης. Κάμερες της πόλης. Η ION Athens Card και οι αρχαίοι Αθηναίοι είναι ακόμα σχέδιο.</p>
+        <p>Ζωντανά δεδομένα του Δήμου. Δοκιμή με άτομα με αναπηρία όρασης. Κάμερες της πόλης. Η ION Card και οι αρχαίοι Αθηναίοι είναι ακόμα σχέδιο.</p>
       </div>
       <div>
         <h3>Ζητάμε</h3>
@@ -274,7 +279,36 @@
     </div>
   </section>
 
-  <section class="slide" aria-label="Διαφάνεια 10 από 10" hidden>
+  <section class="slide wide" aria-label="Διαφάνεια 10 από 11" hidden>
+    <div class="eyebrow">Ένα οικοσύστημα του Δήμου Αθηναίων</div>
+    <h2>ION Athens, με το ION Play και την ION Card</h2>
+    <svg class="eco" viewBox="0 0 620 300" role="img" aria-label="Στο κέντρο το ION Athens, που οδηγεί και λέει τις ιστορίες της πόλης. Το ION Play του δίνει χάρτη χωρίς εμπόδια, το ION Athens φέρνει κόσμο σε βόλτες και εκδηλώσεις που ανταμείβει η ION Card, και η ION Card δίνει πόντους και δώρα στο ION Play.">
+      <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#b3bcdb"/>
+        </marker>
+      </defs>
+      <path d="M140,150 L218,180" fill="none" stroke="#b3bcdb" stroke-width="2.5" marker-end="url(#arrow)"/>
+      <path d="M402,180 L480,150" fill="none" stroke="#b3bcdb" stroke-width="2.5" marker-end="url(#arrow)"/>
+      <path d="M500,66 C430,10 190,10 120,66" fill="none" stroke="#b3bcdb" stroke-width="2.5" marker-end="url(#arrow)"/>
+      <circle cx="310" cy="200" r="92" fill="#0f1a2e" stroke="#ffd27a" stroke-width="5"/>
+      <text class="name big" x="310" y="196" text-anchor="middle">ION Athens</text>
+      <text class="what" x="310" y="220" text-anchor="middle">οδηγεί χωρίς εμπόδια</text>
+      <text class="what" x="310" y="238" text-anchor="middle">λέει τις ιστορίες της πόλης</text>
+      <circle cx="95" cy="110" r="50" fill="#0f1a2e" stroke="#6ff2cf" stroke-width="3"/>
+      <text class="name" x="95" y="108" text-anchor="middle">ION Play</text>
+      <text class="what" x="95" y="127" text-anchor="middle">χαρτογραφεί</text>
+      <circle cx="525" cy="110" r="50" fill="#0f1a2e" stroke="#ff9a5b" stroke-width="3"/>
+      <text class="name" x="525" y="108" text-anchor="middle">ION Card</text>
+      <text class="what" x="525" y="127" text-anchor="middle">ανταμείβει</text>
+      <text class="what" x="150" y="196" text-anchor="middle">χάρτης χωρίς εμπόδια</text>
+      <text class="what" x="470" y="196" text-anchor="middle">βόλτες, εκδηλώσεις</text>
+      <text class="what" x="310" y="40" text-anchor="middle">πόντοι, δώρα</text>
+    </svg>
+    <p>Στο κέντρο το ION Athens: οδηγεί με ασφάλεια όσους το χρειάζονται, πρώτα άτομα με αναπηρία όρασης, και λέει σε όποιον το θέλει τις ιστορίες της πόλης στη βόλτα του. Το ION Play κρατάει τον χάρτη του ενημερωμένο. Η ION Card ανταμείβει όσους βοηθούν, με θέατρο, παραστάσεις και αγώνες του Δήμου.</p>
+  </section>
+
+  <section class="slide" aria-label="Διαφάνεια 11 από 11" hidden>
     <div class="eyebrow">Ἰών: αυτός που περπατάει</div>
     <h2>Το ION μένει δωρεάν, για κατοίκους και επισκέπτες.</h2>
     <p>Το επόμενο βήμα μας είναι το MK IV: μια συσκευή που δείχνει στα δάχτυλα ό,τι υπάρχει στο επόμενο βήμα. Αυτό είναι το εμπορικό μας κομμάτι.</p>
@@ -289,7 +323,7 @@
   </div>
   <div class="group">
     <button id="prev" type="button" aria-label="Προηγούμενη διαφάνεια">←</button>
-    <span id="counter">1 / 10</span>
+    <span id="counter">1 / 11</span>
     <button id="next" type="button" aria-label="Επόμενη διαφάνεια">→</button>
   </div>
 </nav>
@@ -1512,7 +1546,7 @@ function buildStage() {
       setRoute(routeA1, true, ROUTE, 0.7); setRoute(routeB, true, ROUTE, 0.7);
       shot = { pos: new THREE.Vector3(170, 270, 40), look: new THREE.Vector3(-250, 0, 520) };
       phoneEl.hidden = false;
-      setPhone({ brand: "ION Athens Card", destLabel: "Περιπατητής_42 · Επίπεδο 2", dest: "60 πόντοι", text: "Ξεκλείδωσες έκπτωση στο θέατρο", small: "Η γειτονιά σου: 80% χαρτογραφημένη (παράδειγμα)", btns: ["Τα δώρα μου", "Το άλμπουμ μου"] });
+      setPhone({ brand: "ION Card", destLabel: "Περιπατητής_42 · Επίπεδο 2", dest: "60 πόντοι", text: "Ξεκλείδωσες έκπτωση στο θέατρο", small: "Η γειτονιά σου: 80% χαρτογραφημένη (παράδειγμα)", btns: ["Τα δώρα μου", "Το άλμπουμ μου"] });
       heroes.forEach((x, k) => later(700 + k * 1300, () => { x.g.visible = true; x.label.visible = true; x.inner.scale.y = 0.01; }));
       later(3400, () => { athenaLabel.visible = true; });
     }
@@ -1524,6 +1558,13 @@ function buildStage() {
       shot = { orbit: { centre: new THREE.Vector3(0, 0, 250), R: 820, H: 330, a: 2.6, speed: 0.025 }, lookAt: new THREE.Vector3(-20, 40, 300) };
     }
     if (i === 9) {
+      todTarget = 0.92;
+      walker.visible = false;
+      setRoute(routeA1, true, ROUTE, 0.8); setRoute(routeB, true, ROUTE, 0.8);
+      hallLight.intensity = 400; hallMat.emissive.setHex(0x3a2a08);
+      shot = { orbit: { centre: new THREE.Vector3(0, 0, 200), R: 620, H: 260, a: 3.4, speed: 0.02 }, lookAt: new THREE.Vector3(0, 30, 200) };
+    }
+    if (i === 10) {
       todTarget = 1;
       walker.visible = false;
       setRoute(routeA1, true, ROUTE, 0.9); setRoute(routeB, true, ROUTE, 0.9);
