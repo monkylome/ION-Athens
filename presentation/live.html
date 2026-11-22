@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="el">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ION Athens · ζωντανά</title>
+<!--
+  The pitch on one screen: the presentation on the left, the real app running on the right.
+  Nothing here is a recording. The right frame is the app served by scripts/demo-up on this machine.
+
+  Keys (they work whichever frame was clicked last, as soon as the pointer leaves the app):
+    Right, Space, PageDown   next slide          Left, PageUp   previous slide        R   replay the slide
+    1   the game (/play)     2   the stage (/stage)     3   the camera scan (/play/scan)
+    0   reload the app frame F   full screen
+  Options in the address: ?app=http://127.0.0.1:5173  (where the app is served)
+-->
+<style>
+  html, body { margin: 0; height: 100%; background: #000; color: #fff; overflow: hidden;
+    font-family: "Sofia Sans", "Manrope", system-ui, sans-serif; }
+  .wrap { display: grid; grid-template-columns: minmax(0, 1fr) auto; height: 100%; }
+  .deck { border: 0; width: 100%; height: 100%; background: #000; }
+  .side { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+    padding: 12px 16px; background: #000; border-left: 4px solid #fff; }
+  .tag { font-weight: 800; letter-spacing: .04em; font-size: 18px; background: #FFD100; color: #000; padding: 4px 10px; }
+  .where { font-size: 14px; color: #fff; }
+  .phone { border: 4px solid #fff; background: #000; }
+  .phone iframe { display: block; border: 0; background: #000; }
+  .side.wide .phone iframe { width: 100%; height: 100%; }
+  .keys { font-size: 13px; color: #fff; text-align: center; max-width: 30ch; line-height: 1.35; }
+  .keys b { font-weight: 800; }
+  .down { display: none; font-size: 16px; max-width: 26ch; text-align: center; border: 4px solid #FFD100; padding: 12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <iframe class="deck" id="deck" src="index.html" title="Παρουσίαση" allow="autoplay"></iframe>
+  <aside class="side" id="side" aria-label="Η εφαρμογή, ζωντανά">
+    <div class="tag">ΖΩΝΤΑΝΗ ΕΦΑΡΜΟΓΗ</div>
+    <div class="where" id="where"></div>
+    <div class="phone" id="phone"><iframe id="app" title="ION Athens, η εφαρμογή" allow="camera; microphone; geolocation; autoplay"></iframe></div>
+    <p class="down" id="down">Η εφαρμογή δεν απαντά σε αυτή τη διεύθυνση. Ξεκινήστε την με scripts/demo-up και πατήστε 0.</p>
+    <p class="keys"><b>→</b> επόμενη · <b>1</b> παιχνίδι · <b>2</b> σκηνή · <b>3</b> σάρωση · <b>0</b> ξανά</p>
+  </aside>
+</div>
+<script>
+(function () {
+  var params = new URLSearchParams(location.search);
+  var base = (params.get("app") || "http://127.0.0.1:5173").replace(/\/$/, "");
+  var views = {
+    "1": { path: "/play?demo=1&loop=acropolis", label: "Το παιχνίδι · /play", w: 390, h: 800, wide: false },
+    "2": { path: "/stage?loop=acropolis&citizen=scripted", label: "Η σκηνή · /stage", w: 1280, h: 720, wide: true },
+    "3": { path: "/play/scan", label: "Η σάρωση · /play/scan", w: 390, h: 800, wide: false }
+  };
+  var deck = document.getElementById("deck"), app = document.getElementById("app");
+  var phone = document.getElementById("phone"), side = document.getElementById("side");
+  var where = document.getElementById("where"), down = document.getElementById("down");
+  var current = "1";
+
+  // The app keeps its own size (a phone, or a stage) and is scaled to fit the column, so it looks as it does on a device.
+  function fit() {
+    var v = views[current];
+    var room = innerHeight - 150;
+    var maxW = v.wide ? Math.round(innerWidth * 0.52) : Math.round(innerWidth * 0.30);
+    var scale = Math.min(room / v.h, maxW / v.w, 1);
+    app.style.width = v.w + "px"; app.style.height = v.h + "px";
+    app.style.transformOrigin = "0 0"; app.style.transform = "scale(" + scale + ")";
+    phone.style.width = Math.round(v.w * scale) + "px"; phone.style.height = Math.round(v.h * scale) + "px";
+  }
+  function open(key) {
+    current = key; var v = views[key];
+    where.textContent = v.label; app.src = base + v.path; fit();
+    fetch(base + "/api/health", { mode: "no-cors" }).then(function () { down.style.display = "none"; })
+      .catch(function () { down.style.display = "block"; });
+  }
+  function say(what) { deck.contentWindow.postMessage(what, "*"); }
+
+  addEventListener("keydown", function (e) {
+    if (["ArrowRight", "PageDown", " "].indexOf(e.key) >= 0) { e.preventDefault(); say("ion-next"); }
+    else if (["ArrowLeft", "PageUp"].indexOf(e.key) >= 0) { e.preventDefault(); say("ion-prev"); }
+    else if (e.key === "r" || e.key === "R") say("ion-replay");
+    else if (views[e.key]) open(e.key);
+    else if (e.key === "0") open(current);
+    else if (e.key === "f" || e.key === "F") { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(function () {}); }
+  });
+  // After a click inside either frame the keys would go to that frame. Take them back when the pointer leaves it.
+  [side, deck].forEach(function (el) { el.addEventListener("mouseleave", function () { window.focus(); }); });
+  deck.addEventListener("load", function () { window.focus(); });
+  addEventListener("resize", fit);
+  open("1"); window.focus();
+})();
+</script>
+</body>
+</html>
