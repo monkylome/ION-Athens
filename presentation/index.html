@@ -402,6 +402,7 @@
     if (e.data === "ion-next") show(current + 1);
     else if (e.data === "ion-prev") show(current - 1);
     else if (e.data === "ion-replay") show(current);
+    else if (e.data && typeof e.data.ionGoto === "number") show(e.data.ionGoto - 1);
   });
 
   var embedded = window.top !== window;
